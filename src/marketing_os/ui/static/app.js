@@ -3620,6 +3620,10 @@
       var short = bySeverity(envelope, "warning").filter(function (item) {
         return item.code === "answer-too-short";
       });
+      // One accent object per surface: while the preview is up, saving is the primary
+      // action and the review button steps back to secondary. "Keep editing" restores it.
+      setClass(button, "btn--primary", false);
+      setClass(button, "btn--secondary", true);
       var save = el("button", {
         class: "btn btn--primary",
         type: "button",
@@ -3677,6 +3681,8 @@
                 on: {
                   click: function () {
                     fill(host, []);
+                    setClass(button, "btn--secondary", false);
+                    setClass(button, "btn--primary", true);
                     var area = $("iv-answer");
                     if (area) area.focus();
                   },

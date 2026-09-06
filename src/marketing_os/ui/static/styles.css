@@ -355,6 +355,7 @@ details[open] > summary .disc {
   padding: 28px 18px 20px;
   border-right: 1px solid var(--line);
   background: var(--bg);
+  overflow-x: hidden;
   overflow-y: auto;
 }
 
@@ -446,16 +447,19 @@ details[open] > summary .disc {
 
 .brain__name {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 2px 8px;
   min-width: 0;
   font-weight: 700;
 }
 
+/* A brain is named by its folder, which can be long: the name wraps rather than pushing
+   its tag out of the rail, and the tag drops to its own line when it has to. */
 .brain__name > span:first-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .brain__sub {
