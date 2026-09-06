@@ -265,6 +265,17 @@ adapters. It reports a `checks` block (`structure`, `runtime_wiring`,
 `context_ready`) and is `ok` only when structure is sound **and** Claude Code and
 Codex skill discovery are both ready.
 
+### `mos rename`
+
+```text
+mos rename [path] --name NAME (--plan | --yes) [--json]
+```
+
+Changes the business name a brain belongs to, in `.mos/config.yaml`, and nothing else.
+Documents that mention the old name are left as they are. `--plan` names the change
+without writing; `--yes` applies it. The envelope carries `name` and `previous_name`.
+The same name is `ok` with no changes; an empty name is a `missing-name` error.
+
 ### `mos skills sync`
 
 ```text

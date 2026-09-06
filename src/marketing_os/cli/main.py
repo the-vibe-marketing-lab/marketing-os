@@ -19,6 +19,7 @@ from marketing_os.core.migrate import migrate_repo
 from marketing_os.core.onboard import onboard_repo
 from marketing_os.core.query import query_repo
 from marketing_os.core.related import related_repo
+from marketing_os.core.rename import rename_repo
 from marketing_os.core.results import envelope, finding, next_action
 from marketing_os.core.skills import (
     apply_sync,
@@ -160,6 +161,12 @@ def build_parser(
     )
     index_status.add_argument("path", nargs="?", default=".")
     _add_output(index_status)
+
+    rename = commands.add_parser("rename", help="Rename the business a brain belongs to.")
+    rename.add_argument("path", nargs="?", default=".")
+    rename.add_argument("--name", required=True, help="The new business name.")
+    _add_mutation(rename)
+    _add_output(rename)
 
     related = commands.add_parser(
         "related", help="Propose ## Related blocks for documents that link to nothing."
@@ -357,6 +364,29 @@ def _sync_result(root: Path, runtime: str, *, apply: bool, global_install: bool)
     )
 
 
+def _dispatch_ingest(args: argparse.Namespace) -> dict[str, Any]:
+    """The ingest branch: its own function so ``dispatch`` stays under the ceiling."""
+    if args.pending:
+        if args.plan or args.yes:
+            raise ValueError("--pending is read-only; do not combine it with --plan or --yes")
+        # --pending takes only an optional [path]; argparse fills `source` first,
+        # so a lone positional is the path. Two positionals is ambiguous.
+        if args.path != ".":
+            raise ValueError("--pending takes only an optional PATH argument")
+        where = args.source if args.source is not None else args.path
+        return pending_sources(_path(where))
+    if args.source is None:
+        raise ValueError("ingest requires a SOURCE (or --pending to list captures)")
+    return ingest_repo(
+        _path(args.path),
+        args.source,
+        topic=args.topic,
+        slug=args.slug,
+        date=args.date,
+        apply=_mutation_mode(args),
+    )
+
+
 def dispatch(args: argparse.Namespace) -> dict[str, Any]:
     if args.command == "install":
         applied = _mutation_mode(args)
@@ -375,27 +405,7 @@ def dispatch(args: argparse.Namespace) -> dict[str, Any]:
             _path(args.path), args.runtime, apply=_mutation_mode(args), global_install=False
         )
     if args.command == "ingest":
-        if args.pending:
-            if args.plan or args.yes:
-                raise ValueError(
-                    "--pending is read-only; do not combine it with --plan or --yes"
-                )
-            # --pending takes only an optional [path]; argparse fills `source` first,
-            # so a lone positional is the path. Two positionals is ambiguous.
-            if args.path != ".":
-                raise ValueError("--pending takes only an optional PATH argument")
-            where = args.source if args.source is not None else args.path
-            return pending_sources(_path(where))
-        if args.source is None:
-            raise ValueError("ingest requires a SOURCE (or --pending to list captures)")
-        return ingest_repo(
-            _path(args.path),
-            args.source,
-            topic=args.topic,
-            slug=args.slug,
-            date=args.date,
-            apply=_mutation_mode(args),
-        )
+        return _dispatch_ingest(args)
     if args.command == "index":
         if args.index_command == "build":
             return index_build_repo(_path(args.path))
@@ -403,6 +413,8 @@ def dispatch(args: argparse.Namespace) -> dict[str, Any]:
             return index_sync_repo(_path(args.path), apply=_mutation_mode(args))
         if args.index_command == "status":
             return index_status_repo(_path(args.path))
+    if args.command == "rename":
+        return rename_repo(_path(args.path), args.name, apply=_mutation_mode(args))
     if args.command == "related":
         return related_repo(
             _path(args.path), apply=_mutation_mode(args), limit=args.limit

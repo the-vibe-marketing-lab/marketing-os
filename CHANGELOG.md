@@ -5,6 +5,12 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ## [Unreleased]
 
+### Added
+
+- **`mos rename`.** Changes the business name a brain belongs to, in its settings file
+  and nowhere else, with the usual `--plan` then `--yes`. The local app renames from the
+  overview header.
+
 ### Changed
 
 - **A prompt to paste into Claude Code.** The Structure and Findings cards, and the

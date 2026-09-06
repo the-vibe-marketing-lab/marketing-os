@@ -84,6 +84,9 @@ COMMANDS: dict[str, CommandSpec] = {
     "index build": CommandSpec(("index", "build"), positionals=("path",)),
     "index sync": CommandSpec(("index", "sync"), positionals=("path",), flags=_MUTATION),
     "index status": CommandSpec(("index", "status"), positionals=("path",)),
+    "rename": CommandSpec(
+        ("rename",), positionals=("path",), options=("name",), flags=_MUTATION
+    ),
     "related": CommandSpec(
         ("related",), positionals=("path",), options=("limit",), flags=_MUTATION
     ),
