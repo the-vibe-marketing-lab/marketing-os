@@ -1,13 +1,14 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-05T07:59:44Z",
+  "generatedAt": "2026-09-06T00:00:00Z",
   "title": "Design System: MarketingOS local app",
   "extensions": {
     "authority": {
       "system": "Ember",
       "rules": "tvml-website-next/public/design.md",
       "tokens": "tvml-website-next/src/styles/ember.css",
-      "note": "Ember is the authority. This sidecar records only what the app adds or maps."
+      "recordedFrom": "ui-rebrand @ 0205694 (static files unchanged since d2e3b79): src/marketing_os/ui/static/styles.css, index.html, app.js",
+      "note": "Ember is the authority. This sidecar records only what the app adds or maps. No tonal ramps are synthesised: Ember is a single-accent dark system and the app uses only the steps listed here."
     },
     "colorMeta": {
       "bg": { "role": "neutral", "displayName": "Ink", "canonical": "#0d0b0a", "ember": "--ink" },
@@ -19,185 +20,200 @@
       "control-line": { "role": "neutral", "displayName": "Paper 42 over Ink", "canonical": "#716e6b", "ember": "rgb(250 247 242 / 42%) flattened" },
       "ink": { "role": "neutral", "displayName": "Paper", "canonical": "#faf7f2", "ember": "--paper" },
       "ink-2": { "role": "neutral", "displayName": "Paper 78 over Ink", "canonical": "#c6c3bf", "ember": "--text-body flattened" },
-      "ink-3": { "role": "neutral", "displayName": "Paper 54 over Ink", "canonical": "#8d8a87", "ember": "--text-muted is 50%; the app uses 54% to clear 4.5:1 on every audited surface" },
+      "ink-3": { "role": "neutral", "displayName": "Paper 54 over Ink", "canonical": "#8d8a87", "ember": "--text-muted is 50%; the app steps to 54% to clear 4.5:1 on Surface-2 and the accent wash" },
       "accent": { "role": "primary", "displayName": "Ember", "canonical": "#c96442", "ember": "--ember" },
       "accent-hover": { "role": "primary", "displayName": "Ember Bright", "canonical": "#e2794f", "ember": "--ember-bright" },
       "accent-ink": { "role": "primary", "displayName": "Ink on Ember", "canonical": "#0d0b0a", "ember": "--text-on-accent" },
       "accent-soft": { "role": "primary", "displayName": "Ember Soft over Ink", "canonical": "#2b1913", "ember": "--ember-soft flattened" },
       "accent-line": { "role": "primary", "displayName": "Ember Line over Ink", "canonical": "#49271c", "ember": "--ember-line flattened" },
+      "ok": { "role": "status", "displayName": "Paper (done)", "canonical": "#faf7f2", "ember": "--paper; Ember has no green" },
+      "ok-ink": { "role": "status", "displayName": "Ink on done", "canonical": "#0d0b0a", "ember": "--ink" },
+      "ok-soft": { "role": "status", "displayName": "Done wash", "canonical": "#201e1d", "ember": "app-only warm grey" },
+      "ok-line": { "role": "status", "displayName": "Done line", "canonical": "#383534", "ember": "app-only warm grey" },
       "warn": { "role": "status", "displayName": "Sun", "canonical": "#f4c24b", "ember": "--sun" },
       "warn-soft": { "role": "status", "displayName": "Sun Soft over Ink", "canonical": "#2d2513", "ember": "--sun-soft flattened" },
       "warn-line": { "role": "status", "displayName": "Sun Line over Ink", "canonical": "#57461f", "ember": "--sun-line flattened" },
-      "err": { "role": "status", "displayName": "Ember Bright as error", "canonical": "#e2794f", "ember": "--ember-bright; Ember has no red" },
+      "err": { "role": "status", "displayName": "Ember Bright (error)", "canonical": "#e2794f", "ember": "--ember-bright; Ember has no red" },
       "err-ink": { "role": "status", "displayName": "Ink on error", "canonical": "#0d0b0a", "ember": "--ink" },
       "err-soft": { "role": "status", "displayName": "Ember Soft over Ink", "canonical": "#2b1913", "ember": "--ember-soft flattened" },
       "err-line": { "role": "status", "displayName": "Ember Line over Ink", "canonical": "#49271c", "ember": "--ember-line flattened" },
-      "ok": { "role": "status", "displayName": "Paper as done", "canonical": "#faf7f2", "ember": "--paper; Ember has no green" },
-      "ok-ink": { "role": "status", "displayName": "Ink on done", "canonical": "#0d0b0a", "ember": "--ink" },
-      "ok-soft": { "role": "status", "displayName": "Warm grey wash", "canonical": "#201e1d", "ember": "app-only" },
-      "ok-line": { "role": "status", "displayName": "Warm grey line", "canonical": "#383534", "ember": "app-only" }
+      "term-bg": { "role": "neutral", "displayName": "Terminal ground", "canonical": "#0d0b0a", "ember": "--ink" },
+      "term-ink": { "role": "neutral", "displayName": "Terminal text", "canonical": "#faf7f2", "ember": "--paper" },
+      "term-dim": { "role": "neutral", "displayName": "Terminal prompt", "canonical": "#8d8a87", "ember": "same as ink-3" }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "The page-head title: the business name on the dashboard. 32px at 640px and below." },
-      "headline": { "displayName": "Headline", "purpose": "Wizard step titles; the interview question at 32px 600." },
-      "title": { "displayName": "Title", "purpose": "The next-action title (22px); result and card titles (20px); the wordmark (22px 800, -0.03em)." },
-      "body": { "displayName": "Body", "purpose": "Base size and the first line of every ledger row. 17px at 640px and below. 62ch prose, 56ch ledes." },
-      "small": { "displayName": "Small", "purpose": "Labels, help, meta, rail items, buttons." },
-      "label": { "displayName": "Eyebrow", "purpose": "Eyebrows, group labels, subheads. Typed lowercase, uppercased by CSS." },
-      "status": { "displayName": "Status word", "purpose": ".pill and .ledger__state: tracked uppercase words, never capsules." },
-      "mono": { "displayName": "Mono", "purpose": "Command lines, paths, raw output. Never a label or a sentence." }
+      "display": { "displayName": "Display", "purpose": "Page-head title on the interview, attach and commands views; 32px below 640." },
+      "headline": { "displayName": "Headline", "purpose": "The business name in the overview header; 28px below 640." },
+      "title": { "displayName": "Title", "purpose": "Wizard step titles; 26px on small screens." },
+      "stat": { "displayName": "Stat", "purpose": "The status tile value, tabular; 24px below 640." },
+      "card-title": { "displayName": "Card title", "purpose": "Result and card titles outside a panel." },
+      "panel-title": { "displayName": "Panel title", "purpose": "Every overview panel head and a compact readout's title. Figtree, not Bricolage." },
+      "body": { "displayName": "Body", "purpose": "Base size; 17px below 640. Prose 62ch, ledes 56ch." },
+      "small": { "displayName": "Small", "purpose": "Tile lines, rows, meta, help, buttons, the prompt text." },
+      "label": { "displayName": "Label", "purpose": "Eyebrows, group labels, subheads; typed lowercase, uppercased by CSS. 12px in a tile." },
+      "status": { "displayName": "Status", "purpose": "The ready / needs-you words, the health word and .pill words. No capsule." },
+      "mono": { "displayName": "Mono", "purpose": "Command lines, paths and raw output only: code, pre, .term, .row__path." }
     },
-    "fonts": [
-      { "family": "Bricolage Grotesque", "file": "static/fonts/bricolage-grotesque-variable.woff2", "weights": "400 800", "licence": "SIL OFL 1.1" },
-      { "family": "Figtree", "file": "static/fonts/figtree-variable.woff2", "weights": "400 800", "licence": "SIL OFL 1.1" }
-    ],
     "shadows": [
-      { "name": "shadow-ember", "value": "0 12px 32px rgba(201, 100, 66, 0.4)", "purpose": "The primary button on hover, with a 3px lift. The only shadow in the system." },
-      { "name": "shadow-1", "value": "none", "purpose": "Cards cast no shadow." }
+      { "name": "shadow-ember", "value": "0 12px 32px rgba(201, 100, 66, 0.4)", "purpose": "Primary button on hover, with the 3px lift. The only shadow; removed under reduced motion." },
+      { "name": "shadow-1", "value": "none", "purpose": "Cards, tiles and panels cast no shadow." }
     ],
     "motion": [
-      { "name": "ease", "value": "cubic-bezier(0.2, 0, 0, 1)", "purpose": "Every transition and reveal." },
-      { "name": "fast", "value": "0.15s", "purpose": "Hover, focus, the disclosure chevron." },
-      { "name": "base", "value": "0.22s", "purpose": "The in-place reveal (4px rise and fade) when a ledger row or the status row opens." },
+      { "name": "ease", "value": "cubic-bezier(0.2, 0, 0, 1)", "purpose": "Every transition." },
+      { "name": "fast", "value": "0.15s", "purpose": "Hover, border, colour, the disclosure chevron." },
+      { "name": "base", "value": "0.22s", "purpose": "The answer row's in-place reveal (4px rise and fade)." },
       { "name": "lift", "value": "translateY(-3px)", "purpose": "Primary button hover." },
-      { "name": "spin", "value": "0.7s linear infinite", "purpose": "Boot spinner and running step icon; becomes a 1.8s opacity pulse under reduced motion." },
-      { "name": "slide", "value": "1.15s ease-in-out infinite", "purpose": "Indeterminate progress bar; becomes a full-width 35% opacity pulse under reduced motion." }
+      { "name": "spin", "value": "0.7s linear infinite", "purpose": "Boot spinner and running step icon; 0.65s on the button spinner." },
+      { "name": "slide", "value": "1.15s ease-in-out infinite", "purpose": "Indeterminate progress bar." },
+      { "name": "pulse", "value": "1.8s ease-in-out infinite, opacity 0.45 to 1", "purpose": "Every busy cue under prefers-reduced-motion; no rotation, no travel." }
     ],
     "breakpoints": [
-      { "name": "rail-to-drawer", "value": "900px", "purpose": "Topbar appears (56px), rail becomes a fixed drawer, ledger label drops to its own line." },
-      { "name": "small", "value": "640px", "purpose": "Body 17px, tighter padding, icon-button labels visually hidden, display 32px." },
+      { "name": "ov-one-column", "value": "1100px", "purpose": "Overview body grid drops from 8/4 to one column." },
+      { "name": "drawer", "value": "900px", "purpose": "Rail becomes a drawer, strip goes 2x2, commands stack, answer rows stack." },
+      { "name": "phone", "value": "640px", "purpose": "Body 17px, tighter padding, icon-button labels hidden, every control 44px." },
       { "name": "narrow", "value": "460px", "purpose": "Mode cards collapse to a headline and one line." }
     ],
-    "layout": {
-      "sidebarWidth": "240px",
-      "column": "720px",
-      "wideColumn": "1000px",
-      "mainPadding": "56px 40px 120px",
-      "ledgerRow": "grid 164px minmax(0,1fr) auto; gap 8px 24px; padding 22px 0; hairline below"
-    },
-    "tests": {
+    "forcedColors": "Buttons, rail items, command items, tiles, answer heads and quick-action rows gain a 1px ButtonText border; the Lab Rule and the done marks keep their fills with forced-color-adjust: none.",
+    "contractTests": {
       "file": "tests/contracts/test_ui_static_contract.py",
-      "pins": [
-        "test_audited_contrast_pairs_clear_aa: twenty token pairs from :root at 4.5:1 or 3:1; parses :root up to the prefers-color-scheme dark block, which is why the empty dark block stays",
-        "test_the_dark_palette_never_hard_codes_a_glyph_colour: no color: #fff; --ok-ink and --err-ink exist",
-        "test_the_focus_ring_is_not_the_invisible_soft_accent: .input:focus-visible uses outline 2px solid var(--accent)",
-        "test_buttons_are_never_disabled_out_of_the_tab_order: aria-disabled, never .disabled",
-        "test_scaffolding_recedes_in_the_plan_tree: .tree__row--faint uses a token, not opacity",
-        "test_the_mode_consequences_are_not_dressed_as_success: --ok never on .mode__delta",
-        "test_the_commit_point_and_the_summary_cannot_scroll_away: sticky wizard footer and plan summary; overflow clip",
-        "test_no_filesystem_path_in_default_visible_copy: paths only inside .tech disclosures",
-        "drawer and rail: .sidebar.sidebar--open, @media (max-width: 900px), .brain__open[aria-current=\"true\"], .chip--place[aria-pressed=\"true\"] all read from styles.css"
+      "pinned": [
+        "test_audited_contrast_pairs_clear_aa: 21 pairs read from :root (up to the prefers-color-scheme: dark block); 4.5:1 text, 3:1 controls and glyphs.",
+        "test_the_dark_palette_never_hard_codes_a_glyph_colour: no `color: #fff;` in styles.css; --ok-ink and --err-ink must exist.",
+        "test_the_focus_ring_is_not_the_invisible_soft_accent: .input:focus-visible carries `outline: 2px solid var(--accent);`; --accent-soft is never an outline.",
+        "test_no_filesystem_path_in_the_markup_a_reader_sees / test_no_filesystem_path_is_written_into_the_apps_copy: paths only inside <code> in a .tech disclosure or an envelope-reported .row__path.",
+        "test_the_reader_is_never_told_about_a_schema: no 'schema' in any string literal or visible text.",
+        "test_every_checker_code_has_a_plain_sentence / test_the_plain_sentences_carry_a_count_where_more_than_one_can_happen: FINDING_COPY covers every checker code; the many form carries {n}.",
+        "test_no_user_facing_copy_denies_a_capability_the_app_ships: a denial grammar (bare 'no <noun>', 'needs no <noun>', 'never/cannot use a <noun>', 'nothing is <participle>', 'never <verb>') checked per shipped capability.",
+        "test_buttons_are_never_disabled_out_of_the_tab_order: aria-disabled, never .disabled = true.",
+        "test_one_status_system_per_fact_on_the_dashboard: one ready / needs-you word per fact.",
+        "test_scaffolding_recedes_in_the_plan_tree: faint rows use ink-3, never opacity.",
+        "test_the_commit_point_and_the_summary_cannot_scroll_away: sticky wizard footer and plan summary."
       ]
     }
   },
   "components": [
     {
-      "name": "Primary button",
+      "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "The one Ember object on a view. Pill, Ink text on Ember, hover lifts 3px with the Ember shadow.",
-      "html": "<button class=\"ds-btn ds-btn-primary\" type=\"button\">Preview the missing pieces</button>",
-      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 11px 22px; border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--ink, #faf7f2); cursor: pointer; font-family: Figtree, system-ui, sans-serif; font-size: 15px; font-weight: 700; line-height: 1.2; white-space: nowrap; transition: background-color .15s cubic-bezier(.2,0,0,1), border-color .15s cubic-bezier(.2,0,0,1), color .15s cubic-bezier(.2,0,0,1), box-shadow .15s cubic-bezier(.2,0,0,1), transform .15s cubic-bezier(.2,0,0,1); } .ds-btn:focus-visible { outline: 2px solid var(--accent-hover, #e2794f); outline-offset: 3px; } .ds-btn-primary { background: var(--accent, #c96442); color: var(--accent-ink, #0d0b0a); } .ds-btn-primary:hover { box-shadow: 0 12px 32px rgba(201,100,66,.4); transform: translateY(-3px); }"
+      "description": "The one Ember object on a view. Hover adds the Ember shadow and a 3px lift, never a size change.",
+      "html": "<button class=\"ds-btn ds-btn--primary\" type=\"button\">Preview the missing pieces</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 11px 22px; border: 1px solid transparent; border-radius: var(--r-pill, 999px); background: transparent; color: var(--ink, #faf7f2); cursor: pointer; font-family: var(--font, Figtree, system-ui, sans-serif); font-size: 15px; font-weight: 700; line-height: 1.2; white-space: nowrap; transition: background-color 0.15s cubic-bezier(0.2,0,0,1), border-color 0.15s cubic-bezier(0.2,0,0,1), color 0.15s cubic-bezier(0.2,0,0,1), box-shadow 0.15s cubic-bezier(0.2,0,0,1), transform 0.15s cubic-bezier(0.2,0,0,1); } .ds-btn:focus-visible { outline: 2px solid var(--accent-hover, #e2794f); outline-offset: 3px; } .ds-btn--primary { background: var(--accent, #c96442); color: var(--accent-ink, #0d0b0a); } .ds-btn--primary:hover { box-shadow: 0 12px 32px rgba(201, 100, 66, 0.4); transform: translateY(-3px); }"
     },
     {
-      "name": "Secondary button",
+      "name": "Secondary Button",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "Mist border, Paper 78 text; hover to the control line and Paper.",
-      "html": "<button class=\"ds-btn ds-btn-secondary\" type=\"button\">Show everything the check found</button>",
-      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 11px 22px; border: 1px solid transparent; border-radius: 999px; background: transparent; cursor: pointer; font-family: Figtree, system-ui, sans-serif; font-size: 15px; font-weight: 700; line-height: 1.2; white-space: nowrap; transition: border-color .15s cubic-bezier(.2,0,0,1), color .15s cubic-bezier(.2,0,0,1); } .ds-btn:focus-visible { outline: 2px solid var(--accent-hover, #e2794f); outline-offset: 3px; } .ds-btn-secondary { border-color: var(--line-strong, #2c2622); color: var(--ink-2, #c6c3bf); } .ds-btn-secondary:hover { border-color: var(--control-line, #716e6b); color: var(--ink, #faf7f2); }"
+      "description": "Mist border, Paper 78 text; the header's second action and the to-do row's fix.",
+      "html": "<button class=\"ds-btn ds-btn--secondary\" type=\"button\">Show everything the check found</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 11px 22px; border: 1px solid transparent; border-radius: var(--r-pill, 999px); background: transparent; cursor: pointer; font-family: var(--font, Figtree, system-ui, sans-serif); font-size: 15px; font-weight: 700; line-height: 1.2; white-space: nowrap; transition: border-color 0.15s cubic-bezier(0.2,0,0,1), color 0.15s cubic-bezier(0.2,0,0,1); } .ds-btn:focus-visible { outline: 2px solid var(--accent-hover, #e2794f); outline-offset: 3px; } .ds-btn--secondary { border-color: var(--line-strong, #2c2622); color: var(--ink-2, #c6c3bf); } .ds-btn--secondary:hover { border-color: var(--control-line, #716e6b); color: var(--ink, #faf7f2); }"
     },
     {
-      "name": "Ghost button",
+      "name": "Ghost Icon Button",
       "kind": "button",
-      "refersTo": "button-ghost",
-      "description": "Divider border, Paper 54 text; the row action (Change), Back, the rail tools.",
-      "html": "<button class=\"ds-btn ds-btn-ghost ds-btn-sm\" type=\"button\">Change</button>",
-      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 11px 22px; border: 1px solid transparent; border-radius: 999px; background: transparent; cursor: pointer; font-family: Figtree, system-ui, sans-serif; font-size: 15px; font-weight: 700; line-height: 1.2; white-space: nowrap; transition: border-color .15s cubic-bezier(.2,0,0,1), color .15s cubic-bezier(.2,0,0,1); } .ds-btn:focus-visible { outline: 2px solid var(--accent-hover, #e2794f); outline-offset: 3px; } .ds-btn-ghost { border-color: var(--line, #241f1c); color: var(--ink-3, #8d8a87); } .ds-btn-ghost:hover { border-color: var(--line-strong, #2c2622); color: var(--ink, #faf7f2); } .ds-btn-sm { min-height: 36px; padding: 7px 16px; font-size: 14px; }"
+      "refersTo": "button-icon",
+      "description": "The app bar's two utilities: Divider border, Paper 54 text, sprite icon, 36px tall.",
+      "html": "<button class=\"ds-btn ds-btn--ghost ds-btn--icon\" type=\"button\"><svg viewBox=\"0 0 24 24\" class=\"ds-icon\" aria-hidden=\"true\"><path d=\"M20 11a8 8 0 1 0-.7 4.5\"/><path d=\"M20 5v6h-6\"/></svg><span>Re-check</span></button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; padding: 6px 12px; border: 1px solid transparent; border-radius: var(--r-pill, 999px); background: transparent; cursor: pointer; font-family: var(--font, Figtree, system-ui, sans-serif); font-size: 14px; font-weight: 700; line-height: 1.2; white-space: nowrap; transition: border-color 0.15s cubic-bezier(0.2,0,0,1), color 0.15s cubic-bezier(0.2,0,0,1); } .ds-btn:focus-visible { outline: 2px solid var(--accent-hover, #e2794f); outline-offset: 3px; } .ds-btn--ghost { border-color: var(--line, #241f1c); color: var(--ink-2, #c6c3bf); } .ds-btn--ghost:hover { border-color: var(--line-strong, #2c2622); color: var(--ink, #faf7f2); } .ds-icon { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }"
     },
     {
-      "name": "Ledger row",
+      "name": "Status Tile",
+      "kind": "card",
+      "refersTo": "tile",
+      "description": "One of four peer tiles in the strip: eyebrow, Bricolage number, one line, a ready / needs-you word. A button to its panel.",
+      "html": "<button class=\"ds-tile\" type=\"button\"><span class=\"ds-tile__label\">structure</span><span class=\"ds-tile__value\">1</span><span class=\"ds-tile__line\">out of place</span><span class=\"ds-state ds-state--needs\">needs you</span></button>",
+      "css": ".ds-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 200px; padding: 20px; border: 1px solid var(--line-strong, #2c2622); border-radius: var(--r-lg, 18px); background: var(--surface, #1a1614); color: var(--ink, #faf7f2); cursor: pointer; font-family: var(--font, Figtree, system-ui, sans-serif); text-align: left; transition: border-color 0.15s cubic-bezier(0.2,0,0,1); } .ds-tile:hover { border-color: var(--control-line, #716e6b); } .ds-tile:focus-visible { outline: 2px solid var(--accent-hover, #e2794f); outline-offset: 3px; } .ds-tile__label { color: var(--ink-3, #8d8a87); font-size: 12px; font-weight: 700; letter-spacing: 0.14em; line-height: 1.2; text-transform: uppercase; } .ds-tile__value { margin-top: 4px; font-family: var(--font-display, 'Bricolage Grotesque', Figtree, system-ui, sans-serif); font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; } .ds-tile__line { color: var(--ink-2, #c6c3bf); font-size: 15px; line-height: 1.45; } .ds-state { margin-top: 4px; color: var(--ink-2, #c6c3bf); font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; } .ds-state--needs { color: var(--warn, #f4c24b); }"
+    },
+    {
+      "name": "Panel with rows",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Ember's card with a Figtree head; to-do rows inside, hairline-separated, one fix per row.",
+      "html": "<section class=\"ds-panel\"><div class=\"ds-panel__head\"><h2 class=\"ds-panel__title\">Do this next</h2><span class=\"ds-panel__count\">1 to do</span></div><div class=\"ds-todos\"><div class=\"ds-todo\"><svg viewBox=\"0 0 24 24\" class=\"ds-icon ds-icon--warn\" aria-hidden=\"true\"><path d=\"M12 3 2 20h20L12 3Z\"/><path d=\"M12 10v4\"/><path d=\"M12 17.5v.5\"/></svg><div class=\"ds-todo__text\"><p class=\"ds-todo__title\">A document links to nothing else.</p><p class=\"ds-todo__sub\">The related tool proposes links and writes nothing until you apply.</p></div><button class=\"ds-btn ds-btn--secondary ds-btn--sm\" type=\"button\">Preview the links</button></div></div></section>",
+      "css": ".ds-panel { padding: 24px; border: 1px solid var(--line-strong, #2c2622); border-radius: var(--r-lg, 18px); background: var(--surface, #1a1614); color: var(--ink-2, #c6c3bf); font-family: var(--font, Figtree, system-ui, sans-serif); } .ds-panel__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; } .ds-panel__title { margin: 0; color: var(--ink, #faf7f2); font-size: 16px; font-weight: 700; line-height: 1.3; } .ds-panel__count { color: var(--ink-3, #8d8a87); font-size: 14px; } .ds-todos { border-top: 1px solid var(--line, #241f1c); } .ds-todo { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line, #241f1c); } .ds-icon { width: 16px; height: 16px; flex: none; margin-top: 4px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; } .ds-icon--warn { color: var(--warn, #f4c24b); } .ds-todo__text { flex: 1; min-width: 0; } .ds-todo__title { margin: 0; color: var(--ink, #faf7f2); font-size: 15px; font-weight: 700; line-height: 1.45; } .ds-todo__sub { margin: 3px 0 0; color: var(--ink-3, #8d8a87); font-size: 14px; line-height: 1.5; } .ds-btn { display: inline-flex; align-items: center; min-height: 36px; padding: 7px 16px; border: 1px solid var(--line-strong, #2c2622); border-radius: 999px; background: transparent; color: var(--ink-2, #c6c3bf); cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; white-space: nowrap; flex: none; } .ds-btn:hover { border-color: var(--control-line, #716e6b); color: var(--ink, #faf7f2); } .ds-btn:focus-visible { outline: 2px solid var(--accent-hover, #e2794f); outline-offset: 3px; }"
+    },
+    {
+      "name": "Quick-action row",
+      "kind": "nav",
+      "refersTo": "panel",
+      "description": "A full-width square button row: sprite icon, Paper label, chevron; hover underlines the label.",
+      "html": "<button class=\"ds-qa\" type=\"button\"><svg viewBox=\"0 0 24 24\" class=\"ds-qa__icon\" aria-hidden=\"true\"><path d=\"m5 8 4 4-4 4\"/><path d=\"M12 17h7\"/></svg><span class=\"ds-qa__label\">Open this brain in Claude Code</span><svg viewBox=\"0 0 24 24\" class=\"ds-qa__go\" aria-hidden=\"true\"><path d=\"m9 6 6 6-6 6\"/></svg></button>",
+      "css": ".ds-qa { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 10px 0; border: 0; border-top: 1px solid var(--line, #241f1c); border-bottom: 1px solid var(--line, #241f1c); background: transparent; color: var(--ink, #faf7f2); cursor: pointer; font-family: var(--font, Figtree, system-ui, sans-serif); font-size: 15px; font-weight: 700; text-align: left; } .ds-qa:hover .ds-qa__label { text-decoration: underline; text-underline-offset: 0.2em; } .ds-qa:focus-visible { outline: 2px solid var(--accent-hover, #e2794f); outline-offset: 3px; } .ds-qa__icon, .ds-qa__go { flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; color: var(--ink-3, #8d8a87); } .ds-qa__icon { width: 18px; height: 18px; } .ds-qa__go { width: 16px; height: 16px; } .ds-qa__label { flex: 1; min-width: 0; }"
+    },
+    {
+      "name": "Prompt box",
       "kind": "custom",
-      "refersTo": "ledger-row",
-      "description": "The dashboard's unit: label, the operator's first line as a text button, a tracked state word and one ghost action, hairline below.",
-      "html": "<div class=\"ds-ledger\"><div class=\"ds-ledger-row\"><div class=\"ds-ledger-label\">Your brand</div><div class=\"ds-ledger-body\"><button class=\"ds-ledger-open\" type=\"button\"><span class=\"ds-ledger-line\">Flowstate is an AI automations and education partner for agencies and consultants.</span></button></div><div class=\"ds-ledger-end\"><span class=\"ds-ledger-state\">Answered</span><button class=\"ds-btn ds-btn-ghost ds-btn-sm\" type=\"button\">Change</button></div></div><div class=\"ds-ledger-row\"><div class=\"ds-ledger-label\">Your proof</div><div class=\"ds-ledger-body\"><button class=\"ds-ledger-open\" type=\"button\"><span class=\"ds-ledger-line ds-ledger-line-help\">Results you can point to: numbers, before and after, named clients.</span></button></div><div class=\"ds-ledger-end\"><span class=\"ds-ledger-state ds-ledger-state-needed\">Needed</span><button class=\"ds-btn ds-btn-ghost ds-btn-sm\" type=\"button\">Answer</button></div></div></div>",
-      "css": ".ds-ledger { font-family: Figtree, system-ui, sans-serif; border-top: 1px solid var(--line, #241f1c); } .ds-ledger-row { display: grid; grid-template-columns: 164px minmax(0,1fr) auto; gap: 8px 24px; align-items: start; padding: 22px 0; border-bottom: 1px solid var(--line, #241f1c); } .ds-ledger-label { padding-top: 3px; color: var(--ink, #faf7f2); font-size: 15px; font-weight: 700; line-height: 1.4; } .ds-ledger-open { display: block; width: 100%; padding: 0; border: 0; background: transparent; color: var(--ink, #faf7f2); cursor: pointer; font: inherit; font-size: 18px; line-height: 1.5; text-align: left; } .ds-ledger-open:focus-visible { outline: 2px solid var(--accent-hover, #e2794f); outline-offset: 3px; } .ds-ledger-line { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; } .ds-ledger-line-help { color: var(--ink-3, #8d8a87); } .ds-ledger-end { display: flex; align-items: center; justify-content: flex-end; gap: 6px 14px; padding-top: 1px; } .ds-ledger-state { color: var(--ink-3, #8d8a87); font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; } .ds-ledger-state-needed { color: var(--warn, #f4c24b); } .ds-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 7px 16px; border: 1px solid var(--line, #241f1c); border-radius: 999px; background: transparent; color: var(--ink-3, #8d8a87); cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; line-height: 1.2; white-space: nowrap; transition: border-color .15s, color .15s; } .ds-btn:hover { border-color: var(--line-strong, #2c2622); color: var(--ink, #faf7f2); } .ds-btn:focus-visible { outline: 2px solid var(--accent-hover, #e2794f); outline-offset: 3px; }"
+      "refersTo": "prompt",
+      "description": "The paste-into-Claude-Code block: prose in Figtree on the terminal ground, a tracked caption, a copy button under it.",
+      "html": "<div class=\"ds-prompt\"><p class=\"ds-prompt__cap\">Paste this into Claude Code</p><p class=\"ds-prompt__text\">Add a summary header to the 9 documents that have none, then re-run the check.</p><div class=\"ds-prompt__row\"><button class=\"ds-btn\" type=\"button\">Copy the prompt</button></div></div>",
+      "css": ".ds-prompt { padding: 14px 16px; border: 1px solid var(--line-strong, #2c2622); border-radius: var(--r, 12px); background: var(--term-bg, #0d0b0a); font-family: var(--font, Figtree, system-ui, sans-serif); } .ds-prompt__cap { margin: 0 0 8px; color: var(--ink-3, #8d8a87); font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; } .ds-prompt__text { margin: 0; color: var(--term-ink, #faf7f2); font-size: 15px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; } .ds-prompt__row { margin-top: 12px; } .ds-btn { display: inline-flex; align-items: center; min-height: 36px; padding: 7px 16px; border: 1px solid var(--line-strong, #2c2622); border-radius: 999px; background: transparent; color: var(--ink-2, #c6c3bf); cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; } .ds-btn:hover { border-color: var(--control-line, #716e6b); color: var(--ink, #faf7f2); } .ds-btn:focus-visible { outline: 2px solid var(--accent-hover, #e2794f); outline-offset: 3px; }"
     },
     {
-      "name": "Eyebrow and Lab Rule",
-      "kind": "custom",
-      "refersTo": "label",
-      "description": "The page head: lowercase eyebrow uppercased by CSS, Bricolage 800 title, the 56 by 3 Ember rule, quiet meta separated by dots.",
-      "html": "<div class=\"ds-head\"><p class=\"ds-eyebrow\">agency hq</p><h1 class=\"ds-title\">Flowstate</h1><div class=\"ds-rule\" aria-hidden=\"true\"></div><p class=\"ds-meta\"><span>Agency</span><span>9 shared skills</span><span>Folder: flowstate-hq</span></p></div>",
-      "css": ".ds-head { font-family: Figtree, system-ui, sans-serif; } .ds-eyebrow { margin: 0; color: var(--ink-3, #8d8a87); font-size: 13px; font-weight: 700; letter-spacing: .14em; line-height: 1.2; text-transform: uppercase; } .ds-title { margin: 14px 0 0; color: var(--ink, #faf7f2); font-family: 'Bricolage Grotesque', Figtree, system-ui, sans-serif; font-size: 40px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; } .ds-rule { width: 56px; height: 3px; margin-top: 18px; background: var(--accent, #c96442); } .ds-meta { display: flex; flex-wrap: wrap; margin: 16px 0 0; color: var(--ink-3, #8d8a87); font-size: 15px; } .ds-meta span + span::before { content: '\\00b7'; margin: 0 9px; }"
-    },
-    {
-      "name": "Input",
-      "kind": "input",
-      "refersTo": "input",
-      "description": "Ink ground, 3:1 control border, 12px radius, Ember Bright caret; focus is a solid Ember outline with a soft ring behind it.",
-      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Business name</span><span class=\"ds-field-help\">However you would say it out loud. You can change it later.</span><input class=\"ds-input\" type=\"text\" placeholder=\"Cascade Strength Co.\" /></label>",
-      "css": ".ds-field { display: block; font-family: Figtree, system-ui, sans-serif; } .ds-field-label { display: block; color: var(--ink, #faf7f2); font-size: 15px; font-weight: 700; } .ds-field-help { display: block; margin-top: 4px; color: var(--ink-3, #8d8a87); font-size: 15px; } .ds-input { width: 100%; box-sizing: border-box; margin-top: 10px; padding: 12px 15px; border: 1px solid var(--control-line, #716e6b); border-radius: 12px; background: var(--bg, #0d0b0a); color: var(--ink, #faf7f2); caret-color: var(--accent-hover, #e2794f); font: inherit; font-size: 16px; } .ds-input::placeholder { color: var(--ink-3, #8d8a87); } .ds-input:hover { border-color: var(--ink-3, #8d8a87); } .ds-input:focus-visible { border-color: var(--accent, #c96442); outline: 2px solid var(--accent, #c96442); outline-offset: 0; box-shadow: 0 0 0 4px var(--accent-soft, #2b1913); } .ds-input[aria-invalid='true'] { border-color: var(--err, #e2794f); }"
-    },
-    {
-      "name": "Technical disclosure with terminal block",
+      "name": "Terminal block",
       "kind": "custom",
       "refersTo": "term",
-      "description": "Closed by default. Hairline top, chevron that turns when open, then the exact command line in the browser's mono stack on Ink with a small copy pill.",
-      "html": "<details class=\"ds-tech\"><summary class=\"ds-tech-sum\"><svg class=\"ds-disc\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\" /></svg><span>Show the exact lines</span></summary><div class=\"ds-tech-body\"><div class=\"ds-term\"><span class=\"ds-term-prompt\">$</span><code class=\"ds-term-line\">mos start --mode agency</code><button class=\"ds-term-copy\" type=\"button\">Copy</button></div></div></details>",
-      "css": ".ds-tech { margin-top: 18px; border-top: 1px solid var(--line, #241f1c); font-family: Figtree, system-ui, sans-serif; } .ds-tech-sum { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 12px 0; color: var(--ink-3, #8d8a87); cursor: pointer; font-size: 14px; font-weight: 700; list-style: none; } .ds-tech-sum::-webkit-details-marker { display: none; } .ds-tech-sum:hover { color: var(--ink, #faf7f2); } .ds-tech-sum:focus-visible { outline: 2px solid var(--accent-hover, #e2794f); outline-offset: 3px; } .ds-disc { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s cubic-bezier(.2,0,0,1); } .ds-tech[open] > .ds-tech-sum .ds-disc { transform: rotate(180deg); } .ds-tech-body { padding: 2px 0 16px; } .ds-term { display: flex; align-items: flex-start; gap: 10px; padding: 12px 12px 12px 16px; border: 1px solid var(--line-strong, #2c2622); border-radius: 12px; background: var(--bg, #0d0b0a); color: var(--ink, #faf7f2); } .ds-term-prompt { color: var(--ink-3, #8d8a87); font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 14px; line-height: 1.5; user-select: none; } .ds-term-line { flex: 1; min-width: 0; font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; } .ds-term-copy { flex: none; padding: 5px 12px; border: 1px solid var(--line-strong, #2c2622); border-radius: 999px; background: transparent; color: var(--ink-2, #c6c3bf); cursor: pointer; font: inherit; font-size: 13px; font-weight: 700; } .ds-term-copy:hover { border-color: var(--control-line, #716e6b); color: var(--ink, #faf7f2); }"
+      "description": "A command line behind the technical disclosure: mono, Ink ground, Mist border, dim prompt glyph, pill copy button.",
+      "html": "<div class=\"ds-term\"><span class=\"ds-term__prompt\" aria-hidden=\"true\">$</span><code class=\"ds-term__line\">mos validate --json</code><button class=\"ds-term__copy\" type=\"button\">Copy</button></div>",
+      "css": ".ds-term { display: flex; align-items: flex-start; gap: 10px; padding: 12px 12px 12px 16px; border: 1px solid var(--line-strong, #2c2622); border-radius: var(--r, 12px); background: var(--term-bg, #0d0b0a); color: var(--term-ink, #faf7f2); } .ds-term__prompt { color: var(--term-dim, #8d8a87); font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-size: 14px; line-height: 1.5; user-select: none; } .ds-term__line { flex: 1; min-width: 0; font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; } .ds-term__copy { flex: none; padding: 5px 12px; border: 1px solid var(--line-strong, #2c2622); border-radius: 999px; background: transparent; color: var(--ink-2, #c6c3bf); cursor: pointer; font-family: var(--font, Figtree, system-ui, sans-serif); font-size: 13px; font-weight: 700; } .ds-term__copy:hover { border-color: var(--control-line, #716e6b); color: var(--ink, #faf7f2); } .ds-term__copy:focus-visible { outline: 2px solid var(--accent-hover, #e2794f); outline-offset: 3px; }"
     },
     {
-      "name": "Status words",
-      "kind": "chip",
-      "refersTo": "status",
-      "description": "Not pills: tracked uppercase words. Default Paper 54, ok and current in Paper 78, warn in Sun, err in Ember Bright.",
-      "html": "<div class=\"ds-pills\"><span class=\"ds-pill\">Preview only</span><span class=\"ds-pill ds-pill-ok\">Answered</span><span class=\"ds-pill ds-pill-warn\">Needs attach</span><span class=\"ds-pill ds-pill-err\">2 problems</span></div>",
-      "css": ".ds-pills { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-family: Figtree, system-ui, sans-serif; } .ds-pill { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-3, #8d8a87); font-size: 12px; font-weight: 700; letter-spacing: .1em; line-height: 1.4; text-transform: uppercase; white-space: nowrap; } .ds-pill-ok { color: var(--ink-2, #c6c3bf); } .ds-pill-warn { color: var(--warn, #f4c24b); } .ds-pill-err { color: var(--err, #e2794f); }"
+      "name": "Text input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Ink ground, 3:1 control border, Ember Bright caret; focus is a solid Ember outline plus a soft ring.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field__label\">Business name</span><span class=\"ds-field__help\">However you would say it out loud.</span><input class=\"ds-input\" type=\"text\" placeholder=\"Cascade Strength Co.\" /></label>",
+      "css": ".ds-field { display: block; font-family: var(--font, Figtree, system-ui, sans-serif); } .ds-field__label { display: block; color: var(--ink, #faf7f2); font-size: 15px; font-weight: 700; } .ds-field__help { display: block; margin-top: 4px; color: var(--ink-3, #8d8a87); font-size: 15px; } .ds-input { width: 100%; margin-top: 10px; padding: 12px 15px; border: 1px solid var(--control-line, #716e6b); border-radius: var(--r, 12px); background: var(--bg, #0d0b0a); color: var(--ink, #faf7f2); caret-color: var(--accent-hover, #e2794f); font: inherit; font-size: 16px; } .ds-input::placeholder { color: var(--ink-3, #8d8a87); } .ds-input:hover { border-color: var(--ink-3, #8d8a87); } .ds-input:focus-visible { border-color: var(--accent, #c96442); outline: 2px solid var(--accent, #c96442); outline-offset: 0; box-shadow: 0 0 0 4px var(--accent-soft, #2b1913); }"
     },
     {
-      "name": "Rail item",
-      "kind": "nav",
-      "refersTo": "button-ghost",
-      "description": "One brain is one text button, 12px radius; hover Surface, current Surface-2 with a Paper 'current' word.",
-      "html": "<nav class=\"ds-rail\"><p class=\"ds-rail-title\">brains</p><button class=\"ds-rail-item\" type=\"button\" aria-current=\"true\"><span class=\"ds-rail-name\">Flowstate <span class=\"ds-pill\">current</span></span><span class=\"ds-rail-sub\">Agency</span></button><button class=\"ds-rail-item\" type=\"button\"><span class=\"ds-rail-name\">the-vibe-marketing-lab</span><span class=\"ds-rail-sub\">In-house</span></button></nav>",
-      "css": ".ds-rail { display: grid; gap: 2px; width: 204px; font-family: Figtree, system-ui, sans-serif; } .ds-rail-title { margin: 0 0 4px; padding-left: 10px; color: var(--ink-3, #8d8a87); font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; } .ds-rail-item { display: block; width: 100%; padding: 9px 10px; border: 0; border-radius: 12px; background: transparent; color: var(--ink-2, #c6c3bf); cursor: pointer; font: inherit; font-size: 15px; text-align: left; transition: background-color .15s cubic-bezier(.2,0,0,1), color .15s cubic-bezier(.2,0,0,1); } .ds-rail-item:hover { background: var(--surface, #1a1614); color: var(--ink, #faf7f2); } .ds-rail-item[aria-current='true'] { background: var(--surface-2, #241e1b); color: var(--ink, #faf7f2); } .ds-rail-item:focus-visible { outline: 2px solid var(--accent-hover, #e2794f); outline-offset: 3px; } .ds-rail-name { display: flex; align-items: center; gap: 8px; font-weight: 700; } .ds-rail-sub { display: block; margin-top: 1px; color: var(--ink-3, #8d8a87); font-size: 13px; } .ds-pill { color: var(--ink-2, #c6c3bf); font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }"
+      "name": "Technical disclosure",
+      "kind": "custom",
+      "refersTo": "term",
+      "description": "The closed-by-default details block every path and command line lives in; the chevron turns when open.",
+      "html": "<details class=\"ds-tech\"><summary class=\"ds-tech__sum\"><svg viewBox=\"0 0 24 24\" class=\"ds-disc\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg><span>Show the command line and the raw result</span></summary><div class=\"ds-tech__body\"><p class=\"ds-tech__line\">Took 0.4s.</p></div></details>",
+      "css": ".ds-tech { border-top: 1px solid var(--line, #241f1c); font-family: var(--font, Figtree, system-ui, sans-serif); } .ds-tech__sum { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 12px 0; color: var(--ink-3, #8d8a87); cursor: pointer; font-size: 14px; font-weight: 700; list-style: none; } .ds-tech__sum::-webkit-details-marker { display: none; } .ds-tech__sum:hover { color: var(--ink, #faf7f2); } .ds-tech__sum:focus-visible { outline: 2px solid var(--accent-hover, #e2794f); outline-offset: 3px; } .ds-disc { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.15s cubic-bezier(0.2,0,0,1); } .ds-tech[open] > .ds-tech__sum .ds-disc { transform: rotate(180deg); } .ds-tech__body { padding: 2px 0 16px; } .ds-tech__line { margin: 0; color: var(--ink-2, #c6c3bf); font-size: 15px; }"
     }
   ],
   "narrative": {
-    "northStar": "The Ledger",
-    "overview": "This app implements Ember, The Vibe Marketing Lab's design system. Ember is the authority: tvml-website-next/public/design.md for the rules and tvml-website-next/src/styles/ember.css for the tokens, and when those two disagree the CSS wins. Nothing here overrides Ember. This file records only what the app adds on top of it or how it maps Ember onto its own names.\n\nThe app's one idea is the ledger: the dashboard is a single 720px column of rows separated by hairlines, each row a label on the left, the operator's own words in the middle, and the row's state and one action on the right. A row opens in place into the full answer. There are no tiles, no cards around sections, and no shadows. The rail on the left (240px) carries the MarketingOS wordmark, the brains, two section tabs and a quiet footer credit. Every command line, path and raw envelope lives behind a closed disclosure.",
+    "northStar": "The Overview",
+    "overview": "This app implements Ember, The Vibe Marketing Lab's design system. Ember is the authority: tvml-website-next/public/design.md for the rules and tvml-website-next/src/styles/ember.css for the tokens; when those two disagree the CSS wins. Nothing here overrides Ember. This file records only what the app adds on top of it or how it maps Ember onto its own names.\n\nThe app reads as a SaaS project overview, not a landing page. A 240px rail, a 52px app bar on every width, and a content area that runs full width to 1240px, top-aligned. The overview opens with a compact header (eyebrow, business name with a one-word health state beside it, the Lab Rule, a meta line) and the view's one Ember button at the right; then four status tiles; then two columns, 8/4: \"Do this next\" and \"Your answers\" at left, \"Quick actions\", \"Assistants\" and \"Navigation\" at right. Panels hold hairline rows, never boxes. The wizard and the interview keep a 720px reading column inside the same shell. Every command line, path and raw envelope lives behind a closed disclosure.",
     "keyCharacteristics": [
       "Ember's warm dark ground and Paper text, dark only, no toggle.",
-      "One Ember object per view: the primary button. Everything else is Paper at three strengths.",
-      "Bricolage Grotesque only for the business name, step titles and the wordmark; Figtree for everything else.",
-      "Hairlines, not boxes. Status is a tracked uppercase word, not a pill.",
-      "Mono for command lines, paths and raw output only; never for prose."
+      "One Ember object per view: the primary button. Every other emphasis is a Paper word; Sun is for \"needs you\" and nothing else.",
+      "Bricolage Grotesque for the business name, tile values, step and card titles and the wordmark; Figtree for everything else, including panel titles.",
+      "Hairlines, not boxes. Status is a tracked uppercase word, not a capsule.",
+      "Mono inside code, pre, .term and .row__path only; never a label, never prose."
     ],
     "rules": [
-      { "name": "The One Ember Object Rule", "body": "A view gets one Ember fill, and it is the primary button. The open brain marker, the \"current\" tag and every other emphasis is a Paper word.", "section": "colors" },
+      { "name": "The One Ember Object Rule", "body": "A view gets one Ember fill, and it is the primary button. The open brain's \"current\" marker, the \"ready\" word and every other emphasis is a Paper word.", "section": "colors" },
+      { "name": "The Ready / Needs-You Rule", "body": "Every fact on the overview resolves to one of two words, typed lowercase: \"ready\" in Paper 78, \"needs you\" in Sun. \"optional\" in Paper 54 is the third, used only for an unanswered optional question. test_one_status_system_per_fact_on_the_dashboard pins one status system per fact.", "section": "colors" },
       { "name": "The No Red, No Green Rule", "body": "Error is Ember Bright (err); done is Paper (ok). test_the_mode_consequences_are_not_dressed_as_success pins that --ok never colours a static label.", "section": "colors" },
-      { "name": "The Fifty-Four Rule", "body": "Muted text is Paper at 54%, not Ember's 50%, because every audited pair must clear 4.5:1. test_audited_contrast_pairs_clear_aa measures twenty pairs from :root on every run.", "section": "colors" },
-      { "name": "The Mono Is Data Rule", "body": "Mono appears inside code, kbd, pre, samp, .term, .row__path, .cmd-item__cli, .changes, .input--mono and .boot__detail: command lines, file paths and raw envelopes. Never a label, a heading or a sentence.", "section": "typography" },
-      { "name": "The Lowercase Eyebrow Rule", "body": "Eyebrows are typed lowercase in the markup and JavaScript (\"agency hq\", \"on file now\") and uppercased by the stylesheet.", "section": "typography" },
-      { "name": "The Hover Only Shadow Rule", "body": "The Ember shadow appears on the primary button on hover and nowhere else. Reduced motion removes both the lift and the shadow.", "section": "elevation" }
+      { "name": "The Fifty-Four Rule", "body": "Muted text is Paper at 54%, not Ember's 50%, because every audited pair must clear its ratio. test_audited_contrast_pairs_clear_aa measures twenty-one pairs from :root on every run.", "section": "colors" },
+      { "name": "The Mono Is Data Rule", "body": "Mono appears inside code, kbd, pre, samp, .term, .row__path, .cmd-item__cli, .changes, .input--mono and .boot__detail: command lines, file paths and raw envelopes. Never a label, a heading or a sentence. The prompt box is prose in Figtree on the terminal ground.", "section": "typography" },
+      { "name": "The Lowercase Eyebrow Rule", "body": "Eyebrows, state words and the health word are typed lowercase in the markup and JavaScript and uppercased by the stylesheet.", "section": "typography" },
+      { "name": "The Hover Only Shadow Rule", "body": "The Ember shadow appears on the primary button on hover and nowhere else. Reduced motion removes both the lift and the shadow.", "section": "elevation" },
+      { "name": "The Contained Element Rule", "body": "A panel holds hairline rows. The one contained element it may hold is a prompt box or a terminal block, on the Ink ground with a Mist border; a compact readout sits on the panel with a hairline above it, not in a box.", "section": "elevation" }
     ],
     "dos": [
-      "Do keep the app's own token names in :root; the contrast test parses :root { up to @media (prefers-color-scheme: dark) and the empty dark block must stay for that parser.",
-      "Do use ink-3 (#8d8a87), not opacity, to make text recede; test_scaffolding_recedes_in_the_plan_tree bans opacity on faint rows.",
+      "Do keep the app's own token names in :root; the contrast test reads :root { up to @media (prefers-color-scheme: dark) as the palette and the block after it as the dark overrides, so the empty dark block (carrying only color-scheme: dark) must stay.",
       "Do put text on an Ember fill in Ink (accent-ink); Paper on Ember is 3.6:1.",
-      "Do make every target 44px tall (buttons, rail items, summaries, place chips) and keep the 2px Ember Bright focus ring on every control.",
-      "Do mark state with a word or a tick as well as colour: the done dot swaps its digit for a tick, the pressed chip gains a filled tick and aria-pressed.",
+      "Do keep the input focus ring outline: 2px solid var(--accent); test_the_focus_ring_is_not_the_invisible_soft_accent fails on accent-soft as an outline anywhere.",
+      "Do make every target 44px tall (buttons, rail items, summaries, tiles, answer heads) and keep the 2px Ember Bright focus ring on every control.",
+      "Do use ink-3, not opacity, to make text recede; test_scaffolding_recedes_in_the_plan_tree bans opacity on faint rows.",
+      "Do mark state with a word or a tick as well as colour; the done dot swaps its digit for a tick, the pressed chip gains a filled tick and aria-pressed.",
+      "Do give every checker code one plain sentence in FINDING_COPY, with {n} in the many form; test_every_checker_code_has_a_plain_sentence and test_the_plain_sentences_carry_a_count_where_more_than_one_can_happen read the table back against the checker.",
       "Do keep one Ember fill per view and one Lab Rule per page."
     ],
     "donts": [
       "Don't use blue, any cool grey, green or a red; Ember bans blue, and the app maps error to Ember Bright and done to Paper.",
-      "Don't put a card around a section, a border to repair hierarchy, or a shadow on anything but the primary button's hover.",
-      "Don't put metadata in a capsule; a status word is text. Pills are for buttons, place chips and the toast.",
-      "Don't use mono outside code, terminal blocks, paths and raw output, and never as a label.",
-      "Don't add a light theme, a theme toggle, a gradient, a glow or a hero atmosphere; this app has none and Ember allows only one atmosphere per page.",
-      "Don't hard-code color: #fff or set .disabled = true; both are pinned by tests.",
-      "Don't show a filesystem path, command line or raw envelope outside a .tech disclosure.",
+      "Don't write color: #fff; anywhere; test_the_dark_palette_never_hard_codes_a_glyph_colour reads the stylesheet for it and requires --ok-ink and --err-ink.",
+      "Don't show a filesystem path outside <code> inside a .tech disclosure or an envelope-reported .row__path; test_no_filesystem_path_in_the_markup_a_reader_sees and test_no_filesystem_path_is_written_into_the_apps_copy read index.html and app.js for path shapes.",
+      "Don't let the word \"schema\" reach a reader; test_the_reader_is_never_told_about_a_schema reads every string literal and the page's visible text.",
+      "Don't write copy that denies a capability the app ships. test_no_user_facing_copy_denies_a_capability_the_app_ships matches a grammar, not a list: a bare \"no assistant\" or \"without an agent\" bounded by punctuation, \"needs no / requires no / uses no <noun>\", \"never / cannot / does not need, use, open, touch, ask or call a <noun>\", \"nothing is <invented>\", and \"never / won't <verb>\", for each capability whose evidence is in app.js.",
+      "Don't put a card around a section, a card inside a panel, or a shadow on anything but the primary button's hover.",
+      "Don't put metadata in a capsule; a status word is text. Pills are for buttons, place chips, the copy button and the toast.",
+      "Don't use mono outside code, pre, .term and .row__path (and their list forms), and never as a label; the prompt box is prose.",
+      "Don't add a light theme, a theme toggle, a gradient, a glow or a hero atmosphere; this app has none.",
+      "Don't set .disabled = true on a button; use aria-disabled.",
       "Don't use em dashes, hype vocabulary or third-person brand voice in interface copy."
     ]
   }
