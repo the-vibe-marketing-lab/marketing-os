@@ -662,6 +662,11 @@
     drawer.open = true;
     setClass($("sidebar"), "sidebar--open", true);
     $("btn-menu").setAttribute("aria-expanded", "true");
+    // The page behind the drawer is out of reach while it is open: no Tab stop lands
+    // on it, no reader announces it, and a tap on the scrim closes the drawer.
+    $("main").inert = true;
+    $("main").setAttribute("aria-hidden", "true");
+    $("scrim").removeAttribute("hidden");
     // Focus lands inside the drawer, on the control that closes it again.
     $("btn-drawer-close").focus();
   }
@@ -673,6 +678,9 @@
     drawer.open = false;
     setClass($("sidebar"), "sidebar--open", false);
     $("btn-menu").setAttribute("aria-expanded", "false");
+    $("main").inert = false;
+    $("main").removeAttribute("aria-hidden");
+    $("scrim").setAttribute("hidden", "");
     $("btn-menu").focus();
   }
 
@@ -683,7 +691,9 @@
       else openDrawer();
     });
     $("btn-drawer-close").addEventListener("click", closeDrawer);
-    $("sidebar").addEventListener("keydown", function (event) {
+    $("scrim").addEventListener("click", closeDrawer);
+    // Escape closes the drawer from anywhere, not only while focus is inside it.
+    document.addEventListener("keydown", function (event) {
       if (event.key !== "Escape" || !drawer.open) return;
       event.preventDefault();
       closeDrawer();

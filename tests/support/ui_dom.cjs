@@ -189,6 +189,8 @@ function makeDocument(ids) {
 
   const body = new Element("body");
   const document = {
+    // Document-level listeners (the drawer's Escape) register and are never fired here.
+    addEventListener: () => {},
     createElement: (tag) => new Element(tag),
     createElementNS: (ns, tag) => new Element(tag, ns),
     createTextNode: (data) => new TextNode(data),

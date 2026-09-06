@@ -72,6 +72,9 @@
   --err-soft: #2b1913;
   --err-line: #49271c;
 
+  /* The drawer's scrim: Ember's surface-scrim, Ink at 82%. */
+  --scrim: rgba(13, 11, 10, 0.82);
+
   --term-bg: #0d0b0a;
   --term-ink: #faf7f2;
   --term-dim: #8d8a87;
@@ -2959,6 +2962,17 @@ details.raw > summary:hover {
 
   .sidebar.sidebar--open {
     display: flex;
+  }
+
+  /* Under the drawer, over the page. Hidden by the attribute until the drawer opens. */
+  .scrim {
+    position: fixed;
+    top: var(--topbar-h);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 39;
+    background: var(--scrim);
   }
 
   .main {
