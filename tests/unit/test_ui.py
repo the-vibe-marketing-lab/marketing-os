@@ -48,6 +48,9 @@ PLANNED_ALLOWLIST = {
     "statusline",
     "context show",
     "context set",
+    # The rename and open commands landed with the overview header controls.
+    "rename",
+    "open",
 }
 
 #: A full path, spelled the way the platform running these tests spells one. The probe asks
@@ -841,6 +844,7 @@ def browser() -> dict:
         status = run_argv(["status", str(brain)])
         doctor = run_argv(["doctor", str(brain)])
         context = run_argv(["context", "show", str(brain)])
+        rename = run_argv(["rename", str(brain), "--name", "Test Gym Two", "--plan"])
         fixture = {
             "static": str(ui_static_root()),
             "state": {
@@ -868,7 +872,12 @@ def browser() -> dict:
                 "status": status,
                 "doctor": doctor,
             },
-            "envelopes": {"status": status, "doctor": doctor, "context show": context},
+            "envelopes": {
+                "status": status,
+                "doctor": doctor,
+                "context show": context,
+                "rename": rename,
+            },
             "probe": {
                 "schema": "mos.assist.v1",
                 "command": "assist",
@@ -1785,3 +1794,23 @@ def test_attaching_a_folder_while_a_window_is_open_says_so_and_nothing_else(
     assert busy["pending"] == 2
     assert busy["pendingLive"] == "A folder window is already open. Finish with that one."
     assert busy["afterCancel"] == "No folder chosen."
+
+
+def test_the_business_can_be_renamed_from_the_header(browser: dict) -> None:
+    """The title gives way to a form; the plan is previewed, the apply is the one filled
+    button while it is offered, and a rename closes the form, says so and re-reads."""
+    seen = browser["renameFromHeader"]
+    root = browser["root"]
+    assert seen["opened"] is True and seen["prefilled"] == "Test Gym"
+    assert seen["focused"] is True, "focus moves into the input"
+    assert seen["titleHidden"] is True
+    assert seen["headerPrimary"] == 0, "the header action steps back while editing"
+    assert seen["planned"] == [{"path": root, "name": "Test Gym Two", "plan": True}]
+    assert seen["applyShown"] is True
+    assert seen["readoutLabel"] == "Preview only, nothing written"
+    assert seen["calls"][-1] == {"path": root, "name": "Test Gym Two", "yes": True}
+    assert "status" in seen["afterApply"] and "doctor" in seen["afterApply"], "re-read after"
+    assert seen["toast"] == "Renamed to Test Gym Two"
+    assert seen["closed"] is True and seen["titleShown"] is True
+    assert seen["focusedAfter"] == "btn-rename"
+    assert seen["headerPrimaryAfter"] == 1, "the header action comes back"

@@ -74,6 +74,9 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
       </symbol>
       <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
       <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" /></symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24">
+        <path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /><path d="m13.5 6.5 3 3" />
+      </symbol>
     </svg>
 
     <!-- The app bar, on every width: the drawer button (narrow screens only), the
@@ -414,10 +417,17 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         <header class="ov-head">
           <div class="ov-head__main">
             <p class="page-head__eyebrow" id="dash-eyebrow">business brain</p>
-            <div class="ov-head__row">
+            <div class="ov-head__row" id="dash-title-row">
               <h1 class="ov-head__title" id="dash-title">&nbsp;</h1>
+              <button class="btn btn--ghost btn--icon ov-head__rename" id="btn-rename" type="button"
+                aria-label="Rename this business" title="Rename this business">
+                <svg viewBox="0 0 24 24" class="icon"><use href="#i-edit" /></svg>
+                <span class="sr-only">Rename</span>
+              </button>
               <span class="ov-head__health" id="dash-health"></span>
             </div>
+            <!-- The title swaps in place for the rename form; built by app.js on demand. -->
+            <div id="rename-host" hidden></div>
             <div class="em-rule" aria-hidden="true"></div>
             <div class="page-head__meta" id="dash-meta"></div>
           </div>

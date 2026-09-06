@@ -1080,6 +1080,53 @@ details[open] > summary .disc {
   overflow-wrap: anywhere;
 }
 
+/* The rename control: always there at ink-3, brighter on hover and focus. */
+.ov-head__rename {
+  min-height: 36px;
+  padding: 6px 10px;
+  border-color: transparent;
+  color: var(--ink-3);
+  font-size: 15px;
+}
+
+.ov-head__rename:hover:not(:disabled),
+.ov-head__rename:focus-visible {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+/* The inline form in the title's place. */
+.rename {
+  max-width: 40rem;
+}
+
+.rename__input {
+  margin-top: 8px;
+  padding: 8px 14px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.rename__help {
+  margin-top: 8px;
+}
+
+.rename__actions {
+  margin-top: 12px;
+}
+
+.rename__readouts .readout {
+  margin-top: 16px;
+}
+
+.rename__readouts .result__title {
+  font-family: var(--font);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
 .ov-head__health {
   color: var(--ink-2);
   font-size: 12px;
@@ -3542,8 +3589,14 @@ details.raw > summary:hover {
     font-size: 13px;
   }
 
-  .topbar__tools .btn--icon {
+  .topbar__tools .btn--icon,
+  .ov-head__rename {
     min-height: 44px;
+    min-width: 44px;
+  }
+
+  .rename__input {
+    font-size: 24px;
   }
 
   /* Every visible control on the dashboard is a 44px target on a phone. */

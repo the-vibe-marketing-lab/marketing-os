@@ -350,6 +350,12 @@
       title: "Think about a topic",
       blurb: "Gathers the grounded context for a topic and hands it to an assistant to reason over.",
     },
+    rename: {
+      group: "maintenance",
+      order: 10,
+      title: "Rename the business",
+      blurb: "Changes the name shown for this brain. The folder and your documents stay as they are.",
+    },
     "assist status": {
       group: "advanced",
       order: 1,
@@ -425,7 +431,7 @@
 
   var ARG_INFO = {
     path: { label: "Folder", help: "Which brain to act on.", mono: true },
-    name: { label: "Business name", placeholder: "Cascade Strength Co." },
+    name: { label: "Business name", help: "The name real customers use.", placeholder: "Cascade Strength Co." },
     mode: {
       label: "Who it is for",
       help: "In-house is one brand you own; agency adds a client list; client belongs to an agency.",
@@ -1103,6 +1109,11 @@
    * message, so a new finding is never hidden — it is only un-translated. Authored copy,
    * like heroPlan: facts (counts, paths) come from the envelope; these sentences are ours. */
   var FINDING_COPY = {
+    "missing-name": {
+      one: "The business has no name yet.",
+      many: "The business has no name yet.",
+      fix: "Type the name real customers use.",
+    },
     "no-catalog": {
       one: "The catalogue has not been built yet.",
       many: "The catalogue has not been built yet.",
@@ -5133,6 +5144,213 @@
     });
   }
 
+  /* ================================================================= rename */
+
+  /* Renaming the business from the header. The title swaps in place for a form; the
+   * plan is previewed like every other write, and the apply is the one Ember object
+   * while it is on offer. Only the name in the brain's settings changes: the folder and
+   * the operator's documents stay as they are. */
+
+  var renaming = { open: false, host: null, row: null };
+
+  function wireRename() {
+    var button = $("btn-rename");
+    if (!button) return;
+    button.addEventListener("click", openRename);
+  }
+
+  /* One Ember object at a time: the header's action steps back while the form is open
+   * and comes back when it closes. */
+  function demoteHeader(on) {
+    var host = $("dash-actions");
+    if (!host) return;
+    Array.prototype.forEach.call(host.querySelectorAll(".btn"), function (button) {
+      if (on && hasClass(button, "btn--primary")) {
+        setClass(button, "btn--primary", false);
+        setClass(button, "btn--secondary", true);
+        button.setAttribute("data-demoted", "true");
+      } else if (!on && button.getAttribute("data-demoted") === "true") {
+        setClass(button, "btn--secondary", false);
+        setClass(button, "btn--primary", true);
+        button.removeAttribute("data-demoted");
+      }
+    });
+  }
+
+  function openRename() {
+    if (renaming.open) return;
+    var host = $("rename-host");
+    var row = $("dash-title-row");
+    if (!host || !row) return;
+    renaming.open = true;
+    renaming.host = host;
+    renaming.row = row;
+    var current = activeBrainName();
+
+    var input = el("input", {
+      class: "input rename__input",
+      id: "in-rename",
+      type: "text",
+      autocomplete: "off",
+      spellcheck: "false",
+      "aria-describedby": "rename-help rename-block",
+    });
+    input.value = current;
+    var block = el("p", { class: "field__help", id: "rename-block", text: "" });
+    var readouts = el("div", { class: "rename__readouts" });
+    var submit = el("button", { class: "btn btn--primary", type: "button", text: "Rename" });
+    var cancel = el("button", {
+      class: "btn btn--ghost",
+      type: "button",
+      text: "Cancel",
+      on: { click: closeRename },
+    });
+    var ctx = { input: input, submit: submit, block: block, readouts: readouts };
+
+    function sync() {
+      var empty = !input.value.trim();
+      setBlocked(submit, empty, "rename-block");
+      block.textContent = empty ? "Type a name first." : "";
+    }
+    input.addEventListener("input", sync);
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeRename();
+      } else if (event.key === "Enter") {
+        event.preventDefault();
+        planRename(ctx);
+      }
+    });
+    submit.addEventListener("click", function () {
+      planRename(ctx);
+    });
+
+    fill(host, [
+      el("div", { class: "rename", id: "rename-form" }, [
+        el("label", { class: "sr-only", for: "in-rename", text: "Business name" }),
+        input,
+        el("p", {
+          class: "field__help rename__help",
+          id: "rename-help",
+          text:
+            "Changes the name shown everywhere for this brain. The folder name and your " +
+            "documents stay as they are.",
+        }),
+        el("div", { class: "btn-row rename__actions" }, [submit, cancel]),
+        block,
+        readouts,
+      ]),
+    ]);
+    sync();
+    show(row, false);
+    show(host, true);
+    demoteHeader(true);
+    input.focus();
+    if (input.select) input.select();
+  }
+
+  function closeRename() {
+    if (!renaming.open) return;
+    renaming.open = false;
+    fill(renaming.host, []);
+    show(renaming.host, false);
+    show(renaming.row, true);
+    demoteHeader(false);
+    var button = $("btn-rename");
+    if (button) button.focus();
+  }
+
+  function planRename(ctx) {
+    if (blocked(ctx.submit)) {
+      announce("Type a name first.");
+      ctx.input.focus();
+      return;
+    }
+    var name = ctx.input.value.trim();
+    busy(ctx.submit, true, "Checking");
+    run("rename", { path: App.path, name: name, plan: true }).then(function (result) {
+      busy(ctx.submit, false);
+      fill(ctx.submit, ["Rename"]);
+      var envelope = result.envelope;
+      if (!envelope || !envelope.ok) {
+        fill(ctx.readouts, [
+          el("div", { class: "readout" }, [
+            el("div", { class: "readout__body" }, [
+              resultCard(result, { title: "That could not be prepared", compact: true }),
+            ]),
+          ]),
+        ]);
+        land(ctx.readouts.querySelector(".result__title"), resultSummary(result, "Rename"));
+        return;
+      }
+      if (!changesOf(envelope).length) {
+        closeRename();
+        toast("That is already its name.");
+        announce("That is already its name.");
+        return;
+      }
+      var apply = el("button", { class: "btn btn--primary", type: "button", text: "Rename to " + name });
+      apply.addEventListener("click", function () {
+        if (blocked(apply)) return;
+        busy(apply, true, "Renaming");
+        applyRename(ctx, name, apply);
+      });
+      var keep = el("button", {
+        class: "btn btn--ghost",
+        type: "button",
+        text: "Keep editing",
+        on: {
+          click: function () {
+            fill(ctx.readouts, []);
+            setClass(ctx.submit, "btn--secondary", false);
+            setClass(ctx.submit, "btn--primary", true);
+            ctx.input.focus();
+          },
+        },
+      });
+      // The apply is the one Ember object while it is offered; the button that asked
+      // for the preview steps back.
+      setClass(ctx.submit, "btn--primary", false);
+      setClass(ctx.submit, "btn--secondary", true);
+      fill(ctx.readouts, [
+        el("div", { class: "readout" }, [
+          el("div", { class: "readout__body" }, [
+            resultCard(result, { title: "What came back", compact: true }),
+          ]),
+          el("div", { class: "btn-row applybar" }, [apply, keep]),
+        ]),
+      ]);
+      land(ctx.readouts.querySelector(".result__title"), resultSummary(result, "Rename"));
+    });
+  }
+
+  function applyRename(ctx, name, button) {
+    run("rename", { path: App.path, name: name, yes: true }).then(function (applied) {
+      var envelope = applied.envelope;
+      if (!envelope || !envelope.ok) {
+        busy(button, false);
+        fill(button, ["Rename to " + name]);
+        fill(ctx.readouts, [
+          el("div", { class: "readout" }, [
+            el("div", { class: "readout__body" }, [
+              resultCard(applied, { title: "That did not save", compact: true }),
+            ]),
+          ]),
+        ]);
+        land(ctx.readouts.querySelector(".result__title"), resultSummary(applied, "Rename"));
+        return;
+      }
+      closeRename();
+      toast("Renamed to " + name);
+      announce("Renamed to " + name + ".");
+      // The header and the breadcrumb follow the status envelope; the rail follows the
+      // registry, which the server re-reads from the brain's settings.
+      refresh(false);
+      refreshBrains();
+    });
+  }
+
   /* =============================================================== commands */
 
   var cmd = { current: null, values: {}, previewSig: null, builtFor: null, buttons: [] };
@@ -5647,6 +5865,7 @@
 
   wireTabs();
   wireSidebar();
+  wireRename();
   wireWizard();
   boot();
 })();

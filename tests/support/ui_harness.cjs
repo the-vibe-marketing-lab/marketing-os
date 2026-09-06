@@ -939,6 +939,45 @@ const scenarios = {
     return served;
   },
 
+  /* Rename from the header: the title gives way to the form, the plan comes back with
+   * the apply bar, and the apply closes the form, says so, and re-reads the brain. */
+  async renameFromHeader() {
+    const app = launch({ probe: fixture.probe });
+    await settle();
+    const doc = app.dom.document;
+    doc.getElementById("btn-rename").dispatch("click");
+    await settle();
+    const input = doc.getElementById("in-rename");
+    const seen = {
+      opened: !!input,
+      prefilled: input ? input.value : "",
+      focused: doc.activeElement === input,
+      headerPrimary: doc.getElementById("dash-actions").querySelectorAll(".btn--primary").length,
+      titleHidden: doc.getElementById("dash-title-row").hasAttribute("hidden"),
+    };
+    input.value = "Test Gym Two";
+    input.dispatch("input");
+    doc.getElementById("rename-form").querySelector(".btn--primary").dispatch("click");
+    await settle();
+    seen.planned = app.calls.filter((c) => c.command === "rename").map((c) => c.args);
+    const apply = byText(app.dom, "button", "Rename to Test Gym Two");
+    seen.applyShown = !!apply;
+    seen.readoutLabel = doc.getElementById("rename-form").querySelector(".pill")
+      ? doc.getElementById("rename-form").querySelector(".pill").textContent
+      : "";
+    const before = app.calls.length;
+    apply.dispatch("click");
+    await settle();
+    seen.calls = app.calls.filter((c) => c.command === "rename").map((c) => c.args);
+    seen.afterApply = app.calls.slice(before).map((c) => c.command);
+    seen.toast = doc.getElementById("toast").textContent;
+    seen.closed = doc.getElementById("rename-host").childNodes.length === 0;
+    seen.titleShown = !doc.getElementById("dash-title-row").hasAttribute("hidden");
+    seen.focusedAfter = doc.activeElement ? doc.activeElement.getAttribute("id") : null;
+    seen.headerPrimaryAfter = doc.getElementById("dash-actions").querySelectorAll(".btn--primary").length;
+    return seen;
+  },
+
   /* ...but it does replace them when the operator says so. */
   async draftReplacesOnRequest() {
     const app = await openInterview(
