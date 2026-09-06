@@ -1397,16 +1397,17 @@
         el("h2", { class: "result__title", text: opts.title || "What came back" }),
         el("span", {
           class: envelope.ok ? "pill pill--ok" : "pill pill--err",
-          text: envelope.ok ? "Done" : "Needs attention",
+          text: !envelope.ok
+            ? "Needs attention"
+            : envelope.planned
+              ? "Preview only, nothing written"
+              : "Done",
         }),
         errors.length
           ? el("span", { class: "pill pill--err", text: plural(errors.length, "problem") })
           : null,
         warnings.length
           ? el("span", { class: "pill pill--warn", text: plural(warnings.length, "warning") })
-          : null,
-        envelope.planned
-          ? el("span", { class: "pill pill--accent", text: "Preview only, nothing written" })
           : null,
         el("span", { class: "result__elapsed", text: (result.elapsed / 1000).toFixed(1) + "s" }),
       ])
@@ -1434,9 +1435,11 @@
       add(body, emptyState("Nothing to change", opts.emptyChanges));
     }
 
-    if (envelope.next_action && envelope.next_action.id !== "none") {
+    // A preview's next step is the apply button beside it; the envelope's own next
+    // action only matters once something has actually happened.
+    if (!envelope.planned && envelope.next_action && envelope.next_action.id !== "none") {
       add(body, subhead("Next"));
-      add(body, note("accent", "right", [envelope.next_action.reason]));
+      add(body, el("p", { class: "result__next" }, [icon("right"), envelope.next_action.reason]));
     }
 
     add(
@@ -4284,8 +4287,9 @@
       run(action.command, args).then(function (result) {
         busy(button, false);
         fill(button, [action.label]);
+        // The readout sits flat in the row under a hairline, not in a card of its own.
         var panel = el("div", { class: "readout" }, [
-          el("div", { class: "card" }, [
+          el("div", { class: "readout__body" }, [
             resultCard(result, {
               emptyChanges: "Everything is already in place.",
               title: "What came back",
@@ -4301,7 +4305,13 @@
           result.envelope.ok &&
           changesOf(result.envelope).length
         ) {
-          panel.insertBefore(applyBar(action, panel), panel.firstChild);
+          // The apply follows the result it applies, and while it is offered it is the
+          // one Ember object in the row: the button that asked for the preview steps back.
+          panel.appendChild(applyBar(action, panel));
+          if (hasClass(button, "btn--primary")) {
+            setClass(button, "btn--primary", false);
+            setClass(button, "btn--secondary", true);
+          }
         }
         land(panel.querySelector(".result__title"), resultSummary(result, action.label));
       });
@@ -4323,7 +4333,9 @@
       });
       busy(apply, true, "Applying");
       run(action.command, args).then(function (applied) {
-        fill(panel, [el("div", { class: "card" }, [resultCard(applied, { title: "What changed" })])]);
+        fill(panel, [
+          el("div", { class: "readout__body" }, [resultCard(applied, { title: "What changed" })]),
+        ]);
         refresh(false);
         // This button has just been removed from the DOM. Put the operator on the result
         // they asked for, and say what actually happened to their files.
