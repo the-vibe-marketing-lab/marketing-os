@@ -1566,7 +1566,9 @@
     }
 
     if (changes.length) {
-      add(body, subhead(envelope.planned ? "Would change" : "Changed"));
+      // Inside a row the sentence beneath already says whether this would change or did;
+      // a heading over it repeats it.
+      if (!opts.compact) add(body, subhead(envelope.planned ? "Would change" : "Changed"));
       add(
         body,
         el("p", {
@@ -4345,11 +4347,18 @@
     });
   }
 
-  function todoRow(status, group) {
+  function todoRow(status, group, panelReadouts) {
     var look = severityIcon(group.severity);
     var words = findingWords(group);
     var n = group.items.length;
     var readouts = el("div", { class: "todo__readouts" });
+    var action = todoAction(status, group, readouts);
+    // The row that points at the header's button is where that button's result lands,
+    // so the result reads under the thing it answers rather than above it.
+    if (panelReadouts && action && action.className === "todo__pointer") {
+      add(readouts, [panelReadouts]);
+      panelReadouts.setAttribute("data-adopted", "true");
+    }
     return el("li", { class: "todo" }, [
       el("div", { class: "todo__row" }, [
         icon(look.name, "row__icon " + look.cls),
@@ -4360,7 +4369,7 @@
             text: (n > 1 ? "In " + plural(n, "place") + ". " : "") + (words.fix || ""),
           }),
         ]),
-        el("div", { class: "todo__action" }, [todoAction(status, group, readouts)]),
+        el("div", { class: "todo__action" }, [action]),
       ]),
       readouts,
     ]);
@@ -4372,8 +4381,9 @@
     var shown = groups.slice(0, TODO_LIMIT);
     var more = groups.length - shown.length;
     var readouts = el("div", { class: "panel__readouts" });
-    var kids = [readouts];
+    var kids = [];
     if (!groups.length) {
+      kids.push(readouts);
       var plan = heroPlan(status);
       kids.push(el("p", { class: "panel__line", text: "Nothing needs you right now." }));
       kids.push(
@@ -4387,8 +4397,10 @@
       );
     } else {
       kids.push(el("ul", { class: "todos", role: "list" }, shown.map(function (group) {
-        return todoRow(status, group);
+        return todoRow(status, group, readouts);
       })));
+      // No row claimed the header's result: it follows the list, never precedes it.
+      if (readouts.getAttribute("data-adopted") !== "true") kids.push(readouts);
       if (more > 0) {
         kids.push(
           el("div", { class: "btn-row panel__more" }, [
