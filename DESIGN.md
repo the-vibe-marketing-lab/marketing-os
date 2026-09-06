@@ -141,7 +141,7 @@ Recorded from the built code at commit `a99e4c5` (`src/marketing_os/ui/static/st
 
 This app implements **Ember**, The Vibe Marketing Lab's design system. Ember is the authority: `tvml-website-next/public/design.md` for the rules and `tvml-website-next/src/styles/ember.css` for the tokens, and when those two disagree the CSS wins. Nothing here overrides Ember. This file records only what the app adds on top of it or how it maps Ember onto its own names.
 
-The app's one idea is the ledger: the dashboard is a single 720px column of rows separated by hairlines, each row a label on the left, the operator's own words in the middle, and the row's state and one action on the right. A row opens in place into the full answer. There are no tiles, no cards around sections, and no shadows. The rail on the left (240px) carries the MarketingOS wordmark, the brains, two section tabs and a quiet footer credit. Every command line, path and raw envelope lives behind a closed disclosure.
+The app's one idea is the ledger: a single 720px column that reads top to bottom, the next action first, then ten peer cards (six answers in the operator's own words, four checks) each with a state word and one line, opening in place to their details, then how to open the brain in Claude Code. Cards are Ember's card atom and never nest; there are no tiles and no shadows. The rail on the left (240px) carries the MarketingOS wordmark, the brains, two section tabs and a quiet footer credit. Every command line, path and raw envelope lives behind a closed disclosure.
 
 **Key Characteristics:**
 - Ember's warm dark ground and Paper text, dark only, no toggle.
@@ -234,14 +234,11 @@ Ember's radii, plus two smaller steps the app needs for controls: 8px (`sm`) for
 
 ## Components
 
-### The ledger row (`.ledger`, `.ledger__row`, `.ledger__label`, `.ledger__open`, `.ledger__line`, `.ledger__state`, `.ledger__full`, `.ledger__prose`)
-The dashboard's unit. Label in Paper 700 15px; the opener is the answer's first line as a text button at 18px, clamped to two lines; unanswered rows show the help line in `ink-3`. The state word sits at the end (`.ledger__state`, `ink-3`; `--needed` in Sun) beside one small ghost button. Opening swaps the clamped line for `.ledger__full`: prose at 62ch, first paragraph Paper, the rest `ink-2`, headings kept as 15px 700 labels, one 0.22s reveal (4px rise and fade). A row never gets a box.
+### The check card (`.cards`, `.card-check`, `.card-check__head`, `.card-check__name`, `.card-check__state`, `.card-check__line`, `.card-check__body`, `.card-check--open`)
+The dashboard's unit: ten peer cards in one grid (two columns at 900px and up, 20px gap), six answers then four checks. Ember's card atom: Surface, 1px Mist, 18px radius, 24px padding, no shadow, nothing nested. The head is a `<button>` with `aria-expanded` and `aria-controls`: the name in Figtree 700 15px Paper, then the state word at the end (`ink-2` "ready", Sun "needs you", `ink-3` "optional"; typed lowercase, uppercased at 0.1em). Under it one line in `ink-2` 15px clamped to two lines: the answer's first sentence, or the check's plain sentence. Opening swaps the line for `.card-check__body` (prose at 62ch or finding rows, one ghost action), widens the card to the full row (`grid-column: 1 / -1`), closes any other open card, and reveals once in 0.22s (4px rise and fade); Escape closes and refocuses the head.
 
 ### The next-action row (`.next__title`, `.next__body`, `.next__actions`)
 Bricolage 600 22px title, `ink-3` 15px body at 56ch, then the view's one primary button and a ghost beside it.
-
-### The status row (`.status`, `.status__item`, `.status__key`, `.status__value`, `.status__link`)
-Key in `ink-3` 15px, value in Paper 18px, `--warn` variant in Sun for counts that need attention. "Show" and "Fix" are underlined Paper words, not buttons. `.status__more` opens in place with the same reveal.
 
 ### Buttons (`.btn`)
 - **Shape:** pill (999px), 44px minimum height, 11px 22px padding, Figtree 700 15px, 1px transparent border.
@@ -289,7 +286,7 @@ Fixed bottom centre, Surface-2, Mist border, pill, Paper 15px 700.
 `--ease` cubic-bezier(0.2, 0, 0, 1); `--fast` 0.15s for hover, focus and the chevron; `--base` 0.22s for the in-place reveal. Busy cues: the spinner and the step icon rotate at 0.7s, the indeterminate progress bar slides at 1.15s. Under `prefers-reduced-motion` every transform and transition is removed, the primary hover loses its lift and shadow, and each busy cue becomes an opacity pulse at 1.8s; the open chevron keeps its turn because it is a state.
 
 ### Forced colours
-Buttons, rail items and the ledger opener gain a ButtonText border; the rule and the done marks keep their fills with `forced-color-adjust: none`.
+Buttons, rail items and the card head gain a ButtonText border; the rule and the done marks keep their fills with `forced-color-adjust: none`.
 
 ## Do's and Don'ts
 

@@ -18,7 +18,9 @@ All notable changes to marketing-os are recorded here. Versions follow
   Change button, then one status row (assistants, structure, answers by count, findings
   with a count that open in place), then how to open the brain in Claude Code with the
   exact lines behind the technical disclosure. A row opens in place into the whole answer
-  as prose. The answers are read once per brain through `mos context show` and reach the
+  as prose. Pinned on 2026-09-06: the six answers and four checks (structure,
+  assistants, findings, navigation) are one grid of Ember cards, each with a ready or
+  needs-you state word and one line, opening in place to its details. The answers are read once per brain through `mos context show` and reach the
   page as text, never markup. The rail carries the brains, Set up a brain (or another),
   the two section links, and Attach a folder beside Refresh; the top bar is drawn only
   below 900px, where it is the drawer's handle. Commands are tiered everyday, maintenance

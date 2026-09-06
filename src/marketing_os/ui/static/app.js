@@ -24,7 +24,7 @@
  * What is, and is not, from the server. No envelope value is ever interpolated as markup:
  * every one reaches the DOM as text, through el()'s `text:` or add()'s createTextNode. But
  * a large share of the words on screen are written here rather than reported — CONTEXT_INFO,
- * COMMAND_INFO, ARG_INFO, APPLY_STEPS, the ledger's row copy and the whole of heroPlan()
+ * COMMAND_INFO, ARG_INFO, APPLY_STEPS, the cards' copy and the whole of heroPlan()
  * are authored copy, keyed off envelope ids. Facts (counts, paths, findings, changes, diffs)
  * come from envelopes; the sentences around them are ours. Do not read heroPlan's diagnoses
  * as something the server said.
@@ -1066,6 +1066,16 @@
    * message, so a new finding is never hidden — it is only un-translated. Authored copy,
    * like heroPlan: facts (counts, paths) come from the envelope; these sentences are ours. */
   var FINDING_COPY = {
+    "no-catalog": {
+      one: "The catalogue has not been built yet.",
+      many: "The catalogue has not been built yet.",
+      fix: "Searching still works; it reads every document instead. Rebuilding the navigation makes it faster.",
+    },
+    "stale-catalog": {
+      one: "The catalogue is behind the documents on disk.",
+      many: "The catalogue is behind the documents on disk.",
+      fix: "Rebuilding the navigation brings it back in step. Nothing is written until you confirm.",
+    },
     "missing-file": {
       one: "A required file is missing.",
       many: "{n} required files are missing.",
@@ -3870,6 +3880,7 @@
   function renderDashboard() {
     var status = App.status;
     if (!status) return;
+    var counts = contextCounts(status);
 
     $("dash-eyebrow").textContent = (MODE_LABEL[status.mode] || "Business brain").toLowerCase();
     $("dash-title").textContent = (status.business && status.business.name) || "This brain";
@@ -3878,33 +3889,40 @@
       status.mode ? el("span", { class: "meta__item", text: MODE_SHORT[status.mode] || status.mode }) : null,
       el("span", {
         class: "meta__item",
+        text: counts.requiredDone + " of " + counts.required + " required",
+      }),
+      el("span", {
+        class: "meta__item",
         text: plural((status.installed_skills || []).length, "shared skill"),
       }),
       el("span", { class: "meta__item", text: "Folder: " + folderName(status.repo) }),
     ]);
 
-    var rows = answerRows(status);
-    var list = el("ol", { class: "ledger", role: "list", "aria-label": "This brain" }, [
-      nextRow(status),
-      rows.nodes,
-      statusRow(status, App.doctor),
-      openRow(status),
+    cards.open = null;
+    var answers = answerCards(status);
+    var checks = checkCards(status, App.doctor);
+    fill($("dash-body"), [
+      el("div", { class: "ledger" }, [nextRow(status)]),
+      el("div", { class: "cards" }, answers.nodes.concat(checks.nodes)),
+      el("div", { class: "ledger ledger--foot" }, [openRow(status)]),
     ]);
-    fill($("dash-body"), list);
-    fillAnswers(rows.entries, App.path);
+    fillAnswers(answers.entries, App.path);
+    fillNavigation(checks.navigation, App.path);
   }
 
-  /* ================================================================ ledger */
+  /* ================================================================= cards */
 
-  /* The dashboard is one column of rows: the next action, one row per business question
-   * in the operator's own words, one status row, then how to open the brain in Claude
-   * Code. The answers themselves are not in the state envelope, so they are read once
-   * per brain through `mos context show` and filled into the rows in place, as text. */
+  /* The dashboard: the next action, then one grid of ten peer cards, six answers and
+   * four checks, each with a name, a state word and one line, opening in place to its
+   * details. The answers are not in the state envelope, so they are read once per brain
+   * through `mos context show`; the navigation check is read once through `mos index
+   * status`. Both reach the page as text. */
 
-  var ledger = { answers: {}, pending: {} };
+  var ledger = { answers: {}, pending: {}, navigation: {}, navPending: {} };
+  var cards = { open: null };
 
   function ledgerRow(label, body, end, extra) {
-    return el("li", { class: "ledger__row" + (extra ? " " + extra : "") }, [
+    return el("div", { class: "ledger__row" + (extra ? " " + extra : "") }, [
       el("p", { class: "ledger__label", text: label }),
       body,
       end ? el("div", { class: "ledger__end" }, end) : null,
@@ -3973,111 +3991,158 @@
     );
   }
 
-  /* One row per business question. The label names the question, the line is the
-   * first line of the answer once it has been read (the question's help line until
-   * then), the state is a word, and the one action opens the interview on that
-   * question. Pressing the line opens the row into the whole answer. */
-  function answerRow(key, field, isRequired) {
-    var info = contextInfo(key);
-    var source = fieldSource(field);
-    var answered = source !== "missing";
-    var panelId = "answer-" + String(key).replace(/[^a-z0-9-]/gi, "-");
-    var line = el("span", {
-      class: "ledger__line" + (answered ? "" : " ledger__line--help"),
-      text: info.body,
-    });
-    var less = el("span", { class: "ledger__less", text: "Show less", hidden: true });
-    var open = el(
+  /* One card. The head is the button: name, then the state word. The line under it is
+   * the closed state; opening swaps the line for the details, widens the card to the
+   * full row and closes whichever card was open. Details are built on first open. */
+  function card(id, name, state, lineText, buildBody) {
+    var panelId = "card-" + String(id).replace(/[^a-z0-9-]/gi, "-");
+    var api = {};
+    var built = false;
+    var stateWord = el("span", { class: "card-check__state" });
+    var head = el(
       "button",
       {
-        class: "ledger__open",
+        class: "card-check__head",
         type: "button",
         "aria-expanded": "false",
         "aria-controls": panelId,
-        title: (answered ? "Read your answer about " : "Read the question about ") + info.title.toLowerCase(),
       },
-      [line, less]
+      [el("span", { class: "card-check__name", text: name }), stateWord]
     );
-    var full = el("div", { class: "ledger__full", id: panelId, hidden: true });
-    var change = el("button", {
-      class: "btn btn--ghost btn--sm",
-      type: "button",
-      text: answered ? "Change" : "Answer",
-      title:
-        (answered ? "Change your answer about " : "Answer the question about ") +
-        info.title.toLowerCase(),
-      on: {
-        click: function () {
-          openInterview(key);
-        },
-      },
-    });
-    var state = el("span", {
-      class: "ledger__state" + (!answered && isRequired ? " ledger__state--needed" : ""),
-      text: answered ? "Answered" : isRequired ? "Needed" : "optional",
-    });
-    // The prose takes the line's slot: it sits above the button, and the button's
-    // own words swap from the first line to "Show less".
-    var body = el("div", { class: "ledger__body" }, [full, open]);
-    var row = ledgerRow(info.title, body, [state, change]);
+    var line = el("p", { class: "card-check__line", text: lineText });
+    var body = el("div", { class: "card-check__body", id: panelId, hidden: true });
+    var node = el("section", { class: "card-check", "aria-label": name }, [head, line, body]);
 
-    function setOpen(on) {
-      open.setAttribute("aria-expanded", on ? "true" : "false");
-      show(full, on);
-      show(line, !on);
-      show(less, on);
-      setClass(row, "ledger__row--open", on);
+    function setState(word) {
+      stateWord.textContent = word;
+      stateWord.className =
+        "card-check__state" +
+        (word === "needs you" ? " card-check__state--needs" : "") +
+        (word === "optional" ? " card-check__state--optional" : "");
     }
-    open.addEventListener("click", function () {
-      setOpen(open.getAttribute("aria-expanded") !== "true");
+    function setOpen(on) {
+      if (on && cards.open && cards.open !== api) cards.open.close();
+      head.setAttribute("aria-expanded", on ? "true" : "false");
+      show(body, on);
+      show(line, !on);
+      setClass(node, "card-check--open", on);
+      if (on) {
+        cards.open = api;
+        if (!built) {
+          built = true;
+          fill(body, buildBody());
+        }
+      } else if (cards.open === api) {
+        cards.open = null;
+      }
+    }
+    head.addEventListener("click", function () {
+      setOpen(head.getAttribute("aria-expanded") !== "true");
     });
-    row.addEventListener("keydown", function (event) {
-      if (event.key !== "Escape" || open.getAttribute("aria-expanded") !== "true") return;
+    node.addEventListener("keydown", function (event) {
+      if (event.key !== "Escape" || head.getAttribute("aria-expanded") !== "true") return;
       event.preventDefault();
       setOpen(false);
-      open.focus();
+      head.focus();
     });
 
-    return { node: row, key: key, field: field, info: info, line: line, full: full, answered: answered };
+    api.node = node;
+    api.line = line;
+    api.head = head;
+    api.setState = setState;
+    api.setLine = function (text) {
+      line.textContent = text;
+    };
+    api.close = function () {
+      setOpen(false);
+    };
+    api.isOpen = function () {
+      return head.getAttribute("aria-expanded") === "true";
+    };
+    /* Details built from fresh facts: used when an answer or a check arrives after the
+     * card was already open. */
+    api.rebuild = function () {
+      built = false;
+      if (api.isOpen()) {
+        built = true;
+        fill(body, buildBody());
+      }
+    };
+    setState(state);
+    return api;
   }
 
-  function answerRows(status) {
+  /* ---- the six answers ---------------------------------------------------- */
+
+  function answerCard(key, field, isRequired) {
+    var info = contextInfo(key);
+    var source = fieldSource(field);
+    var answered = source !== "missing";
+    var entry = { key: key, field: field, info: info, answered: answered, record: null };
+    var change = function () {
+      return el("button", {
+        class: "btn btn--ghost btn--sm",
+        type: "button",
+        text: answered ? "Change" : "Answer",
+        title:
+          (answered ? "Change your answer about " : "Answer the question about ") +
+          info.title.toLowerCase(),
+        on: {
+          click: function () {
+            openInterview(key);
+          },
+        },
+      });
+    };
+    entry.card = card(
+      "answer-" + key,
+      info.title,
+      answered ? "ready" : isRequired ? "needs you" : "optional",
+      info.body,
+      function () {
+        var record = entry.record;
+        var body = record && record.body ? String(record.body) : "";
+        var question = record && record.question ? String(record.question) : "";
+        var where = source === "discovered" ? field.discovered_path || "" : "";
+        if (body) {
+          return [
+            prose(body),
+            where ? el("p", { class: "row__path", text: "Found in " + where }) : null,
+            el("div", { class: "btn-row" }, [change()]),
+          ];
+        }
+        return [
+          el("div", { class: "ledger__prose" }, [
+            question ? el("p", { text: question }) : null,
+            el("p", { text: answered ? "The answer on file could not be read." : info.body }),
+          ]),
+          el("div", { class: "btn-row" }, [change()]),
+        ];
+      }
+    );
+    return entry;
+  }
+
+  function answerCards(status) {
     var counts = contextCounts(status);
     var required = (status.context || {}).required || [];
     var entries = counts.order.map(function (key) {
-      return answerRow(key, counts.fields[key], required.indexOf(key) !== -1);
+      return answerCard(key, counts.fields[key], required.indexOf(key) !== -1);
     });
     return {
       entries: entries,
       nodes: entries.map(function (entry) {
-        return entry.node;
+        return entry.card.node;
       }),
     };
   }
 
-  /* What a row holds once it opens. The answer is the operator's own words; the file it
-   * came from is the checker's data and rides in a .row__path. The row's one Change
-   * control stays where it was, at the end of the row. */
+  /* The line is the operator's own first sentence once it has been read. */
   function fillAnswer(entry, record) {
+    entry.record = record;
     var body = record && record.body ? String(record.body) : "";
-    var question = record && record.question ? String(record.question) : "";
-    var where =
-      entry.field && fieldSource(entry.field) === "discovered" ? entry.field.discovered_path || "" : "";
-    if (body) {
-      entry.line.textContent = firstLine(body) || entry.info.body;
-      setClass(entry.line, "ledger__line--help", false);
-      fill(entry.full, [
-        prose(body),
-        where ? el("p", { class: "row__path", text: "Found in " + where }) : null,
-      ]);
-      return;
-    }
-    fill(entry.full, [
-      el("div", { class: "ledger__prose" }, [
-        question ? el("p", { text: question }) : null,
-        el("p", { text: entry.answered ? "The answer on file could not be read." : entry.info.body }),
-      ]),
-    ]);
+    if (body) entry.card.setLine(firstLine(body) || entry.info.body);
+    entry.card.rebuild();
   }
 
   /* One read per brain. A late answer for a brain no longer on screen is dropped. */
@@ -4114,6 +4179,7 @@
 
   function forgetAnswers(path) {
     delete ledger.answers[normPath(path)];
+    delete ledger.navigation[normPath(path)];
   }
 
   /* The next action, built from heroPlan. Its primary button is the one Ember object on
@@ -4392,98 +4458,175 @@
     };
   }
 
-  /* The status row: the assistants, the structure, the answers by count, and what the
-   * check found. Findings open in place, grouped by what is wrong; the count is the
-   * checker's own, and a shortened list says so. */
-  function statusRow(status, doctor) {
+  /* ---- the four checks ---------------------------------------------------- */
+
+  /* Findings the structure check owns: where files and folders are, and whether the
+   * brain's own configuration reads. */
+  var STRUCTURE_CODES = [
+    "missing-file",
+    "missing-directory",
+    "unknown-top-level",
+    "invalid-dated-artifact",
+    "invalid-year",
+    "invalid-quarter",
+    "invalid-month",
+    "invalid-report-month",
+    "invalid-type",
+    "invalid-status",
+    "missing-or-invalid-config",
+    "unsupported-schema",
+    "missing-client-registry",
+    "set-mode-agency",
+    "unexpected-clients-folder",
+  ];
+
+  function planAction(action, container) {
+    return el("div", { class: "btn-row" }, [heroButton(action, container, false)]);
+  }
+
+  function structureCard(status, doctor) {
     var checks = (doctor && doctor.checks) || {};
+    var ok = checks.structure !== false;
     var errors = severityCount(status, "error");
+    var findings = findingsOf(status).filter(function (item) {
+      return item && STRUCTURE_CODES.indexOf(item.code) !== -1;
+    });
+    var body = el("div", {});
+    return card(
+      "structure",
+      "Structure",
+      ok ? "ready" : "needs you",
+      ok ? "Every folder and file is where it should be." : plural(errors, "thing") + " out of place.",
+      function () {
+        var repair = repairPlan(status);
+        var plan = repair.actions.filter(function (action) {
+          return action.kind === "plan-apply" && action.command === "onboard";
+        })[0];
+        fill(body, [
+          findings.length
+            ? findingRows(findings)
+            : el("p", { class: "card__sub", text: "The last check found nothing out of place." }),
+          plan && !ok ? planAction(plan, body) : null,
+        ]);
+        return [body];
+      }
+    );
+  }
+
+  function assistantsCard(status) {
     var runtimes = status.runtimes || {};
-    var runtimeKeys = Object.keys(runtimes);
-    var allReady = runtimeKeys.every(function (key) {
+    var keys = Object.keys(runtimes);
+    var allReady = keys.every(function (key) {
       return runtimes[key].ready;
     });
-    var counts = contextCounts(status);
+    var notReady = keys.filter(function (key) {
+      return !runtimes[key].ready;
+    });
+    var line = !keys.length
+      ? "No assistants detected."
+      : allReady
+        ? keys
+            .map(function (key) {
+              return (RUNTIME_LABEL[key] || key) + " ready";
+            })
+            .join(" · ")
+        : notReady
+            .map(function (key) {
+              return RUNTIME_LABEL[key] || key;
+            })
+            .join(" and ") + " cannot see the current skills.";
+    var body = el("div", {});
+    return card("assistants", "Assistants", keys.length && allReady ? "ready" : "needs you", line, function () {
+      var rows = el(
+        "ul",
+        { class: "rows", role: "list" },
+        keys.map(function (key) {
+          var runtime = runtimes[key];
+          var problems = (runtime.missing || []).length + (runtime.mismatched || []).length;
+          return el("li", { class: "row" }, [
+            icon(runtime.ready ? "check" : "alert", "row__icon " + (runtime.ready ? "row__icon--ok" : "row__icon--warn")),
+            el("div", { class: "row__body" }, [
+              el("p", { class: "row__msg", text: RUNTIME_LABEL[key] || key }),
+              el("p", {
+                class: "row__sub",
+                text: runtime.ready
+                  ? "Up to date with this version's skills."
+                  : plural((runtime.missing || []).length, "skill") +
+                    " missing, " +
+                    (runtime.mismatched || []).length +
+                    " out of date",
+              }),
+            ]),
+            el("span", { class: "row__end" }, [
+              el("span", {
+                class: runtime.ready ? "pill pill--ok" : "pill pill--warn",
+                text: runtime.ready ? "Ready" : plural(problems, "problem"),
+              }),
+            ]),
+          ]);
+        })
+      );
+      fill(body, [
+        keys.length ? rows : emptyState("No assistants detected", "Nothing reported a skill folder here."),
+        keys.length && !allReady
+          ? planAction(
+              {
+                kind: "plan-apply",
+                label: "Preview the fix",
+                command: "skills sync",
+                applyLabel: "Apply the sync",
+              },
+              body
+            )
+          : null,
+        keys.length
+          ? tech(
+              [
+                el(
+                  "ul",
+                  { class: "changes changes--static", role: "list" },
+                  keys.map(function (key) {
+                    return el("li", {
+                      text: (RUNTIME_LABEL[key] || key) + " -> " + runtimes[key].skill_dir,
+                    });
+                  })
+                ),
+              ],
+              "Show each assistant's skill folder"
+            )
+          : null,
+      ]);
+      return [body];
+    });
+  }
+
+  function findingsCard(status) {
     var findings = findingsOf(status);
     var total = findingsTotal(status);
     var withheld = total - findings.length;
-
-    function item(key, value, warn, link) {
-      return el("p", { class: "status__item" }, [
-        el("span", { class: "status__key", text: key }),
-        typeof value === "string"
-          ? el("span", { class: "status__value" + (warn ? " status__value--warn" : ""), text: value })
-          : value,
-        link || null,
-      ]);
-    }
-
-    var assistants = runtimeKeys.length
-      ? runtimeKeys
-          .map(function (key) {
-            return (RUNTIME_LABEL[key] || key) + (runtimes[key].ready ? " ready" : " needs a sync");
-          })
-          .join(" · ")
-      : "none detected";
-    var fixLink = allReady
-      ? null
-      : el("button", {
-          class: "status__link",
+    return card(
+      "findings",
+      "Findings",
+      total ? "needs you" : "ready",
+      total ? plural(total, "thing") + " found, errors first" : "Nothing to fix",
+      function () {
+        var recheck = el("button", {
+          class: "btn btn--ghost btn--sm",
           type: "button",
-          text: "Fix",
+          title: "Re-check this brain",
+          "aria-label": "Re-check this brain",
           on: {
             click: function () {
-              setView("commands");
-              selectCommand("skills sync");
+              refresh(true);
             },
           },
         });
-
-    var structureOk = checks.structure !== false;
-    var found = counts.requiredFound + counts.optionalFound;
-    var answers = el(
-      "span",
-      { class: "status__value" + (counts.requiredDone < counts.required ? " status__value--warn" : "") },
-      [
-        el("span", { text: counts.requiredDone + " of " + counts.required + " required" }),
-        counts.optional ? ", " + counts.optionalDone + " of " + counts.optional + " optional" : null,
-        found ? ", " + found + " found elsewhere" : null,
-      ]
-    );
-
-    var more = el("div", { class: "status__more", id: "findings-panel", hidden: true });
-    var showLink = null;
-    if (total) {
-      showLink = el("button", {
-        class: "status__link",
-        type: "button",
-        text: "Show",
-        "aria-expanded": "false",
-        "aria-controls": "findings-panel",
-      });
-      showLink.addEventListener("click", function () {
-        var on = showLink.getAttribute("aria-expanded") !== "true";
-        showLink.setAttribute("aria-expanded", on ? "true" : "false");
-        showLink.textContent = on ? "Hide" : "Show";
-        show(more, on);
-      });
-      var found = [findingRows(findings)];
-      if (withheld) {
-        found.push(
-          el("div", { class: "btn-row" }, [
-            el("p", {
-              class: "card__sub",
-              text:
-                "It found " +
-                plural(total, "thing") +
-                "; the first " +
-                findings.length +
-                " are here, errors before warnings. " +
-                plural(withheld, "finding") +
-                " not listed.",
-            }),
+        add(recheck, [icon("refresh"), el("span", { text: "Re-check" })]);
+        var actions = [recheck];
+        if (withheld) {
+          actions.unshift(
             el("button", {
-              class: "btn btn--secondary btn--sm",
+              class: "btn btn--ghost btn--sm",
               type: "button",
               text: "Open the checker",
               on: {
@@ -4492,70 +4635,120 @@
                   setView("commands");
                 },
               },
-            }),
-          ])
-        );
-      }
-      fill(more, found);
-    }
-
-    var recheck = el("button", {
-      class: "btn btn--ghost btn--sm",
-      type: "button",
-      title: "Re-check this brain",
-      "aria-label": "Re-check this brain",
-      on: {
-        click: function () {
-          refresh(true);
-        },
-      },
-    });
-    add(recheck, [icon("refresh"), el("span", { text: "Re-check" })]);
-
-    var body = el("div", { class: "ledger__body" }, [
-      el("div", { class: "status" }, [
-        item("Assistants", assistants, !allReady, fixLink),
-        item(
-          "Structure",
-          structureOk ? "everything where it should be" : plural(errors, "thing") + " out of place",
-          !structureOk
-        ),
-        item("Answers", answers),
-        item(
-          "Findings",
-          total ? plural(total, "thing") + " found" : "nothing to fix",
-          Boolean(severityCount(status, "error")),
-          showLink
-        ),
-      ]),
-      more,
-      tech(
-        [
-          el(
-            "ul",
-            { class: "changes changes--static", role: "list" },
-            counts.order
-              .map(function (key) {
-                var field = counts.fields[key];
-                var line = contextInfo(key).title + " -> " + (field.path || "no path reported");
-                if (fieldSource(field) === "discovered") {
-                  line += "   (answered in " + (field.discovered_path || "another file") + ")";
-                }
-                return el("li", { text: line });
+            })
+          );
+        }
+        return [
+          findings.length
+            ? findingRows(findings)
+            : el("p", {
+                class: "card__sub",
+                text: "The last check came back clean. Anything that needs doing is at the top of this page.",
+              }),
+          // The count is the checker's own, always. Only the rows are ever shortened,
+          // and when they are this says so.
+          withheld
+            ? el("p", {
+                class: "card__sub",
+                text:
+                  "It found " +
+                  plural(total, "thing") +
+                  "; the first " +
+                  findings.length +
+                  " are here, errors before warnings. " +
+                  plural(withheld, "finding") +
+                  " not listed.",
               })
-              .concat(
-                runtimeKeys.map(function (key) {
-                  return el("li", {
-                    text: (RUNTIME_LABEL[key] || key) + " -> " + runtimes[key].skill_dir,
-                  });
-                })
-              )
-          ),
-        ],
-        "Show the files behind this"
-      ),
-    ]);
-    return ledgerRow("Status", body, [recheck], "ledger__row--status");
+            : null,
+          el("div", { class: "btn-row" }, actions),
+        ];
+      }
+    );
+  }
+
+  /* The navigation check is read once per brain through `mos index status`; until it
+   * answers the card says so and carries no state word. */
+  function navigationCard() {
+    var entry = { envelope: null, failed: false };
+    var body = el("div", {});
+    entry.card = card("navigation", "Navigation", "", "Checking the navigation.", function () {
+      var envelope = entry.envelope;
+      var findings = envelope ? findingsOf(envelope) : [];
+      fill(body, [
+        !envelope
+          ? el("p", {
+              class: "card__sub",
+              text: entry.failed ? "The navigation could not be checked." : "Still checking.",
+            })
+          : findings.length
+            ? findingRows(findings)
+            : el("p", { class: "card__sub", text: "The catalogue and the navigation map match what is on disk." }),
+        findings.length
+          ? planAction(
+              {
+                kind: "plan-apply",
+                label: "Rebuild the navigation",
+                command: "index sync",
+                applyLabel: "Rebuild it",
+              },
+              body
+            )
+          : null,
+      ]);
+      return [body];
+    });
+    return entry;
+  }
+
+  function navigationLine(envelope) {
+    var groups = groupFindings(findingsOf(envelope));
+    if (!groups.length) return "Up to date";
+    return findingWords(groups[0]).title;
+  }
+
+  function fillNavigation(entry, path) {
+    var key = normPath(path);
+    function apply(envelope) {
+      if (envelope) {
+        entry.envelope = envelope;
+        entry.card.setLine(navigationLine(envelope));
+        entry.card.setState(findingsTotal(envelope) ? "needs you" : "ready");
+      } else {
+        entry.failed = true;
+        entry.card.setLine("The navigation could not be checked.");
+        entry.card.setState("needs you");
+      }
+      entry.card.rebuild();
+    }
+    if (ledger.navigation[key]) {
+      apply(ledger.navigation[key]);
+      return;
+    }
+    if (!ledger.navPending[key]) {
+      ledger.navPending[key] = run("index status", { path: path }).then(function (result) {
+        delete ledger.navPending[key];
+        var envelope = result.envelope;
+        if (envelope && envelope.ok) ledger.navigation[key] = envelope;
+        return envelope && envelope.ok ? envelope : null;
+      });
+    }
+    ledger.navPending[key].then(function (envelope) {
+      if (normPath(App.path) !== key) return;
+      apply(envelope);
+    });
+  }
+
+  function checkCards(status, doctor) {
+    var navigation = navigationCard();
+    return {
+      navigation: navigation,
+      nodes: [
+        structureCard(status, doctor).node,
+        assistantsCard(status).node,
+        findingsCard(status).node,
+        navigation.card.node,
+      ],
+    };
   }
 
   /* The closing row. No launcher is invented: the exact lines sit behind the technical

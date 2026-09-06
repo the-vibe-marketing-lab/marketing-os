@@ -1029,77 +1029,7 @@ details[open] > summary .disc {
   padding-top: 1px;
 }
 
-/* The row's own words are the button that opens it. Text, not a control in a box. */
-.ledger__open {
-  display: block;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-  font: inherit;
-  font-size: 18px;
-  line-height: 1.5;
-  text-align: left;
-}
-
-.ledger__open:hover .ledger__line {
-  color: var(--ink);
-}
-
-.ledger__line {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--ink);
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  transition: color var(--fast) var(--ease);
-}
-
-/* Not answered yet: the question's help line stands in, muted. */
-.ledger__line--help {
-  color: var(--ink-3);
-}
-
-.ledger__state {
-  color: var(--ink-3);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.ledger__state--needed {
-  color: var(--warn);
-}
-
-/* The memorable moment: the clamped line gives way to the whole answer in the same
-   slot. One reveal, 0.22s. */
-.ledger__full {
-  margin-bottom: 12px;
-  animation: reveal var(--base) var(--ease);
-}
-
-.ledger__less {
-  color: var(--ink-3);
-  font-size: 14px;
-  font-weight: 700;
-}
-
-@keyframes reveal {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
+/* The whole answer as prose, inside an open card. */
 .ledger__prose {
   max-width: 62ch;
 }
@@ -1116,11 +1046,6 @@ details[open] > summary .disc {
   font-weight: 700;
 }
 
-/* The first heading takes the clamped line's slot, so it sits on the label's baseline. */
-.ledger__prose > .ledger__prose-heading:first-child {
-  margin-top: 0;
-}
-
 .ledger__prose p {
   color: var(--ink-2);
   overflow-wrap: anywhere;
@@ -1130,18 +1055,109 @@ details[open] > summary .disc {
   color: var(--ink);
 }
 
-.ledger__note {
-  margin-top: 14px;
-  color: var(--ink-3);
+.ledger--foot {
+  margin-top: 24px;
+  border-top: 0;
+}
+
+/* ----------------------------------------------------------------- cards -- */
+/* Ten peer cards: six answers, four checks. Ember's card atom, no shadow, no nesting.
+   The head is the button; the state word is a word. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.card-check {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+/* An open card takes the full row and closes any other. */
+.card-check--open {
+  grid-column: 1 / -1;
+}
+
+.card-check__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.card-check__name {
   font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
-.ledger__full .btn-row {
-  margin-top: 18px;
+.card-check__state {
+  flex: none;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-.ledger__full .row__path {
-  margin-top: 12px;
+.card-check__state--needs {
+  color: var(--warn);
+}
+
+.card-check__state--optional {
+  color: var(--ink-3);
+}
+
+.card-check__state:empty {
+  display: none;
+}
+
+.card-check__line {
+  display: -webkit-box;
+  margin-top: 8px;
+  overflow: hidden;
+  color: var(--ink-2);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* The details, revealed once, 0.22s. */
+.card-check__body {
+  margin-top: 14px;
+  animation: reveal var(--base) var(--ease);
+}
+
+.card-check__body > * + *,
+.card-check__body > div > * + * {
+  margin-top: 14px;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* The next-action row. Its one button is the Ember object on the page. */
@@ -1176,57 +1192,6 @@ details[open] > summary .disc {
 
 .next .readout {
   margin-top: 18px;
-}
-
-/* The status row: assistants, structure, findings. Three facts and one Re-check. */
-.status {
-  display: grid;
-  gap: 8px;
-}
-
-.status__item {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 10px;
-  color: var(--ink-2);
-}
-
-.status__key {
-  color: var(--ink-3);
-  font-size: 15px;
-}
-
-.status__value {
-  color: var(--ink);
-  font-size: 18px;
-}
-
-.status__value--warn {
-  color: var(--warn);
-}
-
-/* "Show" and "Fix": underlined words, not more buttons and not a second accent. */
-.status__link {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ink-2);
-  cursor: pointer;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
-.status__link:hover {
-  color: var(--ink);
-}
-
-.status__more {
-  margin-top: 16px;
-  animation: reveal var(--base) var(--ease);
 }
 
 /* ---------------------------------------------------------------- wizard -- */
@@ -3014,6 +2979,10 @@ details.raw > summary:hover {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .ledger__row {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 6px 16px;
@@ -3148,8 +3117,15 @@ details.raw > summary:hover {
     padding: 18px 0;
   }
 
-  .ledger__open {
-    font-size: 17px;
+  .card-check {
+    padding: 18px;
+  }
+
+  /* Every visible control on the dashboard is a 44px target on a phone. */
+  .btn--sm,
+  .term__copy,
+  .tech__sum {
+    min-height: 44px;
   }
 
   .next__title {
@@ -3288,7 +3264,7 @@ details.raw > summary:hover {
   .tab,
   .cmd-item,
   .sidebar__action,
-  .ledger__open {
+  .card-check__head {
     border: 1px solid ButtonText;
   }
 
