@@ -198,6 +198,21 @@ pre {
 .term-wrap {
   min-width: 0;
   max-width: 100%;
+  /* Their content never sets their width: a wide raw result scrolls inside, and a to-do
+     row, panel or column above them keeps the width the layout gave it. */
+  contain: inline-size;
+}
+
+.todos,
+.todo,
+.todo__row,
+.todo__text,
+.todo__action,
+.arow,
+.panel__body,
+.skill-card,
+.skill-card__body {
+  min-width: 0;
 }
 
 a {
