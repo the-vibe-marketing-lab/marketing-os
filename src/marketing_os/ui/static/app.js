@@ -1262,7 +1262,7 @@
       var step = FIX_STEP[group.code] || "fix what the checker's message describes";
       if (seen[step]) return;
       seen[step] = true;
-      steps.push("- " + findingWords(group).title + " " + step + ".");
+      steps.push("- " + findingWords(group).title.replace(/\.$/, "") + ": " + step + ".");
     });
     var onboard =
       'mos onboard --name "' + name + '" --mode ' + mode + (mode === "client" ? ' --agency "<agency name>"' : "") + " --plan .";
