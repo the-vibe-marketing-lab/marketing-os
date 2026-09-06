@@ -26,6 +26,10 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ### Changed
 
+- **The command runner reads like the Skills page.** Search, a chip per group, and one
+  card per command with its title, what it does, the exact `mos` line and whether it
+  writes; opening a card brings the run form, the result and the copyable command line
+  into it.
 - **A prompt to paste into Claude Code.** The Structure and Findings cards, and the
   next-action row behind "Ask Claude Code to fix it", carry a copyable prompt built from
   the checker's findings: what is wrong, where, and what to do about each, with the

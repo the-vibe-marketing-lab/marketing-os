@@ -665,7 +665,7 @@
     if (toRunner) {
       toRunner.addEventListener("click", function () {
         showRunner(true);
-        var first = $("cmd-list") && $("cmd-list").querySelector(".cmd-item");
+        var first = $("cmd-list") && $("cmd-list").querySelector("[data-command]");
         if (first) first.focus();
       });
     }
@@ -5853,62 +5853,240 @@
 
   /* =============================================================== commands */
 
-  var cmd = { current: null, values: {}, previewSig: null, builtFor: null, buttons: [] };
+  var cmd = {
+    current: null,
+    values: {},
+    previewSig: null,
+    builtFor: null,
+    buttons: [],
+    query: "",
+    group: "all",
+  };
 
-  function renderCommandList() {
-    fill(
-      $("cmd-list"),
+  var GROUP_BLURB = {
+    everyday: "The ones you will reach for most.",
+    maintenance: "Keep the brain tidy and its assistants current.",
+    advanced: "Plumbing. Useful when something is off.",
+  };
+
+  function commandNames() {
+    return App.specs
+      .map(function (spec) {
+        return spec.command;
+      })
+      .sort(function (left, right) {
+        var a = commandInfo(left).order;
+        var b = commandInfo(right).order;
+        return a === b ? (left < right ? -1 : 1) : a - b;
+      });
+  }
+
+  function commandMatches(name, query) {
+    if (!query) return true;
+    var info = commandInfo(name);
+    var hay = [name, "mos " + name, info.title, info.blurb, info.group].join(" ").toLowerCase();
+    return hay.indexOf(query) !== -1;
+  }
+
+  function specFor(name) {
+    return App.specs.filter(function (item) {
+      return item.command === name;
+    })[0];
+  }
+
+  /* One command as a card, the same shape as a skill: what it is called, what it does,
+   * the exact line behind it, and whether it writes. Opening it brings the runner in. */
+  function commandCard(name) {
+    var info = commandInfo(name);
+    var spec = specFor(name);
+    var panelId = "cmd-card-" + name.replace(/[^a-z0-9-]/gi, "-");
+    var head = el(
+      "button",
+      {
+        class: "skill__head",
+        type: "button",
+        "data-command": name,
+        "aria-expanded": "false",
+        "aria-controls": panelId,
+        on: {
+          click: function () {
+            if (head.getAttribute("aria-expanded") === "true") closeCommandCard();
+            else selectCommand(name);
+          },
+        },
+      },
+      [
+        el("span", { class: "skill__repo eyebrow", text: info.group }),
+        el("span", { class: "skill__name", text: info.title }),
+      ]
+    );
+    var body = el("div", { class: "skill__body", id: panelId, hidden: true });
+    var node = el("article", { class: "skill", "aria-label": info.title }, [
+      head,
+      el("p", { class: "skill__summary", text: info.blurb || "" }),
+      el("div", { class: "skill__foot" }, [
+        el("code", { class: "skill__command", text: "mos " + name }),
+        el("span", {
+          class: "pill skill__state",
+          text: spec && spec.mutating ? "writes" : "read only",
+        }),
+      ]),
+      body,
+    ]);
+    node.addEventListener("keydown", function (event) {
+      if (event.key !== "Escape" || head.getAttribute("aria-expanded") !== "true") return;
+      event.preventDefault();
+      closeCommandCard();
+      head.focus();
+    });
+    return node;
+  }
+
+  function commandGrid(names) {
+    return el("div", { class: "skills" }, names.map(commandCard));
+  }
+
+  function renderCommandToolbar() {
+    var host = $("cmd-toolbar");
+    if (!host) return;
+    var search = el("input", {
+      class: "input search__input",
+      id: "cmd-search",
+      type: "search",
+      autocomplete: "off",
+      placeholder: "Search commands",
+    });
+    search.value = cmd.query;
+    search.addEventListener("input", function () {
+      cmd.query = search.value;
+      renderCommandList();
+    });
+    function cchip(label, pressed, onClick) {
+      return el("button", {
+        class: "chip-f",
+        type: "button",
+        text: label,
+        "aria-pressed": pressed ? "true" : "false",
+        on: {
+          click: function () {
+            onClick();
+            renderCommandToolbar();
+            renderCommandList();
+          },
+        },
+      });
+    }
+    var names = commandNames();
+    var chips = [
+      cchip("All", cmd.group === "all", function () {
+        cmd.group = "all";
+      }),
+    ].concat(
       GROUPS.map(function (group) {
-        var names = App.specs
-          .map(function (spec) {
-            return spec.command;
-          })
-          .filter(function (name) {
-            return commandInfo(name).group === group.id;
-          })
-          .sort(function (left, right) {
-            var a = commandInfo(left).order;
-            var b = commandInfo(right).order;
-            return a === b ? (left < right ? -1 : 1) : a - b;
-          });
-        if (!names.length) return null;
-        var list = el(
-          "div",
-          {},
-          names.map(function (name) {
-            var info = commandInfo(name);
-            return el(
-              "button",
-              {
-                class: "cmd-item",
-                type: "button",
-                "data-command": name,
-                on: {
-                  click: function () {
-                    selectCommand(name);
-                  },
-                },
-              },
-              [
-                el("span", { class: "cmd-item__name", text: info.title }),
-                el("span", { class: "cmd-item__cli", text: "mos " + name }),
-              ]
-            );
-          })
-        );
-        // The advanced tier folds away by default; its summary is the group label.
-        if (group.folded) {
-          return el("details", { class: "cmd-group cmd-adv" }, [
-            el("summary", {}, [icon("down", "disc"), el("span", { text: group.label })]),
-            list,
-          ]);
-        }
-        return el("div", { class: "cmd-group" }, [
-          el("h3", { class: "cmd-group__label", text: group.label }),
-          list,
-        ]);
+        var count = names.filter(function (name) {
+          return commandInfo(name).group === group.id;
+        }).length;
+        return cchip(group.label + " " + count, cmd.group === group.id, function () {
+          cmd.group = cmd.group === group.id ? "all" : group.id;
+        });
       })
     );
+    fill(host, [
+      el("label", { class: "search" }, [
+        icon("search", "search__icon"),
+        el("span", { class: "sr-only", text: "Search commands" }),
+        search,
+      ]),
+      el("div", { class: "chips-f", role: "group", "aria-label": "Groups" }, chips),
+    ]);
+  }
+
+  function renderCommandList() {
+    var host = $("cmd-list");
+    if (!host) return;
+    // The runner panel lives inside a card; a re-render replaces the cards, so the
+    // panel is parked beside the list first and moved back into the open card after.
+    var panel = $("cmd-panel");
+    if (panel && panel.closest("#cmd-list") && host.parentNode) {
+      show(panel, false);
+      host.parentNode.appendChild(panel);
+    }
+    if (!$("cmd-toolbar") || !$("cmd-toolbar").firstChild) renderCommandToolbar();
+    var query = cmd.query.trim().toLowerCase();
+    var names = commandNames().filter(function (name) {
+      if (cmd.group !== "all" && commandInfo(name).group !== cmd.group) return false;
+      return commandMatches(name, query);
+    });
+    var filtering = query || cmd.group !== "all";
+    if (!names.length) {
+      fill(host, [
+        el("p", {
+          class: "panel__line skills__empty",
+          text: "Nothing matches. Try a word from what a command does, or its mos line.",
+        }),
+      ]);
+    } else if (filtering) {
+      fill(host, [commandGrid(names)]);
+    } else {
+      fill(
+        host,
+        GROUPS.map(function (group) {
+          var mine = names.filter(function (name) {
+            return commandInfo(name).group === group.id;
+          });
+          if (!mine.length) return null;
+          return el("section", { class: "skills-group", "aria-label": group.label }, [
+            el("div", { class: "skills-group__head" }, [
+              el("div", {}, [
+                el("h2", { class: "skills-group__title", text: group.label }),
+                el("p", { class: "skills-group__blurb", text: GROUP_BLURB[group.id] || "" }),
+              ]),
+              el("span", { class: "panel__count", text: plural(mine.length, "command") }),
+            ]),
+            commandGrid(mine),
+          ]);
+        })
+      );
+    }
+    // A re-render keeps the open command open, with the runner inside its card.
+    if (cmd.current) openCommandCard(cmd.current.command);
+  }
+
+  function closeCommandCard() {
+    var list = $("cmd-list");
+    if (!list) return;
+    Array.prototype.forEach.call(list.querySelectorAll("[data-command]"), function (head) {
+      head.setAttribute("aria-expanded", "false");
+      head.removeAttribute("aria-current");
+      var card = head.closest(".skill");
+      if (card) setClass(card, "skill--open", false);
+      var body = card && card.querySelector(".skill__body");
+      if (body) show(body, false);
+    });
+    cmd.current = null;
+  }
+
+  /* The runner panel is one element that moves into whichever card is open. */
+  function openCommandCard(name) {
+    var list = $("cmd-list");
+    var panel = $("cmd-panel");
+    if (!list || !panel) return;
+    var target = null;
+    Array.prototype.forEach.call(list.querySelectorAll("[data-command]"), function (head) {
+      var mine = head.getAttribute("data-command") === name;
+      head.setAttribute("aria-expanded", mine ? "true" : "false");
+      if (mine) head.setAttribute("aria-current", "true");
+      else head.removeAttribute("aria-current");
+      var card = head.closest(".skill");
+      if (card) setClass(card, "skill--open", mine);
+      var body = card && card.querySelector(".skill__body");
+      if (body) show(body, mine);
+      if (mine) target = body;
+    });
+    if (target) {
+      add(target, [panel]);
+      show(panel, true);
+    }
   }
 
   function selectCommand(name) {
@@ -5921,14 +6099,8 @@
     cmd.previewSig = null;
     cmd.builtFor = App.path;
     showRunner(true);
-    Array.prototype.forEach.call($("cmd-list").querySelectorAll(".cmd-item"), function (button) {
-      if (button.getAttribute("data-command") === name) {
-        button.setAttribute("aria-current", "true");
-        // A command chosen from elsewhere in the app must be visible in the list.
-        var folded = button.closest("details");
-        if (folded) folded.setAttribute("open", "");
-      } else button.removeAttribute("aria-current");
-    });
+    if (!$("cmd-list").querySelector("[data-command]")) renderCommandList();
+    openCommandCard(name);
     renderCommandPanel();
   }
 
