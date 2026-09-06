@@ -5909,7 +5909,7 @@
       ]),
       el("div", { class: "chips-f", role: "group", "aria-label": "Repositories" }, chips),
       el("div", { class: "chips-f", role: "group", "aria-label": "Installed" }, [
-        chip("Built in", skills.builtIn, function () {
+        chip("Installed only", skills.builtIn, function () {
           skills.builtIn = !skills.builtIn;
         }),
       ]),

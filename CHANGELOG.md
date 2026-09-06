@@ -7,6 +7,15 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ### Added
 
+- **A Skills page in the local app.** The Commands tab is now a marketplace of every skill
+  across the organisation's repositories, from a bundled catalogue: search, a chip per
+  repository, and cards that open to the slash command, the full description, an install
+  prompt to copy, and a link to the skill on GitHub. The command runner is one link away.
+- **One-click Claude Code, and prompts you can read first.** "Open this brain in Claude
+  Code" launches it in a new terminal through `mos open`, with the exact lines kept as
+  the fallback. "Sync the assistant skills" opens to an update-now button or a prompt.
+  Every "Copy the prompt" has a "View the prompt" beside it that shows the prompt in a
+  card with Copy at the top right before anything is copied.
 - **`mos open`.** Opens Claude Code (or Codex) in the brain's folder in a new terminal
   window, per platform, with a fixed argv and no shell. The local app's "Open this brain
   in Claude Code" is now a button that does this, with the exact lines kept as the
