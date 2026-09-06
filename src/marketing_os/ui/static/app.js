@@ -350,6 +350,12 @@
       title: "Think about a topic",
       blurb: "Gathers the grounded context for a topic and hands it to an assistant to reason over.",
     },
+    open: {
+      group: "maintenance",
+      order: 11,
+      title: "Open the brain in Claude Code",
+      blurb: "Opens a terminal in this brain's folder with Claude Code started. The lines it runs are shown so you can do it yourself.",
+    },
     rename: {
       group: "maintenance",
       order: 10,
@@ -450,6 +456,12 @@
       choices: ["all", "claude", "codex"],
       initial: "all",
       empty: "Not set",
+    },
+    in: {
+      label: "Assistant",
+      help: "Which assistant to start. Claude Code unless you say otherwise.",
+      choices: ["claude", "codex"],
+      empty: "Claude Code",
     },
     limit: { label: "How many results", type: "number" },
     question: { label: "Your question", placeholder: "What do we promise first-time buyers?" },
@@ -601,6 +613,10 @@
     show($("tabs"), onBrain);
     show($("btn-refresh"), onBrain);
     renderTopbarName();
+    if (name === "commands") {
+      var runner = $("runner");
+      if (!runner || runner.hasAttribute("hidden")) renderSkills();
+    }
     ["dashboard", "commands"].forEach(function (id) {
       var tab = $("tab-" + id);
       var selected = id === name;
@@ -620,6 +636,8 @@
       tab.addEventListener("click", function () {
         closeDrawer();
         setView(views[index]);
+        // The Skills tab always lands on the skills, never on the runner.
+        if (views[index] === "commands") showRunner(false);
       });
       tab.addEventListener("keydown", function (event) {
         var next = null;
@@ -643,6 +661,22 @@
       refresh(true);
     });
     $("iv-exit").addEventListener("click", leaveInterview);
+    var toRunner = $("btn-runner");
+    if (toRunner) {
+      toRunner.addEventListener("click", function () {
+        showRunner(true);
+        var first = $("cmd-list") && $("cmd-list").querySelector(".cmd-item");
+        if (first) first.focus();
+      });
+    }
+    var back = $("btn-runner-back");
+    if (back) {
+      back.addEventListener("click", function () {
+        showRunner(false);
+        var search = $("skills-search");
+        if (search) search.focus();
+      });
+    }
   }
 
   /* ================================================================ sidebar */
@@ -728,7 +762,7 @@
   /* The name of the brain on screen, in the bar. Empty while nothing is open. */
   var SECTION_NAME = {
     dashboard: "Overview",
-    commands: "Commands",
+    commands: "Skills",
     wizard: "Setting up",
     interview: "Interview",
     attach: "Attach",
@@ -1109,6 +1143,21 @@
    * message, so a new finding is never hidden — it is only un-translated. Authored copy,
    * like heroPlan: facts (counts, paths) come from the envelope; these sentences are ours. */
   var FINDING_COPY = {
+    "runtime-not-found": {
+      one: "Claude Code is not installed on this computer, or is not on the PATH.",
+      many: "Claude Code is not installed on this computer, or is not on the PATH.",
+      fix: "Install it, or use the lines below once it is there.",
+    },
+    "no-terminal": {
+      one: "No terminal program was found to open.",
+      many: "No terminal program was found to open.",
+      fix: "Open one yourself and use the lines below.",
+    },
+    "launch-failed": {
+      one: "The terminal could not be opened.",
+      many: "The terminal could not be opened.",
+      fix: "Open one yourself and use the lines below.",
+    },
     "missing-name": {
       one: "The business has no name yet.",
       many: "The business has no name yet.",
@@ -1324,11 +1373,12 @@
     );
   }
 
+  /* The prompt card: a head row with the label at left and Copy at the top right, then
+   * the text. One card for every prompt in the app. */
   function promptBox(text) {
     return el("div", { class: "prompt" }, [
-      el("p", { class: "prompt__cap", text: "Paste this into Claude Code" }),
-      el("pre", { class: "prompt__text", text: text }),
-      el("div", { class: "btn-row" }, [
+      el("div", { class: "prompt__head" }, [
+        el("p", { class: "prompt__cap", text: "Paste this into Claude Code" }),
         el("button", {
           class: "btn btn--secondary btn--sm",
           type: "button",
@@ -1340,7 +1390,54 @@
           },
         }),
       ]),
+      el("pre", { class: "prompt__text", text: text }),
     ]);
+  }
+
+  /* "View the prompt": a ghost button that opens the card in place under its row. One
+   * open at a time; Escape closes and returns focus to the button. */
+  var prompts = { open: null, seq: 0 };
+
+  function promptReveal(text, label) {
+    prompts.seq += 1;
+    var id = "prompt-" + prompts.seq;
+    var host = el("div", { class: "prompt-host", id: id, hidden: true });
+    var button = el("button", {
+      class: "btn btn--ghost btn--sm",
+      type: "button",
+      text: label || "View the prompt",
+      "aria-expanded": "false",
+      "aria-controls": id,
+    });
+    var api = {};
+    function setOpen(on) {
+      if (on && prompts.open && prompts.open !== api) prompts.open.close();
+      button.setAttribute("aria-expanded", on ? "true" : "false");
+      if (on && !host.firstChild) fill(host, [promptBox(typeof text === "function" ? text() : text)]);
+      show(host, on);
+      if (on) prompts.open = api;
+      else if (prompts.open === api) prompts.open = null;
+    }
+    button.addEventListener("click", function () {
+      setOpen(button.getAttribute("aria-expanded") !== "true");
+    });
+    function onEscape(event) {
+      if (event.key !== "Escape" || button.getAttribute("aria-expanded") !== "true") return;
+      event.preventDefault();
+      setOpen(false);
+      button.focus();
+    }
+    host.addEventListener("keydown", onEscape);
+    button.addEventListener("keydown", onEscape);
+    api.button = button;
+    api.host = host;
+    api.open = function () {
+      setOpen(true);
+    };
+    api.close = function () {
+      setOpen(false);
+    };
+    return api;
   }
 
   /* Findings that share a code are one thing that is wrong in several places, and are
@@ -4322,7 +4419,7 @@
 
   var TODO_LIMIT = 6;
 
-  function todoAction(status, group, container) {
+  function todoAction(status, group, container, slots) {
     var code = group.code;
     if (code === "missing-file" || code === "missing-directory") {
       var repair = repairPlan(status);
@@ -4345,17 +4442,22 @@
       );
     }
     var text = fixPromptText(status, group.items);
-    return el("button", {
-      class: "btn btn--secondary btn--sm",
-      type: "button",
-      text: "Copy the prompt",
-      title: "Copy a prompt for Claude Code that fixes this",
-      on: {
-        click: function () {
-          copy(text, "Prompt copied");
+    var view = promptReveal(text);
+    if (slots && slots.after) add(slots.after, view.host);
+    return el("div", { class: "btn-row todo__prompts" }, [
+      el("button", {
+        class: "btn btn--secondary btn--sm",
+        type: "button",
+        text: "Copy the prompt",
+        title: "Copy a prompt for Claude Code that fixes this",
+        on: {
+          click: function () {
+            copy(text, "Prompt copied");
+          },
         },
-      },
-    });
+      }),
+      view.button,
+    ]);
   }
 
   function todoRow(status, group, panelReadouts) {
@@ -4363,7 +4465,8 @@
     var words = findingWords(group);
     var n = group.items.length;
     var readouts = el("div", { class: "todo__readouts" });
-    var action = todoAction(status, group, readouts);
+    var after = el("div", { class: "todo__after" });
+    var action = todoAction(status, group, readouts, { after: after });
     // The row that points at the header's button is where that button's result lands,
     // so the result reads under the thing it answers rather than above it.
     if (panelReadouts && action && action.className === "todo__pointer") {
@@ -4382,6 +4485,7 @@
         ]),
         el("div", { class: "todo__action" }, [action]),
       ]),
+      after,
       readouts,
     ]);
   }
@@ -4932,12 +5036,11 @@
 
   /* ---- quick actions ----------------------------------------------------- */
 
-  /* The exact lines for opening this brain in Claude Code, behind a disclosure. No
-   * launcher is invented. */
+  /* The exact lines for opening this brain in Claude Code: the fallback behind the
+   * Open button, and what the app-bar utility falls back to. */
   function claudeLines(status) {
     var repo = status.repo || App.path;
     return [
-      el("p", { class: "tech__line", text: "Open a terminal in this folder and start Claude Code, then type /mos-start." }),
       el("p", { class: "tech__line" }, ["This brain is at ", el("code", { text: repo, title: repo }), "."]),
       terminal('cd "' + repo + '"', "Go to the folder"),
       terminal("claude", "Start Claude Code"),
@@ -4961,51 +5064,250 @@
     ];
   }
 
-  function quickRow(iconName, label, onClick) {
+  function quickRow(iconName, label, onClick, plain) {
     return el(
       "button",
       { class: "qa", type: "button", on: { click: onClick } },
-      [icon(iconName, "qa__icon"), el("span", { class: "qa__label", text: label }), icon("chevron", "qa__go")]
+      [
+        icon(iconName, "qa__icon"),
+        el("span", { class: "qa__label", text: label }),
+        plain ? null : icon("chevron", "qa__go"),
+      ]
     );
+  }
+
+  /* Which positionals a command takes, read from the server's own description. */
+  function baseArgs(command) {
+    var spec = App.specs.filter(function (item) {
+      return item.command === command;
+    })[0];
+    return spec && (spec.positionals || []).indexOf("path") !== -1 ? { path: App.path } : {};
+  }
+
+  var opening = { busy: false };
+
+  /* `mos open`: a terminal in the brain's folder with the assistant started. On success
+   * the envelope's own sentence is the toast; on failure the plain sentence for its
+   * code shows above the lines that do the same by hand, opened. */
+  function launchBrain(button, afterFailure) {
+    if (opening.busy) return Promise.resolve(null);
+    opening.busy = true;
+    if (button) busy(button, true, "Opening");
+    var args = baseArgs("open");
+    return run("open", args).then(function (result) {
+      opening.busy = false;
+      if (button) {
+        busy(button, false);
+        fill(button, [icon("terminal", "qa__icon"), el("span", { class: "qa__label", text: "Open this brain in Claude Code" })]);
+      }
+      var envelope = result.envelope;
+      if (envelope && envelope.ok) {
+        var said = (envelope.next_action && envelope.next_action.reason) || "Claude Code is opening in this brain's folder.";
+        toast(said);
+        announce(said);
+        return result;
+      }
+      var groups = envelope ? groupFindings(findingsOf(envelope)) : [];
+      var words = groups.length ? findingWords(groups[0]) : { title: "Claude Code could not be opened.", fix: "" };
+      if (afterFailure) afterFailure(words, result);
+      return result;
+    });
   }
 
   function quickPanel(status, counts) {
     var missing = (status.context && status.context.missing) || [];
     var complete = counts.requiredDone === counts.required;
-    var open = el("details", { class: "tech qa-tech", id: "qa-open-cc" }, [
-      el("summary", { class: "tech__sum qa" }, [
-        icon("terminal", "qa__icon"),
-        el("span", { class: "qa__label", text: "Open this brain in Claude Code" }),
-        icon("down", "disc qa__go"),
-      ]),
+
+    // Open: a button, with the lines as the closed fallback beneath it.
+    var fail = el("p", { class: "qa__fail", hidden: true });
+    var lines = el("details", { class: "tech qa-lines", id: "qa-open-cc" }, [
+      el("summary", { class: "tech__sum" }, [icon("down", "disc"), el("span", { text: "If nothing opened, the exact lines are here" })]),
       el("div", { class: "tech__body" }, claudeLines(status)),
     ]);
+    var openButton = quickRow("terminal", "Open this brain in Claude Code", function () {
+      launchBrain(openButton, function (words) {
+        showOpenFailure(words);
+      });
+    }, true);
+    openButton.setAttribute("id", "qa-open-btn");
+    var openRow = el("div", { class: "qa-block" }, [openButton, fail, lines]);
+
+    // Sync: opens in place to one line and two ways.
+    var sync = syncBlock(status);
+
     return panel("quick", "Quick actions", null, [
       el("div", { class: "qas" }, [
-        open,
+        openRow,
         quickRow("chat", complete ? "Review your answers" : "Answer the questions", function () {
           openInterview(complete ? null : missing[0] || null);
         }),
-        quickRow("refresh", "Sync the assistant skills", function () {
-          setView("commands");
-          selectCommand("skills sync");
-        }),
+        sync,
         quickRow("terminal", "See every command", function () {
+          showRunner(true);
           setView("commands");
         }),
       ]),
     ]);
   }
 
-  /* The app bar's shortcut: the same disclosure, opened and focused. */
+  function showOpenFailure(words) {
+    var fail = document.querySelector("#dashboard .qa__fail");
+    var lines = $("qa-open-cc");
+    if (fail) {
+      fill(fail, [
+        el("span", { text: words.title }),
+        words.fix ? el("span", { class: "qa__fail-fix", text: " " + words.fix }) : null,
+      ]);
+      show(fail, true);
+    }
+    if (lines) lines.setAttribute("open", "");
+    announce(words.title);
+  }
+
+  /* The app bar's utility runs the same command; a failure lands on the overview with
+   * the fallback lines opened. */
   function openClaudeCode() {
-    if (App.view !== "dashboard") setView("dashboard");
-    var details = $("qa-open-cc");
-    if (!details) return;
-    details.setAttribute("open", "");
-    var summary = details.querySelector("summary");
-    if (summary && summary.scrollIntoView) summary.scrollIntoView({ block: "center" });
-    if (summary) summary.focus();
+    var button = $("btn-open-cc");
+    launchBrain(button, function (words) {
+      if (App.view !== "dashboard") setView("dashboard");
+      showOpenFailure(words);
+      var lines = $("qa-open-cc");
+      var summary = lines && lines.querySelector("summary");
+      if (summary && summary.scrollIntoView) summary.scrollIntoView({ block: "center" });
+      if (summary) summary.focus();
+    }).then(function () {
+      if (button) fill(button, [icon("refresh", "icon"), el("span", { text: "Open in Claude Code" })]);
+    });
+  }
+
+  /* ---- keeping the skills matched ------------------------------------------ */
+
+  function syncPromptText(status) {
+    var repo = status.repo || App.path;
+    var NL = "\n";
+    return [
+      "I am working in the MarketingOS brain at " + repo + ". Update MarketingOS to the latest",
+      "version and refresh this brain's skills: run `mos update --plan`, review it, then",
+      "`mos update --yes`; then `mos skills sync . --plan` and `mos skills sync . --yes`; then",
+      "`mos doctor .` and show me what it reports.",
+    ].join(NL);
+  }
+
+  function syncBlock(status) {
+    var readouts = el("div", { class: "qa-readouts" });
+    var update = el("button", { class: "btn btn--secondary btn--sm", type: "button", text: "Update now" });
+    var view = promptReveal(function () {
+      return syncPromptText(status);
+    });
+    var details = el("details", { class: "tech qa-tech", id: "qa-sync" }, [
+      el("summary", { class: "tech__sum qa" }, [
+        icon("refresh", "qa__icon"),
+        el("span", { class: "qa__label", text: "Sync the assistant skills" }),
+        icon("down", "disc qa__go"),
+      ]),
+      el("div", { class: "tech__body" }, [
+        el("p", {
+          class: "panel__line",
+          text:
+            "Keeps this brain's copy of the skills matched to the installed MarketingOS, and " +
+            "updates MarketingOS itself when a newer version is out.",
+        }),
+        el("div", { class: "btn-row" }, [update, view.button]),
+        view.host,
+        readouts,
+      ]),
+    ]);
+    update.addEventListener("click", function () {
+      if (blocked(update)) return;
+      updateChain(update, readouts, details);
+    });
+    return details;
+  }
+
+  /* A flat readout for one step of the chain, with its apply beside it. */
+  function chainReadout(readouts, result, applyLabel, onApply) {
+    var apply = el("button", { class: "btn btn--primary", type: "button", text: applyLabel });
+    apply.addEventListener("click", function () {
+      if (blocked(apply)) return;
+      busy(apply, true, "Applying");
+      onApply(apply);
+    });
+    fill(readouts, [
+      el("div", { class: "readout" }, [
+        el("div", { class: "readout__body" }, [resultCard(result, { title: "What came back", compact: true })]),
+        el("div", { class: "btn-row applybar" }, [apply]),
+      ]),
+    ]);
+    land(readouts.querySelector(".result__title"), resultSummary(result, applyLabel));
+  }
+
+  function chainTrouble(readouts, result, title) {
+    fill(readouts, [
+      el("div", { class: "readout" }, [
+        el("div", { class: "readout__body" }, [resultCard(result, { title: title, compact: true })]),
+      ]),
+    ]);
+    land(readouts.querySelector(".result__title"), resultSummary(result, title));
+  }
+
+  /* Update, then sync: each write previewed, each apply pressed. An update with nothing
+   * to do falls through to the sync; a sync with nothing to do closes with a word. */
+  function updateChain(button, readouts, details) {
+    function plan(command) {
+      var args = baseArgs(command);
+      args.plan = true;
+      return run(command, args);
+    }
+    function apply(command) {
+      var args = baseArgs(command);
+      args.yes = true;
+      return run(command, args);
+    }
+    function done(said) {
+      busy(button, false);
+      fill(button, ["Update now"]);
+      fill(readouts, []);
+      details.removeAttribute("open");
+      toast(said);
+      announce(said);
+      refresh(false);
+    }
+    function syncStep() {
+      return plan("skills sync").then(function (result) {
+        var envelope = result.envelope;
+        if (!envelope || !envelope.ok) return chainTrouble(readouts, result, "The sync could not be prepared");
+        if (!changesOf(envelope).length) return done("Already up to date.");
+        busy(button, false);
+        fill(button, ["Update now"]);
+        chainReadout(readouts, result, "Sync the skills", function () {
+          apply("skills sync").then(function (applied) {
+            if (!applied.envelope || !applied.envelope.ok) return chainTrouble(readouts, applied, "The sync did not finish");
+            done("Skills synced.");
+          });
+        });
+      });
+    }
+    busy(button, true, "Checking");
+    plan("update").then(function (result) {
+      var envelope = result.envelope;
+      if (!envelope || !envelope.ok) {
+        busy(button, false);
+        fill(button, ["Update now"]);
+        return chainTrouble(readouts, result, "The update could not be prepared");
+      }
+      if (!changesOf(envelope).length) return syncStep();
+      busy(button, false);
+      fill(button, ["Update now"]);
+      chainReadout(readouts, result, "Apply the update", function () {
+        apply("update").then(function (applied) {
+          if (!applied.envelope || !applied.envelope.ok) return chainTrouble(readouts, applied, "The update did not finish");
+          return apply("skills sync").then(function (synced) {
+            if (!synced.envelope || !synced.envelope.ok) return chainTrouble(readouts, synced, "The sync did not finish");
+            done("Updated and skills synced.");
+          });
+        });
+      });
+    });
   }
 
   /* ---- assistants ------------------------------------------------------------ */
@@ -5351,6 +5653,287 @@
     });
   }
 
+  /* ================================================================= skills */
+
+  /* The Skills page: every skill across the organisation's repositories, from the
+   * bundled catalogue. Search, repository chips and a built-in filter narrow the grid;
+   * a card opens in place to the command, the description, an install prompt and the
+   * GitHub link. The command runner stays reachable from the foot. */
+
+  var skills = { data: null, loading: null, failed: false, query: "", repo: "all", builtIn: false, open: null };
+
+  var CATALOG_URL = "/static/catalog/skills.json";
+
+  function loadCatalog() {
+    if (skills.data) return Promise.resolve(skills.data);
+    if (skills.loading) return skills.loading;
+    skills.loading = request(CATALOG_URL).then(function (res) {
+      skills.loading = null;
+      if (res.ok && res.data && Array.isArray(res.data.skills)) {
+        skills.data = res.data;
+      } else {
+        skills.failed = true;
+      }
+      return skills.data;
+    }, function () {
+      skills.loading = null;
+      skills.failed = true;
+      return null;
+    });
+    return skills.loading;
+  }
+
+  function installedNames() {
+    var status = App.status || {};
+    return (status.installed_skills || []).map(function (item) {
+      return typeof item === "string" ? item : item && item.name;
+    });
+  }
+
+  function skillMatches(skill, query) {
+    if (!query) return true;
+    var hay = [skill.name, skill.command, skill.summary, skill.description, repoLabel(skill.repo)]
+      .join(" ")
+      .toLowerCase();
+    return hay.indexOf(query) !== -1;
+  }
+
+  function repoLabel(repo) {
+    var found = ((skills.data && skills.data.repos) || []).filter(function (item) {
+      return item.repo === repo;
+    })[0];
+    return found ? found.label : repo;
+  }
+
+  function installPrompt(skill) {
+    var NL = "\n";
+    if (skill.bundled) {
+      return [
+        "This skill ships with MarketingOS and is installed by mos install; run",
+        "`mos update --yes` to refresh it.",
+      ].join(NL);
+    }
+    var home = "~" + "/.claude" + "/skills";
+    return [
+      "Install the " + skill.name + " skill from " + skill.url + " into my Claude Code skills",
+      "folder so " + skill.command + " is available: clone the repository, run its setup if it has one,",
+      "or copy the " + skill.path + " folder into " + home + "; then confirm the skill appears.",
+    ].join(NL);
+  }
+
+  function githubLink(skill, className, withText) {
+    return el(
+      "a",
+      {
+        class: className,
+        href: skill.url,
+        target: "_blank",
+        rel: "noopener noreferrer",
+        "aria-label": skill.name + " on GitHub",
+        title: skill.name + " on GitHub",
+      },
+      [withText ? el("span", { text: "View on GitHub" }) : null, icon("external")]
+    );
+  }
+
+  function skillCard(skill) {
+    var api = {};
+    var built = false;
+    var panelId = "skill-" + String(skill.name).replace(/[^a-z0-9-]/gi, "-");
+    var head = el(
+      "button",
+      { class: "skill__head", type: "button", "aria-expanded": "false", "aria-controls": panelId },
+      [
+        el("span", { class: "skill__repo eyebrow", text: repoLabel(skill.repo).toLowerCase() }),
+        el("span", { class: "skill__name", text: skill.name }),
+      ]
+    );
+    var summary = el("p", { class: "skill__summary", text: skill.summary || "" });
+    var foot = el("div", { class: "skill__foot" }, [
+      el("code", { class: "skill__command", text: skill.command }),
+      githubLink(skill, "skill__link", false),
+    ]);
+    var body = el("div", { class: "skill__body", id: panelId, hidden: true });
+    var node = el("article", { class: "skill", "aria-label": skill.name }, [head, summary, foot, body]);
+
+    function setOpen(on) {
+      if (on && skills.open && skills.open !== api) skills.open.close();
+      head.setAttribute("aria-expanded", on ? "true" : "false");
+      show(body, on);
+      setClass(node, "skill--open", on);
+      if (on) {
+        skills.open = api;
+        if (!built) {
+          built = true;
+          fill(body, [
+            terminal(skill.command, "The command"),
+            prose(skill.description || skill.summary || ""),
+            promptBox(installPrompt(skill)),
+            el("div", { class: "btn-row" }, [githubLink(skill, "btn btn--ghost btn--sm", true)]),
+          ]);
+        }
+      } else if (skills.open === api) {
+        skills.open = null;
+      }
+    }
+    head.addEventListener("click", function () {
+      setOpen(head.getAttribute("aria-expanded") !== "true");
+    });
+    node.addEventListener("keydown", function (event) {
+      if (event.key !== "Escape" || head.getAttribute("aria-expanded") !== "true") return;
+      event.preventDefault();
+      setOpen(false);
+      head.focus();
+    });
+    api.node = node;
+    api.close = function () {
+      setOpen(false);
+    };
+    return api;
+  }
+
+  function skillGrid(list) {
+    return el(
+      "div",
+      { class: "skills" },
+      list.map(function (skill) {
+        return skillCard(skill).node;
+      })
+    );
+  }
+
+  function renderSkillsBody() {
+    var host = $("skills-body");
+    if (!host) return;
+    var data = skills.data;
+    if (!data) {
+      fill(host, [
+        el("p", {
+          class: "panel__line",
+          text: skills.failed ? "The catalogue could not be read." : "Reading the catalogue.",
+        }),
+      ]);
+      return;
+    }
+    skills.open = null;
+    var query = skills.query.trim().toLowerCase();
+    var installed = installedNames();
+    var list = data.skills.filter(function (skill) {
+      if (skills.repo !== "all" && skill.repo !== skills.repo) return false;
+      if (skills.builtIn && !(skill.bundled || installed.indexOf(skill.name) !== -1)) return false;
+      return skillMatches(skill, query);
+    });
+    var filtering = query || skills.repo !== "all" || skills.builtIn;
+    if (!list.length) {
+      fill(host, [
+        el("p", {
+          class: "panel__line skills__empty",
+          text: "Nothing matches. Try the repository names or a word from a description.",
+        }),
+      ]);
+      return;
+    }
+    if (filtering) {
+      fill(host, [skillGrid(list)]);
+      return;
+    }
+    fill(
+      host,
+      data.repos.map(function (repo) {
+        var mine = list.filter(function (skill) {
+          return skill.repo === repo.repo;
+        });
+        if (!mine.length) return null;
+        return el("section", { class: "skills-group", "aria-label": repo.label }, [
+          el("div", { class: "skills-group__head" }, [
+            el("div", {}, [
+              el("h2", { class: "skills-group__title", text: repo.label }),
+              repo.blurb ? el("p", { class: "skills-group__blurb", text: repo.blurb }) : null,
+            ]),
+            el("span", { class: "panel__count", text: plural(mine.length, "skill") }),
+          ]),
+          skillGrid(mine),
+        ]);
+      })
+    );
+  }
+
+  function renderSkillsToolbar() {
+    var host = $("skills-toolbar");
+    if (!host || !skills.data) return;
+    var search = el("input", {
+      class: "input search__input",
+      id: "skills-search",
+      type: "search",
+      autocomplete: "off",
+      placeholder: "Search skills",
+    });
+    search.value = skills.query;
+    search.addEventListener("input", function () {
+      skills.query = search.value;
+      renderSkillsBody();
+    });
+    function chip(label, pressed, onClick) {
+      return el("button", {
+        class: "chip-f",
+        type: "button",
+        text: label,
+        "aria-pressed": pressed ? "true" : "false",
+        on: {
+          click: function () {
+            onClick();
+            renderSkillsToolbar();
+            renderSkillsBody();
+            var again = $("skills-search");
+            if (again && again !== search) again.value = skills.query;
+          },
+        },
+      });
+    }
+    var chips = [
+      chip("All", skills.repo === "all", function () {
+        skills.repo = "all";
+      }),
+    ].concat(
+      skills.data.repos.map(function (repo) {
+        return chip(repo.label + " " + repo.count, skills.repo === repo.repo, function () {
+          skills.repo = skills.repo === repo.repo ? "all" : repo.repo;
+        });
+      })
+    );
+    fill(host, [
+      el("label", { class: "search" }, [
+        icon("search", "search__icon"),
+        el("span", { class: "sr-only", text: "Search skills" }),
+        search,
+      ]),
+      el("div", { class: "chips-f", role: "group", "aria-label": "Repositories" }, chips),
+      el("div", { class: "chips-f", role: "group", "aria-label": "Installed" }, [
+        chip("Built in", skills.builtIn, function () {
+          skills.builtIn = !skills.builtIn;
+        }),
+      ]),
+    ]);
+  }
+
+  function renderSkills() {
+    renderSkillsBody();
+    loadCatalog().then(function () {
+      renderSkillsToolbar();
+      renderSkillsBody();
+    });
+  }
+
+  /* The command runner is a sub-view of the Skills page: shown when a command is
+   * chosen from anywhere in the app, hidden when the Skills tab is pressed. */
+  function showRunner(on) {
+    var runner = $("runner");
+    var page = $("skills-page");
+    if (runner) show(runner, on);
+    if (page) show(page, !on);
+    if (!on && App.view === "commands") renderSkills();
+  }
+
   /* =============================================================== commands */
 
   var cmd = { current: null, values: {}, previewSig: null, builtFor: null, buttons: [] };
@@ -5420,6 +6003,7 @@
     cmd.values = {};
     cmd.previewSig = null;
     cmd.builtFor = App.path;
+    showRunner(true);
     Array.prototype.forEach.call($("cmd-list").querySelectorAll(".cmd-item"), function (button) {
       if (button.getAttribute("data-command") === name) {
         button.setAttribute("aria-current", "true");
@@ -5836,6 +6420,7 @@
         App.path = stored || res.data.root;
         renderCommandList();
         selectCommand("status");
+        showRunner(false);
         renderSidebar();
 
         // The answer just read is this brain's whenever the stored path is the folder the

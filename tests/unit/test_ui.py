@@ -877,6 +877,22 @@ def browser() -> dict:
                 "doctor": doctor,
                 "context show": context,
                 "rename": rename,
+                # `mos open` would pop a terminal here; the app only needs its shape.
+                "open": {
+                    "schema": "mos.open.v1",
+                    "command": "open",
+                    "ok": True,
+                    "repo": str(brain),
+                    "changes": [],
+                    "findings": [],
+                    "next_action": {
+                        "id": "type-start",
+                        "reason": "Claude Code is opening in a console window, in this "
+                        "brain's folder. Type /mos-start there.",
+                    },
+                    "launched": True,
+                    "terminal": "a console window",
+                },
             },
             "probe": {
                 "schema": "mos.assist.v1",
@@ -1814,3 +1830,13 @@ def test_the_business_can_be_renamed_from_the_header(browser: dict) -> None:
     assert seen["closed"] is True and seen["titleShown"] is True
     assert seen["focusedAfter"] == "btn-rename"
     assert seen["headerPrimaryAfter"] == 1, "the header action comes back"
+
+
+def test_open_in_claude_code_is_one_press_and_says_where_it_opened(browser: dict) -> None:
+    """The quick action runs `mos open` for this brain and repeats the envelope's own
+    sentence; the lines stay behind their closed disclosure as the fallback."""
+    seen = browser["openFromQuickActions"]
+    assert seen["calls"] == [{"path": browser["root"]}]
+    assert seen["toast"].startswith("Claude Code is opening in a console window")
+    assert seen["linesOpen"] is False
+    assert seen["failShown"] is False

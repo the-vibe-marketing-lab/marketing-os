@@ -259,6 +259,8 @@ NOT_COPY = {
     "/api/browse",
     "/api/pick-folder",
     "/api/brains",
+    # The bundled skill catalogue, served like the fonts: a route, never rendered.
+    "/static/catalog/skills.json",
     "http://www.w3.org/2000/svg",
 }
 

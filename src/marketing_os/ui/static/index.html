@@ -74,6 +74,9 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
       </symbol>
       <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
       <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" /></symbol>
+      <symbol id="i-external" viewBox="0 0 24 24">
+        <path d="M14 4h6v6" /><path d="M20 4 11 13" /><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+      </symbol>
       <symbol id="i-edit" viewBox="0 0 24 24">
         <path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /><path d="m13.5 6.5 3 3" />
       </symbol>
@@ -143,7 +146,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
             <button class="tab" id="tab-commands" type="button" role="tab" aria-selected="false"
               aria-controls="commands">
               <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="#i-terminal" /></svg>
-              <span>Commands</span>
+              <span>Skills</span>
             </button>
           </div>
         </section>
@@ -436,21 +439,48 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         <div id="dash-body"></div>
       </section>
 
-      <!-- ---------- commands ---------- -->
+      <!-- ---------- skills: the catalogue, with the command runner as a sub-view -------- -->
       <section class="view" id="commands" role="tabpanel" tabindex="0"
         aria-labelledby="tab-commands" hidden>
-        <header class="page-head">
-          <div class="page-head__main">
-            <h1 class="page-head__title">Commands</h1>
-            <p class="page-head__lede">
-              These are the same commands the terminal runs. Each one shows you the exact line to
-              type, so you can do it yourself next time.
-            </p>
+        <div id="skills-page">
+          <header class="page-head page-head--skills">
+            <div class="page-head__main">
+              <h1 class="page-head__title">Skills</h1>
+              <p class="page-head__lede">
+                Every skill you can install, from MarketingOS and its packs. Search, open one,
+                copy its install prompt.
+              </p>
+            </div>
+          </header>
+          <div class="skills-toolbar" id="skills-toolbar"></div>
+          <div id="skills-body"></div>
+          <footer class="skills-foot">
+            <button class="btn btn--ghost" id="btn-runner" type="button">
+              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="#i-terminal" /></svg>
+              <span>Run any command yourself</span>
+            </button>
+          </footer>
+        </div>
+        <div id="runner" hidden>
+          <header class="page-head runner__head">
+            <div class="page-head__main">
+              <h2 class="page-head__title">Commands</h2>
+              <p class="page-head__lede">
+                These are the same commands the terminal runs. Each one shows you the exact line to
+                type, so you can do it yourself next time.
+              </p>
+            </div>
+            <div class="page-head__end">
+              <button class="btn btn--ghost" id="btn-runner-back" type="button">
+                <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="#i-left" /></svg>
+                <span>Back to skills</span>
+              </button>
+            </div>
+          </header>
+          <div class="cmd-layout">
+            <nav class="cmd-list" id="cmd-list" aria-label="Commands"></nav>
+            <div class="cmd-panel" id="cmd-panel"></div>
           </div>
-        </header>
-        <div class="cmd-layout">
-          <nav class="cmd-list" id="cmd-list" aria-label="Commands"></nav>
-          <div class="cmd-panel" id="cmd-panel"></div>
         </div>
       </section>
     </main>

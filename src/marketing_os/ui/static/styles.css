@@ -1511,6 +1511,48 @@ details.raw .result__elapsed {
   color: var(--ink-3);
 }
 
+/* The Open row: a plain button, then the failure sentence and the fallback lines. */
+.qa-block {
+  border-bottom: 1px solid var(--line);
+}
+
+.qa-block > .qa {
+  border-bottom: 0;
+}
+
+.qa__fail {
+  padding: 0 0 12px 30px;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.qa__fail-fix {
+  color: var(--ink-3);
+}
+
+.qa-lines {
+  margin: 0 0 0 30px;
+  border-top: 0;
+}
+
+.qa-lines .tech__sum {
+  min-height: 40px;
+  padding: 6px 0 12px;
+}
+
+.qa-lines[open] .tech__sum {
+  padding-bottom: 6px;
+}
+
+.qa-readouts:empty {
+  display: none;
+}
+
+.qa-readouts {
+  margin-top: 14px;
+}
+
 .qa-tech {
   margin-top: 0;
   border-top: 0;
@@ -1595,8 +1637,26 @@ details.raw .result__elapsed {
   background: var(--term-bg);
 }
 
+/* The head row: the label at left, Copy at the top right. */
+.prompt__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 10px;
+}
+
+.prompt-host {
+  margin-top: 12px;
+}
+
+.prompt-host .prompt {
+  margin-top: 0;
+}
+
 .prompt__cap {
-  margin: 0 0 8px;
+  margin: 0;
   color: var(--ink-3);
   font-size: 13px;
   font-weight: 700;
@@ -1614,8 +1674,12 @@ details.raw .result__elapsed {
   overflow-wrap: anywhere;
 }
 
-.prompt .btn-row {
-  margin-top: 12px;
+.todo__after:empty {
+  display: none;
+}
+
+.todo__after {
+  padding-bottom: 14px;
 }
 
 /* ---------------------------------------------------------------- wizard -- */
@@ -2823,6 +2887,224 @@ details.raw .result__elapsed {
   overflow-wrap: anywhere;
 }
 
+/* ---------------------------------------------------------------- skills -- */
+.page-head--skills {
+  margin-bottom: 20px;
+}
+
+.skills-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-bottom: 24px;
+}
+
+/* The search field: the sprite glass inside a 44px input. */
+.search {
+  position: relative;
+  display: block;
+  flex: 1 1 18rem;
+  max-width: 28rem;
+}
+
+.search__icon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  font-size: 18px;
+  color: var(--ink-3);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.search__input {
+  min-height: 44px;
+  margin-top: 0;
+  padding: 10px 14px 10px 42px;
+  font-size: 15px;
+}
+
+.search__input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Repository chips. The pressed chip is the page's one accent. */
+.chips-f {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip-f {
+  min-height: 36px;
+  padding: 7px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  transition: border-color var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.chip-f:hover {
+  border-color: var(--control-line);
+  color: var(--ink);
+}
+
+.chip-f[aria-pressed="true"] {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+.skills-group + .skills-group {
+  margin-top: 32px;
+}
+
+.skills-group__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-bottom: 14px;
+}
+
+.skills-group__title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.skills-group__blurb {
+  margin-top: 2px;
+  color: var(--ink-3);
+  font-size: 15px;
+}
+
+/* The grid: three across, two, one. Ember's card, no shadow. */
+.skills {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.skill {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  transition: border-color var(--fast) var(--ease);
+}
+
+.skill:hover {
+  border-color: var(--control-line);
+}
+
+.skill--open {
+  grid-column: 1 / -1;
+}
+
+.skill__head {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.skill__repo {
+  font-size: 12px;
+}
+
+.skill__name {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.skill__summary {
+  display: -webkit-box;
+  margin-top: 8px;
+  overflow: hidden;
+  color: var(--ink-2);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.skill__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.skill__command {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.skill__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-pill);
+  color: var(--ink-3);
+  font-size: 18px;
+}
+
+.skill__link:hover {
+  color: var(--ink);
+}
+
+.skill__body {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  animation: reveal var(--base) var(--ease);
+}
+
+.skill__body > * + * {
+  margin-top: 14px;
+}
+
+.skill__body .ledger__prose p {
+  font-size: 15px;
+}
+
+.skills__empty {
+  padding: 24px 0;
+}
+
+.skills-foot {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.runner__head {
+  margin-bottom: 24px;
+}
+
 /* -------------------------------------------------------------- commands -- */
 .cmd-layout {
   display: grid;
@@ -3406,6 +3688,10 @@ details.raw > summary:hover {
     gap: 24px;
   }
 
+  .skills {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .cmd-list {
     position: static;
   }
@@ -3553,6 +3839,23 @@ details.raw > summary:hover {
 
   .strip {
     gap: 10px;
+  }
+
+  .skills {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .search {
+    max-width: none;
+  }
+
+  .chip-f {
+    min-height: 44px;
+  }
+
+  .skill__link {
+    width: 44px;
+    height: 44px;
   }
 
   .tile {
@@ -3741,7 +4044,9 @@ details.raw > summary:hover {
   .sidebar__action,
   .tile,
   .arow__head,
-  .qa {
+  .qa,
+  .skill__head,
+  .chip-f {
     border: 1px solid ButtonText;
   }
 

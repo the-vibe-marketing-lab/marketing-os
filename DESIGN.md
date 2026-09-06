@@ -348,6 +348,21 @@ Ink ground, Mist border, 18px radius, 18px 20px padding. Hover Surface-3; checke
 ### Toast (`.toast`)
 Fixed bottom centre, Surface-2, Mist border, pill, Paper 15px 700.
 
+### Prompt card (`.prompt`, `.prompt__head`, `.prompt__cap`, `.prompt__text`, `.prompt-host`)
+The one card for every prompt the app writes for Claude Code: Ink ground, Mist border, 12px radius. A head row with the tracked label "Paste this into Claude Code" at left and the secondary "Copy the prompt" at the top right, then the text in Figtree 15px, pre-wrapped. "View the prompt" (ghost, `aria-expanded`) opens it in place under its row; one open at a time, Escape closes and returns focus.
+
+### Search field (`.search`, `.search__icon`, `.search__input`)
+The sprite glass at 18px inside a 44px `.input`, 42px left padding, label visually hidden, filtering as you type. Grows to 28rem on a wide page, full width on a phone.
+
+### Chip row (`.chips-f`, `.chip-f`)
+Pill chips at 36px (44px on a phone), Mist border, `ink-2` Figtree 700 14px, `aria-pressed`. The pressed chip is Ember-soft with the Ember line and Ember Bright text: the Skills page's one accent. "All", then each repository with its count; "Built in" is a separate toggle.
+
+### Skill card (`.skills`, `.skill`, `.skill__head`, `.skill__repo`, `.skill__name`, `.skill__summary`, `.skill__foot`, `.skill__command`, `.skill__link`, `.skill__body`, `.skill--open`)
+Ember's card in a grid of three (two below 1100, one below 640), 20px padding, no shadow. The head is a button: the repository as a lowercase eyebrow, the name in Figtree 700 16px; then the summary clamped to two lines; at the foot the command in `code` and the external-link icon to the skill's GitHub folder. Opening (one at a time, full row, Escape closes) reveals the command in a terminal block with Copy, the description as prose, the install prompt card, and a ghost "View on GitHub". Repositories group the cards, each with its label, blurb and count, until a search or chip filters to a flat grid.
+
+### External-link icon (`#i-external`)
+A box with an arrow leaving the top right, 24px canvas, 1.5px stroke, `currentColor`, used only where a link leaves the app; carried in the sprite beside the others.
+
 ### Motion
 `--ease` cubic-bezier(0.2, 0, 0, 1); `--fast` 0.15s for hover, border, colour and the chevron; `--base` 0.22s for the answer row's in-place reveal (4px rise and fade); `--lift` translateY(-3px). Busy cues: the spinner and the running step icon rotate at 0.7s, the button spinner at 0.65s, the indeterminate progress bar slides at 1.15s. Under `prefers-reduced-motion: reduce` every transition and transform is removed, the primary hover loses its lift and shadow, each busy cue becomes an opacity pulse between 0.45 and 1 at 1.8s, the progress bar goes full width at 0.35 opacity, and the skip link and toast get static resting places; the open chevron keeps its turn because it is a state.
 

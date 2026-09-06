@@ -978,6 +978,22 @@ const scenarios = {
     return seen;
   },
 
+  /* Open in Claude Code: one press runs `mos open` for this brain; the envelope's
+   * sentence is what the operator is told; the fallback lines stay closed. */
+  async openFromQuickActions() {
+    const app = launch({ probe: fixture.probe });
+    await settle();
+    const doc = app.dom.document;
+    doc.getElementById("qa-open-btn").dispatch("click");
+    await settle();
+    return {
+      calls: app.calls.filter((c) => c.command === "open").map((c) => c.args),
+      toast: doc.getElementById("toast").textContent,
+      linesOpen: doc.getElementById("qa-open-cc").hasAttribute("open"),
+      failShown: !doc.querySelector(".qa__fail").hasAttribute("hidden"),
+    };
+  },
+
   /* ...but it does replace them when the operator says so. */
   async draftReplacesOnRequest() {
     const app = await openInterview(
