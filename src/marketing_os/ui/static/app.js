@@ -692,12 +692,15 @@
     });
     $("btn-drawer-close").addEventListener("click", closeDrawer);
     $("scrim").addEventListener("click", closeDrawer);
-    // Escape closes the drawer from anywhere, not only while focus is inside it.
-    document.addEventListener("keydown", function (event) {
+    // Escape closes the drawer from inside it, and from anywhere else on the page: the
+    // second listener is a no-op once the first has closed it.
+    function escapeCloses(event) {
       if (event.key !== "Escape" || !drawer.open) return;
       event.preventDefault();
       closeDrawer();
-    });
+    }
+    $("sidebar").addEventListener("keydown", escapeCloses);
+    document.addEventListener("keydown", escapeCloses);
     $("btn-new-brain").addEventListener("click", function () {
       closeDrawer();
       startWizard(suggestedPlace());
