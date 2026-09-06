@@ -5194,10 +5194,18 @@
   }
 
   function syncBlock(status) {
-    var readouts = el("div", { class: "qa-readouts" });
-    var update = el("button", { class: "btn btn--secondary btn--sm", type: "button", text: "Update now" });
     var view = promptReveal(function () {
       return syncPromptText(status);
+    });
+    var browse = el("button", {
+      class: "btn btn--ghost btn--sm",
+      type: "button",
+      text: "See every skill",
+      on: {
+        click: function () {
+          setView("commands");
+        },
+      },
     });
     var details = el("details", { class: "tech qa-tech", id: "qa-sync" }, [
       el("summary", { class: "tech__sum qa" }, [
@@ -5209,105 +5217,14 @@
         el("p", {
           class: "panel__line",
           text:
-            "Keeps this brain's copy of the skills matched to the installed MarketingOS, and " +
-            "updates MarketingOS itself when a newer version is out.",
+            "Ask Claude Code to update MarketingOS and refresh this brain's skills, or find " +
+            "every skill on the Skills page.",
         }),
-        el("div", { class: "btn-row" }, [update, view.button]),
+        el("div", { class: "btn-row" }, [view.button, browse]),
         view.host,
-        readouts,
       ]),
     ]);
-    update.addEventListener("click", function () {
-      if (blocked(update)) return;
-      updateChain(update, readouts, details);
-    });
     return details;
-  }
-
-  /* A flat readout for one step of the chain, with its apply beside it. */
-  function chainReadout(readouts, result, applyLabel, onApply) {
-    var apply = el("button", { class: "btn btn--primary", type: "button", text: applyLabel });
-    apply.addEventListener("click", function () {
-      if (blocked(apply)) return;
-      busy(apply, true, "Applying");
-      onApply(apply);
-    });
-    fill(readouts, [
-      el("div", { class: "readout" }, [
-        el("div", { class: "readout__body" }, [resultCard(result, { title: "What came back", compact: true })]),
-        el("div", { class: "btn-row applybar" }, [apply]),
-      ]),
-    ]);
-    land(readouts.querySelector(".result__title"), resultSummary(result, applyLabel));
-  }
-
-  function chainTrouble(readouts, result, title) {
-    fill(readouts, [
-      el("div", { class: "readout" }, [
-        el("div", { class: "readout__body" }, [resultCard(result, { title: title, compact: true })]),
-      ]),
-    ]);
-    land(readouts.querySelector(".result__title"), resultSummary(result, title));
-  }
-
-  /* Update, then sync: each write previewed, each apply pressed. An update with nothing
-   * to do falls through to the sync; a sync with nothing to do closes with a word. */
-  function updateChain(button, readouts, details) {
-    function plan(command) {
-      var args = baseArgs(command);
-      args.plan = true;
-      return run(command, args);
-    }
-    function apply(command) {
-      var args = baseArgs(command);
-      args.yes = true;
-      return run(command, args);
-    }
-    function done(said) {
-      busy(button, false);
-      fill(button, ["Update now"]);
-      fill(readouts, []);
-      details.removeAttribute("open");
-      toast(said);
-      announce(said);
-      refresh(false);
-    }
-    function syncStep() {
-      return plan("skills sync").then(function (result) {
-        var envelope = result.envelope;
-        if (!envelope || !envelope.ok) return chainTrouble(readouts, result, "The sync could not be prepared");
-        if (!changesOf(envelope).length) return done("Already up to date.");
-        busy(button, false);
-        fill(button, ["Update now"]);
-        chainReadout(readouts, result, "Sync the skills", function () {
-          apply("skills sync").then(function (applied) {
-            if (!applied.envelope || !applied.envelope.ok) return chainTrouble(readouts, applied, "The sync did not finish");
-            done("Skills synced.");
-          });
-        });
-      });
-    }
-    busy(button, true, "Checking");
-    plan("update").then(function (result) {
-      var envelope = result.envelope;
-      if (!envelope || !envelope.ok) {
-        busy(button, false);
-        fill(button, ["Update now"]);
-        return chainTrouble(readouts, result, "The update could not be prepared");
-      }
-      if (!changesOf(envelope).length) return syncStep();
-      busy(button, false);
-      fill(button, ["Update now"]);
-      chainReadout(readouts, result, "Apply the update", function () {
-        apply("update").then(function (applied) {
-          if (!applied.envelope || !applied.envelope.ok) return chainTrouble(readouts, applied, "The update did not finish");
-          return apply("skills sync").then(function (synced) {
-            if (!synced.envelope || !synced.envelope.ok) return chainTrouble(readouts, synced, "The sync did not finish");
-            done("Updated and skills synced.");
-          });
-        });
-      });
-    });
   }
 
   /* ---- assistants ------------------------------------------------------------ */

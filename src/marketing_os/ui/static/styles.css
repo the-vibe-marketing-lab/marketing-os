@@ -183,6 +183,23 @@ samp {
   font-size: 0.875em;
 }
 
+/* Wide content scrolls inside its own box; the page never scrolls sideways. */
+pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.tech__body,
+.readout,
+.readout__body,
+.qa-readouts,
+.todo__readouts,
+.panel__readouts,
+.term-wrap {
+  min-width: 0;
+  max-width: 100%;
+}
+
 a {
   color: var(--accent-hover);
   text-underline-offset: 0.16em;
