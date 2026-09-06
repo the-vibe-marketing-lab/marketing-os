@@ -97,9 +97,12 @@
   --base: 0.22s;
   --lift: translateY(-3px);
 
-  --topbar-h: 0px;
+  --topbar-h: 52px;
   --sidebar-w: 240px;
   --column: 720px;
+  --content: 1240px;
+  --gutter: 32px;
+  --blur-nav: saturate(180%) blur(20px);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -302,19 +305,29 @@ details[open] > summary .disc {
 }
 
 /* ---------------------------------------------------------------- topbar -- */
-/* Narrow screens only: the drawer's handle and the name of the brain on screen. At
-   900px and up the rail is always in view and this bar is not rendered. */
+/* The app bar, on every width: the drawer button (narrow screens), the breadcrumb, and
+   two utilities. Sticky, hairline below, Ink behind a nav blur. */
 .topbar {
-  display: none;
   position: sticky;
   top: 0;
   z-index: 50;
+  display: flex;
   align-items: center;
   gap: 12px;
   height: var(--topbar-h);
-  padding: 0 14px;
+  padding: 0 var(--gutter);
   border-bottom: 1px solid var(--line);
-  background: var(--bg);
+  background: rgba(13, 11, 10, 0.82);
+  backdrop-filter: var(--blur-nav);
+  -webkit-backdrop-filter: var(--blur-nav);
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
 }
 
 .topbar__brain {
@@ -328,8 +341,40 @@ details[open] > summary .disc {
   white-space: nowrap;
 }
 
-.topbar__brain:empty {
+.topbar__brain:empty,
+.topbar__brain:empty + .crumbs__sep {
   display: none;
+}
+
+.crumbs__sep {
+  font-size: 16px;
+  color: var(--ink-3);
+}
+
+.crumbs__here {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.crumbs__here:empty {
+  display: none;
+}
+
+.topbar__tools {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+}
+
+.topbar__tools .btn--icon {
+  min-height: 36px;
+  padding: 6px 12px;
+  color: var(--ink-2);
+  font-size: 14px;
 }
 
 /* ------------------------------------------------------------------ rail -- */
@@ -614,16 +659,17 @@ details[open] > summary .disc {
 
 /* ------------------------------------------------------------------ main -- */
 .main {
-  padding: 56px 40px 120px;
+  padding: 28px var(--gutter) 96px;
 }
 
 .view {
-  max-width: var(--column);
-  margin: 0 auto;
+  max-width: var(--content);
+  margin: 0;
 }
 
-.view--wide {
-  max-width: 1000px;
+/* The forms keep a reading column inside the same shell. */
+.view--form {
+  max-width: var(--column);
 }
 
 /* ------------------------------------------------------------------ boot -- */
@@ -996,47 +1042,411 @@ details[open] > summary .disc {
   margin-left: auto;
 }
 
-/* ---------------------------------------------------------------- ledger -- */
-/* The dashboard is one column of rows separated by hairlines. Each row: a label on
-   the left, the operator's own words on the right, the row's state and one action. */
-.ledger {
-  display: block;
-  margin: 0;
-  padding: 0;
-  border-top: 1px solid var(--line);
+/* ------------------------------------------------------------- overview -- */
+/* The compact header: eyebrow, name with the health word beside it, meta line; the one
+   Ember action at the right. */
+.ov-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+  margin-bottom: 24px;
 }
 
-.ledger__row {
-  display: grid;
-  grid-template-columns: 164px minmax(0, 1fr) auto;
-  gap: 8px 24px;
-  align-items: start;
-  padding: 22px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.ledger__label {
-  padding-top: 3px;
-  color: var(--ink);
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.4;
-}
-
-.ledger__body {
+.ov-head__main {
   min-width: 0;
+  flex: 1 1 24rem;
 }
 
-.ledger__end {
+.ov-head__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  margin-top: 8px;
+}
+
+.ov-head__title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.ov-head__health {
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ov-head__health--needs {
+  color: var(--warn);
+}
+
+.ov-head__health:empty {
+  display: none;
+}
+
+.ov-head .page-head__meta {
+  margin-top: 8px;
+}
+
+.ov-head__actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
-  gap: 6px 14px;
-  padding-top: 1px;
+  gap: 10px;
 }
 
-/* The whole answer as prose, inside an open card. */
+/* State words: ready in Paper, needs you in Sun, optional muted. Typed lowercase. */
+.state {
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.state--needs {
+  color: var(--warn);
+}
+
+.state--optional {
+  color: var(--ink-3);
+}
+
+.state:empty {
+  display: none;
+}
+
+/* The status strip: four peer tiles, each a button to its panel. */
+.strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: border-color var(--fast) var(--ease);
+}
+
+.tile:hover {
+  border-color: var(--control-line);
+}
+
+.tile__label {
+  font-size: 12px;
+}
+
+.tile__value {
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.tile__line {
+  color: var(--ink-2);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.tile .state {
+  margin-top: 4px;
+}
+
+/* The body: two columns, 8/4. */
+.ov {
+  display: grid;
+  grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
+  gap: 20px;
+  margin-top: 20px;
+  align-items: start;
+}
+
+.ov__main,
+.ov__side {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  align-content: start;
+}
+
+/* A panel: Ember's card with a head. Rows inside are hairline-separated. */
+.panel {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.panel__title {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.panel__end {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel__count {
+  color: var(--ink-3);
+  font-size: 14px;
+}
+
+.panel__line {
+  color: var(--ink-2);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.panel__stack > * + * {
+  margin-top: 14px;
+}
+
+.panel__readouts:empty,
+.todo__readouts:empty {
+  display: none;
+}
+
+.panel__readouts .readout,
+.todo__readouts .readout {
+  margin: 0 0 16px;
+}
+
+.panel .readout__body {
+  padding-top: 14px;
+}
+
+.panel__more {
+  margin-top: 14px;
+}
+
+/* The to-do list: one row per finding group, a fix per row. */
+.todos {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+
+.todo {
+  border-bottom: 1px solid var(--line);
+}
+
+.todo__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 0;
+}
+
+.todo__row .row__icon {
+  margin-top: 4px;
+  font-size: 16px;
+}
+
+.todo__text {
+  min-width: 0;
+  flex: 1;
+}
+
+.todo__title {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.todo__sub {
+  margin-top: 3px;
+  color: var(--ink-3);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.todo__action {
+  flex: none;
+  padding-top: 2px;
+}
+
+.todo__readouts {
+  padding-bottom: 14px;
+}
+
+/* Your answers: a dense list, one row per question. The head is the button. */
+.arows {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+
+.arow {
+  border-bottom: 1px solid var(--line);
+}
+
+.arow__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.arow__head {
+  display: grid;
+  grid-template-columns: 11rem auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 4px 14px;
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.arow__name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.arow__line {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink-2);
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arow__end {
+  flex: none;
+}
+
+.arow__body {
+  padding: 4px 0 18px;
+  animation: reveal var(--base) var(--ease);
+}
+
+.arow__body > * + * {
+  margin-top: 12px;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Quick actions: plain rows with the sprite icons and a chevron. */
+.qas {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+
+.qa {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.qa:hover .qa__label {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.qa__icon {
+  flex: none;
+  font-size: 18px;
+  color: var(--ink-3);
+}
+
+.qa__label {
+  flex: 1;
+  min-width: 0;
+}
+
+.qa__go {
+  flex: none;
+  font-size: 16px;
+  color: var(--ink-3);
+}
+
+.qa-tech {
+  margin-top: 0;
+  border-top: 0;
+}
+
+.qa-tech .tech__sum {
+  min-height: 48px;
+}
+
+.qa-tech .tech__body {
+  padding: 4px 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* The whole answer as prose, inside an open row. */
+
 .ledger__prose {
   max-width: 62ch;
 }
@@ -1062,146 +1472,6 @@ details[open] > summary .disc {
   color: var(--ink);
 }
 
-.ledger--foot {
-  margin-top: 24px;
-  border-top: 0;
-}
-
-/* ----------------------------------------------------------------- cards -- */
-/* Ten peer cards: six answers, four checks. Ember's card atom, no shadow, no nesting.
-   The head is the button; the state word is a word. */
-.cards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
-  margin-top: 24px;
-}
-
-.card-check {
-  min-width: 0;
-  padding: 24px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-}
-
-/* An open card takes the full row and closes any other. */
-.card-check--open {
-  grid-column: 1 / -1;
-}
-
-.card-check__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  min-height: 44px;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
-}
-
-.card-check__name {
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.4;
-}
-
-.card-check__state {
-  flex: none;
-  color: var(--ink-2);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.card-check__state--needs {
-  color: var(--warn);
-}
-
-.card-check__state--optional {
-  color: var(--ink-3);
-}
-
-.card-check__state:empty {
-  display: none;
-}
-
-.card-check__line {
-  display: -webkit-box;
-  margin-top: 8px;
-  overflow: hidden;
-  color: var(--ink-2);
-  font-size: 15px;
-  line-height: 1.55;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-/* The details, revealed once, 0.22s. */
-.card-check__body {
-  margin-top: 14px;
-  animation: reveal var(--base) var(--ease);
-}
-
-.card-check__body > * + *,
-.card-check__body > div > * + * {
-  margin-top: 14px;
-}
-
-@keyframes reveal {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* The next-action row. Its one button is the Ember object on the page. */
-.next__title {
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
-}
-
-.next__body {
-  max-width: 56ch;
-  margin-top: 8px;
-  color: var(--ink-3);
-  font-size: 15px;
-  line-height: 1.55;
-}
-
-.next__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-top: 18px;
-}
-
-.next__actions .btn {
-  padding: 10px 18px;
-  font-size: 14px;
-}
-
-.next .readout {
-  margin-top: 18px;
-}
-
-/* A result that lands inside a row: a hairline above it and nothing around it. */
 .readout__body {
   padding-top: 18px;
   border-top: 1px solid var(--line);
@@ -1256,7 +1526,7 @@ details[open] > summary .disc {
 /* ---------------------------------------------------------------- wizard -- */
 .wizard {
   max-width: var(--column);
-  margin: 0 auto;
+  margin: 0;
 }
 
 .stepper {
@@ -2454,8 +2724,8 @@ details[open] > summary .disc {
 /* -------------------------------------------------------------- commands -- */
 .cmd-layout {
   display: grid;
-  grid-template-columns: 17rem minmax(0, 1fr);
-  gap: 40px;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  gap: 32px;
   align-items: start;
 }
 
@@ -2980,19 +3250,13 @@ details.raw > summary:hover {
 
 /* ------------------------------------------------------------ responsive -- */
 @media (max-width: 900px) {
-  :root {
-    --topbar-h: 56px;
-  }
-
-  .topbar,
-  .menu-btn,
-  .drawer-close {
-    display: flex;
-  }
-
   .menu-btn,
   .drawer-close {
     display: inline-flex;
+  }
+
+  .topbar {
+    padding: 0 16px;
   }
 
   .shell {
@@ -3049,23 +3313,26 @@ details.raw > summary:hover {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .cards {
-    grid-template-columns: minmax(0, 1fr);
+  .strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .ledger__row {
+  .arow__head {
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 6px 16px;
   }
 
-  .ledger__label {
+  .arow__line {
     grid-column: 1 / -1;
-    padding-top: 0;
+    display: -webkit-box;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
+}
 
-  .ledger__row > .ledger__end {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
+@media (max-width: 1100px) {
+  .ov {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -3166,8 +3433,7 @@ details.raw > summary:hover {
     font-size: 16px;
   }
 
-  .btn-row .btn,
-  .next__actions .btn {
+  .btn-row .btn {
     flex: 1 1 auto;
   }
 
@@ -3183,12 +3449,46 @@ details.raw > summary:hover {
     padding: 14px;
   }
 
-  .ledger__row {
-    padding: 18px 0;
+  .strip {
+    gap: 10px;
   }
 
-  .card-check {
+  .tile {
+    padding: 16px;
+  }
+
+  .tile__value {
+    font-size: 24px;
+  }
+
+  .panel {
     padding: 18px;
+  }
+
+  .ov-head__title {
+    font-size: 28px;
+  }
+
+  .ov-head__actions .btn {
+    flex: 1 1 auto;
+  }
+
+  .todo__row {
+    flex-wrap: wrap;
+  }
+
+  .todo__action {
+    flex: 1 1 100%;
+    padding-left: 28px;
+  }
+
+  .topbar__tools .btn--icon,
+  .crumbs__here {
+    font-size: 13px;
+  }
+
+  .topbar__tools .btn--icon {
+    min-height: 44px;
   }
 
   /* Every visible control on the dashboard is a 44px target on a phone. */
@@ -3198,9 +3498,6 @@ details.raw > summary:hover {
     min-height: 44px;
   }
 
-  .next__title {
-    font-size: 20px;
-  }
 }
 
 /* -------------------------------------------------- 390px mode options --- */
@@ -3334,7 +3631,9 @@ details.raw > summary:hover {
   .tab,
   .cmd-item,
   .sidebar__action,
-  .card-check__head {
+  .tile,
+  .arow__head,
+  .qa {
     border: 1px solid ButtonText;
   }
 

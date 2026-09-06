@@ -24,7 +24,7 @@
  * What is, and is not, from the server. No envelope value is ever interpolated as markup:
  * every one reaches the DOM as text, through el()'s `text:` or add()'s createTextNode. But
  * a large share of the words on screen are written here rather than reported — CONTEXT_INFO,
- * COMMAND_INFO, ARG_INFO, APPLY_STEPS, the cards' copy and the whole of heroPlan()
+ * COMMAND_INFO, ARG_INFO, APPLY_STEPS, the overview's copy and the whole of heroPlan()
  * are authored copy, keyed off envelope ids. Facts (counts, paths, findings, changes, diffs)
  * come from envelopes; the sentences around them are ours. Do not read heroPlan's diagnoses
  * as something the server said.
@@ -691,6 +691,14 @@
       else openDrawer();
     });
     $("btn-drawer-close").addEventListener("click", closeDrawer);
+    var recheck = $("btn-recheck-top");
+    if (recheck) {
+      recheck.addEventListener("click", function () {
+        refresh(true);
+      });
+    }
+    var openCc = $("btn-open-cc");
+    if (openCc) openCc.addEventListener("click", openClaudeCode);
     $("scrim").addEventListener("click", closeDrawer);
     // Escape closes the drawer from inside it, and from anywhere else on the page: the
     // second listener is a no-op once the first has closed it.
@@ -712,11 +720,27 @@
   }
 
   /* The name of the brain on screen, in the bar. Empty while nothing is open. */
+  var SECTION_NAME = {
+    dashboard: "Overview",
+    commands: "Commands",
+    wizard: "Setting up",
+    interview: "Interview",
+    attach: "Attach",
+  };
+
+  /* The breadcrumb in the app bar: the brain, then the section. */
   function renderTopbarName() {
     var node = $("topbar-brain");
     if (!node) return;
     var onBrain = App.view === "dashboard" || App.view === "commands";
-    node.textContent = onBrain ? activeBrainName() : App.view === "wizard" ? "Setting up a brain" : "";
+    var withBrain = onBrain || App.view === "interview" || App.view === "attach";
+    node.textContent = withBrain ? activeBrainName() : "";
+    var section = $("topbar-section");
+    if (section) section.textContent = SECTION_NAME[App.view] || "";
+    var recheck = $("btn-recheck-top");
+    if (recheck) show(recheck, onBrain);
+    var openCc = $("btn-open-cc");
+    if (openCc) show(openCc, onBrain);
   }
 
   function activeBrainName() {
@@ -3999,53 +4023,106 @@
   function renderDashboard() {
     var status = App.status;
     if (!status) return;
+    var doctor = App.doctor;
     var counts = contextCounts(status);
+    var healthy = Boolean(doctor && doctor.ok);
 
     $("dash-eyebrow").textContent = (MODE_LABEL[status.mode] || "Business brain").toLowerCase();
     $("dash-title").textContent = (status.business && status.business.name) || "This brain";
+    var health = $("dash-health");
+    if (health) {
+      health.textContent = healthy ? "healthy" : "needs attention";
+      health.className = "ov-head__health" + (healthy ? "" : " ov-head__health--needs");
+    }
 
     fill($("dash-meta"), [
-      status.mode ? el("span", { class: "meta__item", text: MODE_SHORT[status.mode] || status.mode }) : null,
-      el("span", {
-        class: "meta__item",
-        text: counts.requiredDone + " of " + counts.required + " required",
-      }),
+      el("span", { class: "meta__item", text: "Folder: " + folderName(status.repo) }),
       el("span", {
         class: "meta__item",
         text: plural((status.installed_skills || []).length, "shared skill"),
       }),
-      el("span", { class: "meta__item", text: "Folder: " + folderName(status.repo) }),
+      el("span", {
+        class: "meta__item",
+        text: counts.requiredDone + " of " + counts.required + " required",
+      }),
     ]);
 
-    cards.open = null;
-    var answers = answerCards(status);
-    var checks = checkCards(status, App.doctor);
+    panels.open = null;
+    var todo = todoPanel(status);
+    var answers = answersPanel(status);
+    var assistants = assistantsPanel(status);
+    var navigation = navigationPanel();
+    var quick = quickPanel(status, counts);
+
+    // The one Ember object on the page: the header's primary. Its readout lands flat
+    // at the top of the to-do panel, where the fix it previews is listed.
+    var plan = heroPlan(status);
+    var actions = $("dash-actions");
+    if (actions) {
+      fill(
+        actions,
+        plan.actions.map(function (action, index) {
+          return heroButton(action, todo.readouts, index === 0);
+        })
+      );
+    }
+
     fill($("dash-body"), [
-      el("div", { class: "ledger" }, [nextRow(status)]),
-      el("div", { class: "cards" }, answers.nodes.concat(checks.nodes)),
-      el("div", { class: "ledger ledger--foot" }, [openRow(status)]),
+      statusStrip(status, doctor, counts, {
+        answers: answers,
+        structure: todo,
+        assistants: assistants,
+        findings: todo,
+      }),
+      el("div", { class: "ov" }, [
+        el("div", { class: "ov__main" }, [todo.node, answers.node]),
+        el("div", { class: "ov__side" }, [quick.node, assistants.node, navigation.node]),
+      ]),
     ]);
     fillAnswers(answers.entries, App.path);
-    fillNavigation(checks.navigation, App.path);
+    fillNavigation(navigation, App.path);
   }
 
-  /* ================================================================= cards */
+  /* ============================================================== overview */
 
-  /* The dashboard: the next action, then one grid of ten peer cards, six answers and
-   * four checks, each with a name, a state word and one line, opening in place to its
-   * details. The answers are not in the state envelope, so they are read once per brain
-   * through `mos context show`; the navigation check is read once through `mos index
-   * status`. Both reach the page as text. */
+  /* The overview: a compact header with the one action, a strip of four status tiles,
+   * then two columns of panels. Left, what needs doing and the operator's answers;
+   * right, quick actions, the assistants and the navigation check. The answers are not
+   * in the state envelope, so they are read once per brain through `mos context show`;
+   * the navigation check is read once through `mos index status`. Both reach the page
+   * as text. */
 
   var ledger = { answers: {}, pending: {}, navigation: {}, navPending: {} };
-  var cards = { open: null };
+  var panels = { open: null };
 
-  function ledgerRow(label, body, end, extra) {
-    return el("div", { class: "ledger__row" + (extra ? " " + extra : "") }, [
-      el("p", { class: "ledger__label", text: label }),
-      body,
-      end ? el("div", { class: "ledger__end" }, end) : null,
-    ]);
+  /* An Ember card with a head: title, optional right-hand end. Rows inside it are
+   * separated by hairlines, never boxed. */
+  function panel(id, title, end, kids) {
+    var head = el("h2", { class: "panel__title", id: "panel-" + id + "-title", text: title });
+    var node = el(
+      "section",
+      { class: "panel", id: "panel-" + id, "aria-labelledby": "panel-" + id + "-title" },
+      [el("div", { class: "panel__head" }, [head, end ? el("div", { class: "panel__end" }, end) : null]), kids]
+    );
+    return { node: node, head: head };
+  }
+
+  /* Bring a panel into view and put focus on its title. */
+  function goPanel(target) {
+    var node = target && target.node;
+    if (!node) return;
+    if (node.scrollIntoView) node.scrollIntoView({ block: "start" });
+    land(target.head || node);
+  }
+
+  function stateWord(word) {
+    return el("span", {
+      class:
+        "state" +
+        (word === "needs you" ? " state--needs" : "") +
+        (word === "optional" ? " state--optional" : ""),
+      text: word,
+    });
   }
 
   /* The operator's words, read as prose: frontmatter dropped, the document title
@@ -4110,49 +4187,261 @@
     );
   }
 
-  /* One card. The head is the button: name, then the state word. The line under it is
-   * the closed state; opening swaps the line for the details, widens the card to the
-   * full row and closes whichever card was open. Details are built on first open. */
-  function card(id, name, state, lineText, buildBody) {
-    var panelId = "card-" + String(id).replace(/[^a-z0-9-]/gi, "-");
-    var api = {};
-    var built = false;
-    var stateWord = el("span", { class: "card-check__state" });
-    var head = el(
+  /* ---- the status strip -------------------------------------------------- */
+
+  function tile(id, label, value, line, state, target) {
+    return el(
       "button",
       {
-        class: "card-check__head",
+        class: "tile",
         type: "button",
-        "aria-expanded": "false",
-        "aria-controls": panelId,
+        "aria-controls": "panel-" + target,
+        on: {
+          click: function () {
+            goPanel(id);
+          },
+        },
       },
-      [el("span", { class: "card-check__name", text: name }), stateWord]
+      [
+        el("span", { class: "tile__label eyebrow", text: label }),
+        el("span", { class: "tile__value", text: value }),
+        el("span", { class: "tile__line", text: line }),
+        stateWord(state),
+      ]
     );
-    var line = el("p", { class: "card-check__line", text: lineText });
-    var body = el("div", { class: "card-check__body", id: panelId, hidden: true });
-    var node = el("section", { class: "card-check", "aria-label": name }, [head, line, body]);
+  }
 
-    function setState(word) {
-      stateWord.textContent = word;
-      stateWord.className =
-        "card-check__state" +
-        (word === "needs you" ? " card-check__state--needs" : "") +
-        (word === "optional" ? " card-check__state--optional" : "");
+  function statusStrip(status, doctor, counts, targets) {
+    var checks = (doctor && doctor.checks) || {};
+    var runtimes = status.runtimes || {};
+    var runtimeKeys = Object.keys(runtimes);
+    var ready = runtimeKeys.filter(function (key) {
+      return runtimes[key].ready;
+    });
+    var structural = findingsOf(status).filter(function (item) {
+      return item && STRUCTURE_CODES.indexOf(item.code) !== -1;
+    });
+    var structureOk = checks.structure !== false;
+    var total = findingsTotal(status);
+    var errors = severityCount(status, "error");
+    var warnings = severityCount(status, "warning");
+    var answersOk = counts.requiredDone === counts.required;
+    return el("div", { class: "strip", role: "list", "aria-label": "Status" }, [
+      tile(
+        targets.answers,
+        "answers",
+        counts.requiredDone + "/" + counts.required,
+        counts.optional
+          ? counts.optionalDone + " of " + counts.optional + " optional answered"
+          : "required questions answered",
+        answersOk ? "ready" : "needs you",
+        "answers"
+      ),
+      tile(
+        targets.structure,
+        "structure",
+        structureOk ? "0" : String(structural.length || errors),
+        structureOk ? "everything where it should be" : "out of place",
+        structureOk ? "ready" : "needs you",
+        "todo"
+      ),
+      tile(
+        targets.assistants,
+        "assistants",
+        ready.length + "/" + runtimeKeys.length,
+        runtimeKeys.length
+          ? runtimeKeys
+              .map(function (key) {
+                return RUNTIME_LABEL[key] || key;
+              })
+              .join(" · ")
+          : "none detected",
+        runtimeKeys.length && ready.length === runtimeKeys.length ? "ready" : "needs you",
+        "assistants"
+      ),
+      tile(
+        targets.findings,
+        "findings",
+        String(total),
+        total ? plural(errors, "error") + ", " + plural(warnings, "warning") : "nothing to fix",
+        total ? "needs you" : "ready",
+        "todo"
+      ),
+    ]);
+  }
+
+  /* ---- do this next -------------------------------------------------------- */
+
+  var TODO_LIMIT = 6;
+
+  function todoAction(status, group, container) {
+    var code = group.code;
+    if (code === "missing-file" || code === "missing-directory") {
+      var repair = repairPlan(status);
+      var plan = repair.actions.filter(function (action) {
+        return action.kind === "plan-apply" && action.command === "onboard";
+      })[0];
+      if (plan) return heroButton(plan, container, false);
+      return heroButton({ kind: "run", label: "Show everything the check found", command: "validate" }, container, false);
+    }
+    if (code === "unlinked-document") {
+      return heroButton(
+        { kind: "plan-apply", label: "Preview the links", command: "related", applyLabel: "Add the links" },
+        container,
+        false
+      );
+    }
+    var text = fixPromptText(status, group.items);
+    return el("button", {
+      class: "btn btn--secondary btn--sm",
+      type: "button",
+      text: "Copy the prompt",
+      title: "Copy a prompt for Claude Code that fixes this",
+      on: {
+        click: function () {
+          copy(text, "Prompt copied");
+        },
+      },
+    });
+  }
+
+  function todoRow(status, group) {
+    var look = severityIcon(group.severity);
+    var words = findingWords(group);
+    var n = group.items.length;
+    var readouts = el("div", { class: "todo__readouts" });
+    return el("li", { class: "todo" }, [
+      el("div", { class: "todo__row" }, [
+        icon(look.name, "row__icon " + look.cls),
+        el("div", { class: "todo__text" }, [
+          el("p", { class: "todo__title", text: words.title }),
+          el("p", {
+            class: "todo__sub",
+            text: (n > 1 ? "In " + plural(n, "place") + ". " : "") + (words.fix || ""),
+          }),
+        ]),
+        el("div", { class: "todo__action" }, [todoAction(status, group, readouts)]),
+      ]),
+      readouts,
+    ]);
+  }
+
+  function todoPanel(status) {
+    var findings = findingsOf(status);
+    var groups = groupFindings(findings);
+    var shown = groups.slice(0, TODO_LIMIT);
+    var more = groups.length - shown.length;
+    var readouts = el("div", { class: "panel__readouts" });
+    var kids = [readouts];
+    if (!groups.length) {
+      var plan = heroPlan(status);
+      kids.push(el("p", { class: "panel__line", text: "Nothing needs you right now." }));
+      kids.push(
+        el(
+          "div",
+          { class: "btn-row" },
+          plan.actions.map(function (action) {
+            return heroButton(action, readouts, false);
+          })
+        )
+      );
+    } else {
+      kids.push(el("ul", { class: "todos", role: "list" }, shown.map(function (group) {
+        return todoRow(status, group);
+      })));
+      if (more > 0) {
+        kids.push(
+          el("div", { class: "btn-row panel__more" }, [
+            el("p", { class: "panel__line", text: "And " + plural(more, "more thing", "more things") + " the check found." }),
+            el("button", {
+              class: "btn btn--ghost btn--sm",
+              type: "button",
+              text: "Open the checker",
+              on: {
+                click: function () {
+                  selectCommand("validate");
+                  setView("commands");
+                },
+              },
+            }),
+          ])
+        );
+      }
+      kids.push(tech([promptBox(fixPromptText(status, findings))], "Ask Claude Code to fix it"));
+    }
+    var built = panel("todo", "Do this next", groups.length ? [el("span", { class: "panel__count", text: plural(findingsTotal(status), "thing") })] : null, kids);
+    built.readouts = readouts;
+    return built;
+  }
+
+  /* ---- your answers --------------------------------------------------------- */
+
+  /* One row per business question: name, state word, the first line of the answer,
+   * and a ghost Change. The head is the button; opening swaps the line for the whole
+   * answer as prose, and closes whichever row was open. Details are built on open. */
+  function answerRow(key, field, isRequired) {
+    var info = contextInfo(key);
+    var source = fieldSource(field);
+    var answered = source !== "missing";
+    var entry = { key: key, field: field, info: info, answered: answered, record: null };
+    var panelId = "answer-" + String(key).replace(/[^a-z0-9-]/gi, "-");
+    var api = {};
+    var built = false;
+    var word = stateWord(answered ? "ready" : isRequired ? "needs you" : "optional");
+    var line = el("span", { class: "arow__line", text: info.body });
+    var head = el(
+      "button",
+      { class: "arow__head", type: "button", "aria-expanded": "false", "aria-controls": panelId },
+      [el("span", { class: "arow__name", text: info.title }), word, line]
+    );
+    var body = el("div", { class: "arow__body", id: panelId, hidden: true });
+    var change = el("button", {
+      class: "btn btn--ghost btn--sm",
+      type: "button",
+      text: answered ? "Change" : "Answer",
+      title:
+        (answered ? "Change your answer about " : "Answer the question about ") +
+        info.title.toLowerCase(),
+      on: {
+        click: function () {
+          openInterview(key);
+        },
+      },
+    });
+    var node = el("li", { class: "arow" }, [
+      el("div", { class: "arow__row" }, [head, el("div", { class: "arow__end" }, [change])]),
+      body,
+    ]);
+
+    function build() {
+      var record = entry.record;
+      var text = record && record.body ? String(record.body) : "";
+      var question = record && record.question ? String(record.question) : "";
+      var where = source === "discovered" ? field.discovered_path || "" : "";
+      if (text) {
+        return [prose(text), where ? el("p", { class: "row__path", text: "Found in " + where }) : null];
+      }
+      return [
+        el("div", { class: "ledger__prose" }, [
+          question ? el("p", { text: question }) : null,
+          el("p", { text: answered ? "The answer on file could not be read." : info.body }),
+        ]),
+      ];
     }
     function setOpen(on) {
-      if (on && cards.open && cards.open !== api) cards.open.close();
+      if (on && panels.open && panels.open !== api) panels.open.close();
       head.setAttribute("aria-expanded", on ? "true" : "false");
       show(body, on);
       show(line, !on);
-      setClass(node, "card-check--open", on);
+      setClass(node, "arow--open", on);
       if (on) {
-        cards.open = api;
+        panels.open = api;
         if (!built) {
           built = true;
-          fill(body, buildBody());
+          fill(body, build());
         }
-      } else if (cards.open === api) {
-        cards.open = null;
+      } else if (panels.open === api) {
+        panels.open = null;
       }
     }
     head.addEventListener("click", function () {
@@ -4166,94 +4455,62 @@
     });
 
     api.node = node;
-    api.line = line;
-    api.head = head;
-    api.setState = setState;
-    api.setLine = function (text) {
-      line.textContent = text;
-    };
     api.close = function () {
       setOpen(false);
     };
     api.isOpen = function () {
       return head.getAttribute("aria-expanded") === "true";
     };
-    /* Details built from fresh facts: used when an answer or a check arrives after the
-     * card was already open. */
+    api.setLine = function (text) {
+      line.textContent = text;
+    };
+    api.setState = function (text) {
+      word.textContent = text;
+    };
     api.rebuild = function () {
       built = false;
       if (api.isOpen()) {
         built = true;
-        fill(body, buildBody());
+        fill(body, build());
       }
     };
-    setState(state);
-    return api;
-  }
-
-  /* ---- the six answers ---------------------------------------------------- */
-
-  function answerCard(key, field, isRequired) {
-    var info = contextInfo(key);
-    var source = fieldSource(field);
-    var answered = source !== "missing";
-    var entry = { key: key, field: field, info: info, answered: answered, record: null };
-    var change = function () {
-      return el("button", {
-        class: "btn btn--ghost btn--sm",
-        type: "button",
-        text: answered ? "Change" : "Answer",
-        title:
-          (answered ? "Change your answer about " : "Answer the question about ") +
-          info.title.toLowerCase(),
-        on: {
-          click: function () {
-            openInterview(key);
-          },
-        },
-      });
-    };
-    entry.card = card(
-      "answer-" + key,
-      info.title,
-      answered ? "ready" : isRequired ? "needs you" : "optional",
-      info.body,
-      function () {
-        var record = entry.record;
-        var body = record && record.body ? String(record.body) : "";
-        var question = record && record.question ? String(record.question) : "";
-        var where = source === "discovered" ? field.discovered_path || "" : "";
-        if (body) {
-          return [
-            prose(body),
-            where ? el("p", { class: "row__path", text: "Found in " + where }) : null,
-            el("div", { class: "btn-row" }, [change()]),
-          ];
-        }
-        return [
-          el("div", { class: "ledger__prose" }, [
-            question ? el("p", { text: question }) : null,
-            el("p", { text: answered ? "The answer on file could not be read." : info.body }),
-          ]),
-          el("div", { class: "btn-row" }, [change()]),
-        ];
-      }
-    );
+    entry.card = api;
     return entry;
   }
 
-  function answerCards(status) {
+  function answersPanel(status) {
     var counts = contextCounts(status);
     var required = (status.context || {}).required || [];
     var entries = counts.order.map(function (key) {
-      return answerCard(key, counts.fields[key], required.indexOf(key) !== -1);
+      return answerRow(key, counts.fields[key], required.indexOf(key) !== -1);
     });
-    return {
-      entries: entries,
-      nodes: entries.map(function (entry) {
-        return entry.card.node;
-      }),
-    };
+    var built = panel(
+      "answers",
+      "Your answers",
+      [
+        el("button", {
+          class: "btn btn--ghost btn--sm",
+          type: "button",
+          text: counts.requiredDone < counts.required ? "Answer the rest" : "Review",
+          on: {
+            click: function () {
+              openInterview(null);
+            },
+          },
+        }),
+      ],
+      entries.length
+        ? el(
+            "ul",
+            { class: "arows", role: "list" },
+            entries.map(function (entry) {
+              return entry.card.node;
+            })
+          )
+        : emptyState("Nothing to show", "This brain reports no context files at all. Run the validator.")
+    );
+    built.entries = entries;
+    return built;
   }
 
   /* The line is the operator's own first sentence once it has been read. */
@@ -4299,35 +4556,6 @@
   function forgetAnswers(path) {
     delete ledger.answers[normPath(path)];
     delete ledger.navigation[normPath(path)];
-  }
-
-  /* The next action, built from heroPlan. Its primary button is the one Ember object on
-   * the page. */
-  function nextRow(status) {
-    var plan = heroPlan(status);
-    var actions = el("div", { class: "next__actions" });
-    var body = el("div", { class: "ledger__body next" }, [
-      el("h2", { class: "next__title", text: plan.title }),
-      el("p", { class: "next__body", text: plan.body }),
-      actions,
-    ]);
-    plan.actions.forEach(function (action, index) {
-      actions.appendChild(heroButton(action, body, index === 0));
-    });
-    // The same fix, as a prompt for the operator's own assistant: one click away so the
-    // row keeps its one action, and never empty because it is built from the findings.
-    var problems = findingsOf(status).filter(function (item) {
-      return item && item.severity === "error";
-    });
-    if (!problems.length) {
-      problems = findingsOf(status).filter(function (item) {
-        return item && item.severity === "warning";
-      });
-    }
-    if (problems.length) {
-      add(body, tech([promptBox(fixPromptText(status, problems))], "Ask Claude Code to fix it"));
-    }
-    return ledgerRow("Do this next", body, null, "ledger__row--next");
   }
 
   function heroButton(action, card, primary) {
@@ -4422,6 +4650,15 @@
             setClass(button, "btn--primary", false);
             setClass(button, "btn--secondary", true);
           }
+          // The header's primary steps back too while an apply is on offer: the page
+          // keeps one Ember object, and a refresh after the apply restores it.
+          Array.prototype.forEach.call(
+            document.querySelectorAll("#dash-actions .btn--primary"),
+            function (other) {
+              setClass(other, "btn--primary", false);
+              setClass(other, "btn--secondary", true);
+            }
+          );
         }
         land(panel.querySelector(".result__title"), resultSummary(result, action.label));
       });
@@ -4625,227 +4862,185 @@
     return el("div", { class: "btn-row" }, [heroButton(action, container, false)]);
   }
 
-  function structureCard(status, doctor) {
-    var checks = (doctor && doctor.checks) || {};
-    var ok = checks.structure !== false;
-    var errors = severityCount(status, "error");
-    var findings = findingsOf(status).filter(function (item) {
-      return item && STRUCTURE_CODES.indexOf(item.code) !== -1;
-    });
-    var body = el("div", {});
-    return card(
-      "structure",
-      "Structure",
-      ok ? "ready" : "needs you",
-      ok ? "Every folder and file is where it should be." : plural(errors, "thing") + " out of place.",
-      function () {
-        var repair = repairPlan(status);
-        var plan = repair.actions.filter(function (action) {
-          return action.kind === "plan-apply" && action.command === "onboard";
-        })[0];
-        fill(body, [
-          findings.length
-            ? findingRows(findings)
-            : el("p", { class: "card__sub", text: "The last check found nothing out of place." }),
-          plan && !ok ? planAction(plan, body) : null,
-          findings.length ? promptBox(fixPromptText(status, findings)) : null,
-        ]);
-        return [body];
-      }
+  /* ---- quick actions ----------------------------------------------------- */
+
+  /* The exact lines for opening this brain in Claude Code, behind a disclosure. No
+   * launcher is invented. */
+  function claudeLines(status) {
+    var repo = status.repo || App.path;
+    return [
+      el("p", { class: "tech__line", text: "Open a terminal in this folder and start Claude Code, then type /mos-start." }),
+      el("p", { class: "tech__line" }, ["This brain is at ", el("code", { text: repo, title: repo }), "."]),
+      terminal('cd "' + repo + '"', "Go to the folder"),
+      terminal("claude", "Start Claude Code"),
+      el("p", { class: "tech__line" }, [
+        "Then, inside Claude Code, type ",
+        el("code", { text: "/mos-start" }),
+        ".",
+      ]),
+      el("div", { class: "btn-row" }, [
+        el("button", {
+          class: "btn btn--secondary btn--sm",
+          type: "button",
+          text: "Copy that path",
+          on: {
+            click: function () {
+              copy(repo, "Folder path copied");
+            },
+          },
+        }),
+      ]),
+    ];
+  }
+
+  function quickRow(iconName, label, onClick) {
+    return el(
+      "button",
+      { class: "qa", type: "button", on: { click: onClick } },
+      [icon(iconName, "qa__icon"), el("span", { class: "qa__label", text: label }), icon("chevron", "qa__go")]
     );
   }
 
-  function assistantsCard(status) {
+  function quickPanel(status, counts) {
+    var missing = (status.context && status.context.missing) || [];
+    var complete = counts.requiredDone === counts.required;
+    var open = el("details", { class: "tech qa-tech", id: "qa-open-cc" }, [
+      el("summary", { class: "tech__sum qa" }, [
+        icon("terminal", "qa__icon"),
+        el("span", { class: "qa__label", text: "Open this brain in Claude Code" }),
+        icon("down", "disc qa__go"),
+      ]),
+      el("div", { class: "tech__body" }, claudeLines(status)),
+    ]);
+    return panel("quick", "Quick actions", null, [
+      el("div", { class: "qas" }, [
+        open,
+        quickRow("chat", complete ? "Review your answers" : "Answer the questions", function () {
+          openInterview(complete ? null : missing[0] || null);
+        }),
+        quickRow("refresh", "Sync the assistant skills", function () {
+          setView("commands");
+          selectCommand("skills sync");
+        }),
+        quickRow("terminal", "See every command", function () {
+          setView("commands");
+        }),
+      ]),
+    ]);
+  }
+
+  /* The app bar's shortcut: the same disclosure, opened and focused. */
+  function openClaudeCode() {
+    if (App.view !== "dashboard") setView("dashboard");
+    var details = $("qa-open-cc");
+    if (!details) return;
+    details.setAttribute("open", "");
+    var summary = details.querySelector("summary");
+    if (summary && summary.scrollIntoView) summary.scrollIntoView({ block: "center" });
+    if (summary) summary.focus();
+  }
+
+  /* ---- assistants ------------------------------------------------------------ */
+
+  function assistantsPanel(status) {
     var runtimes = status.runtimes || {};
     var keys = Object.keys(runtimes);
     var allReady = keys.every(function (key) {
       return runtimes[key].ready;
     });
-    var notReady = keys.filter(function (key) {
-      return !runtimes[key].ready;
-    });
-    var line = !keys.length
-      ? "No assistants detected."
-      : allReady
-        ? keys
-            .map(function (key) {
-              return (RUNTIME_LABEL[key] || key) + " ready";
-            })
-            .join(" · ")
-        : notReady
-            .map(function (key) {
-              return RUNTIME_LABEL[key] || key;
-            })
-            .join(" and ") + " cannot see the current skills.";
-    var body = el("div", {});
-    return card("assistants", "Assistants", keys.length && allReady ? "ready" : "needs you", line, function () {
-      var rows = el(
-        "ul",
-        { class: "rows", role: "list" },
-        keys.map(function (key) {
-          var runtime = runtimes[key];
-          var problems = (runtime.missing || []).length + (runtime.mismatched || []).length;
-          return el("li", { class: "row" }, [
-            icon(runtime.ready ? "check" : "alert", "row__icon " + (runtime.ready ? "row__icon--ok" : "row__icon--warn")),
-            el("div", { class: "row__body" }, [
-              el("p", { class: "row__msg", text: RUNTIME_LABEL[key] || key }),
-              el("p", {
-                class: "row__sub",
-                text: runtime.ready
-                  ? "Up to date with this version's skills."
-                  : plural((runtime.missing || []).length, "skill") +
-                    " missing, " +
-                    (runtime.mismatched || []).length +
-                    " out of date",
-              }),
-            ]),
-            el("span", { class: "row__end" }, [
-              el("span", {
-                class: runtime.ready ? "pill pill--ok" : "pill pill--warn",
-                text: runtime.ready ? "Ready" : plural(problems, "problem"),
-              }),
-            ]),
-          ]);
-        })
-      );
-      fill(body, [
-        keys.length ? rows : emptyState("No assistants detected", "Nothing reported a skill folder here."),
-        keys.length && !allReady
-          ? planAction(
-              {
-                kind: "plan-apply",
-                label: "Preview the fix",
-                command: "skills sync",
-                applyLabel: "Apply the sync",
-              },
-              body
-            )
-          : null,
-        keys.length
-          ? tech(
-              [
-                el(
-                  "ul",
-                  { class: "changes changes--static", role: "list" },
-                  keys.map(function (key) {
-                    return el("li", {
-                      text: (RUNTIME_LABEL[key] || key) + " -> " + runtimes[key].skill_dir,
-                    });
-                  })
-                ),
-              ],
-              "Show each assistant's skill folder"
-            )
-          : null,
-      ]);
-      return [body];
-    });
-  }
-
-  function findingsCard(status) {
-    var findings = findingsOf(status);
-    var total = findingsTotal(status);
-    var withheld = total - findings.length;
-    return card(
-      "findings",
-      "Findings",
-      total ? "needs you" : "ready",
-      total ? plural(total, "thing") + " found, errors first" : "Nothing to fix",
-      function () {
-        var recheck = el("button", {
-          class: "btn btn--ghost btn--sm",
-          type: "button",
-          title: "Re-check this brain",
-          "aria-label": "Re-check this brain",
-          on: {
-            click: function () {
-              refresh(true);
-            },
-          },
-        });
-        add(recheck, [icon("refresh"), el("span", { text: "Re-check" })]);
-        var actions = [recheck];
-        if (withheld) {
-          actions.unshift(
-            el("button", {
-              class: "btn btn--ghost btn--sm",
-              type: "button",
-              text: "Open the checker",
-              on: {
-                click: function () {
-                  selectCommand("validate");
-                  setView("commands");
-                },
-              },
-            })
-          );
-        }
-        return [
-          findings.length
-            ? findingRows(findings)
-            : el("p", {
-                class: "card__sub",
-                text: "The last check came back clean. Anything that needs doing is at the top of this page.",
-              }),
-          findings.length ? promptBox(fixPromptText(status, findings)) : null,
-          // The count is the checker's own, always. Only the rows are ever shortened,
-          // and when they are this says so.
-          withheld
-            ? el("p", {
-                class: "card__sub",
-                text:
-                  "It found " +
-                  plural(total, "thing") +
-                  "; the first " +
-                  findings.length +
-                  " are here, errors before warnings. " +
-                  plural(withheld, "finding") +
-                  " not listed.",
-              })
-            : null,
-          el("div", { class: "btn-row" }, actions),
-        ];
-      }
+    var body = el("div", { class: "panel__stack" });
+    var rows = el(
+      "ul",
+      { class: "rows", role: "list" },
+      keys.map(function (key) {
+        var runtime = runtimes[key];
+        var problems = (runtime.missing || []).length + (runtime.mismatched || []).length;
+        return el("li", { class: "row" }, [
+          icon(runtime.ready ? "check" : "alert", "row__icon " + (runtime.ready ? "row__icon--ok" : "row__icon--warn")),
+          el("div", { class: "row__body" }, [
+            el("p", { class: "row__msg", text: RUNTIME_LABEL[key] || key }),
+            el("p", {
+              class: "row__sub",
+              text: runtime.ready
+                ? "Up to date with this version's skills."
+                : plural((runtime.missing || []).length, "skill") +
+                  " missing, " +
+                  (runtime.mismatched || []).length +
+                  " out of date",
+            }),
+          ]),
+          el("span", { class: "row__end" }, [stateWord(runtime.ready ? "ready" : "needs you")]),
+        ]);
+      })
     );
+    fill(body, [
+      keys.length ? rows : el("p", { class: "panel__line", text: "No assistants detected. Nothing reported a skill folder here." }),
+      keys.length && !allReady
+        ? planAction(
+            { kind: "plan-apply", label: "Preview the fix", command: "skills sync", applyLabel: "Apply the sync" },
+            body
+          )
+        : null,
+      keys.length
+        ? tech(
+            [
+              el(
+                "ul",
+                { class: "changes changes--static", role: "list" },
+                keys.map(function (key) {
+                  return el("li", { text: (RUNTIME_LABEL[key] || key) + " -> " + runtimes[key].skill_dir });
+                })
+              ),
+            ],
+            "Show each assistant's skill folder"
+          )
+        : null,
+    ]);
+    return panel("assistants", "Assistants", [stateWord(keys.length && allReady ? "ready" : "needs you")], [body]);
   }
 
-  /* The navigation check is read once per brain through `mos index status`; until it
-   * answers the card says so and carries no state word. */
-  function navigationCard() {
+  /* ---- navigation ------------------------------------------------------------ */
+
+  /* Read once per brain through `mos index status`; until it answers the panel says
+   * so and carries no state word. */
+  function navigationPanel() {
     var entry = { envelope: null, failed: false };
-    var body = el("div", {});
-    entry.card = card("navigation", "Navigation", "", "Checking the navigation.", function () {
-      var envelope = entry.envelope;
-      var findings = envelope ? findingsOf(envelope) : [];
-      fill(body, [
-        !envelope
-          ? el("p", {
-              class: "card__sub",
-              text: entry.failed ? "The navigation could not be checked." : "Still checking.",
-            })
-          : findings.length
-            ? findingRows(findings)
-            : el("p", { class: "card__sub", text: "The catalogue and the navigation map match what is on disk." }),
-        findings.length
-          ? planAction(
-              {
-                kind: "plan-apply",
-                label: "Rebuild the navigation",
-                command: "index sync",
-                applyLabel: "Rebuild it",
-              },
-              body
-            )
-          : null,
-      ]);
-      return [body];
-    });
+    var word = stateWord("");
+    var line = el("p", { class: "panel__line", text: "Checking the navigation." });
+    var body = el("div", { class: "panel__stack" }, [line]);
+    var built = panel("navigation", "Navigation", [word], [body]);
+    entry.node = built.node;
+    entry.head = built.head;
+    entry.card = {
+      setLine: function (text) {
+        line.textContent = text;
+      },
+      setState: function (text) {
+        word.textContent = text;
+        word.className = "state" + (text === "needs you" ? " state--needs" : "");
+      },
+      rebuild: function () {
+        var envelope = entry.envelope;
+        var findings = envelope ? findingsOf(envelope) : [];
+        // The rows carry the sentence once findings exist; the line stands in until then.
+        fill(body, [
+          findings.length ? null : line,
+          findings.length ? findingRows(findings) : null,
+          findings.length
+            ? planAction(
+                { kind: "plan-apply", label: "Rebuild the navigation", command: "index sync", applyLabel: "Rebuild it" },
+                body
+              )
+            : null,
+        ]);
+      },
+    };
     return entry;
   }
 
   function navigationLine(envelope) {
     var groups = groupFindings(findingsOf(envelope));
-    if (!groups.length) return "Up to date";
+    if (!groups.length) return "Up to date. The catalogue and the navigation map match what is on disk.";
     return findingWords(groups[0]).title;
   }
 
@@ -4879,62 +5074,6 @@
       if (normPath(App.path) !== key) return;
       apply(envelope);
     });
-  }
-
-  function checkCards(status, doctor) {
-    var navigation = navigationCard();
-    return {
-      navigation: navigation,
-      nodes: [
-        structureCard(status, doctor).node,
-        assistantsCard(status).node,
-        findingsCard(status).node,
-        navigation.card.node,
-      ],
-    };
-  }
-
-  /* The closing row. No launcher is invented: the exact lines sit behind the technical
-   * disclosure with a copy button each. */
-  function openRow(status) {
-    var repo = status.repo || App.path;
-    var body = el("div", { class: "ledger__body" }, [
-      el("p", { class: "ledger__line", text: "Open this brain in Claude Code" }),
-      el("p", {
-        class: "next__body",
-        text: "Open a terminal in this folder and start Claude Code, then type /mos-start.",
-      }),
-      tech(
-        [
-          el("p", { class: "tech__line" }, [
-            "This brain is at ",
-            el("code", { text: repo, title: repo }),
-            ".",
-          ]),
-          terminal('cd "' + repo + '"', "Go to the folder"),
-          terminal("claude", "Start Claude Code"),
-          el("p", { class: "tech__line" }, [
-            "Then, inside Claude Code, type ",
-            el("code", { text: "/mos-start" }),
-            ".",
-          ]),
-          el("div", { class: "btn-row" }, [
-            el("button", {
-              class: "btn btn--secondary btn--sm",
-              type: "button",
-              text: "Copy that path",
-              on: {
-                click: function () {
-                  copy(repo, "Folder path copied");
-                },
-              },
-            }),
-          ]),
-        ],
-        "Show the exact lines"
-      ),
-    ]);
-    return ledgerRow("Claude Code", body, null, "ledger__row--open-brain");
   }
 
   /* =============================================================== commands */

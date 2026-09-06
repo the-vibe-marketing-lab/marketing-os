@@ -24,7 +24,10 @@ All notable changes to marketing-os are recorded here. Versions follow
   exact lines behind the technical disclosure. A row opens in place into the whole answer
   as prose. Pinned on 2026-09-06: the six answers and four checks (structure,
   assistants, findings, navigation) are one grid of Ember cards, each with a ready or
-  needs-you state word and one line, opening in place to its details. The answers are read once per brain through `mos context show` and reach the
+  needs-you state word and one line, opening in place to its details. Pinned again the same day: the app reads as a SaaS overview, with a 52px app bar
+  on every width, a compact header carrying the one action, four status tiles, and
+  panels for what needs doing, the answers, quick actions, the assistants and the
+  navigation check. The answers are read once per brain through `mos context show` and reach the
   page as text, never markup. The rail carries the brains, Set up a brain (or another),
   the two section links, and Attach a folder beside Refresh; the top bar is drawn only
   below 900px, where it is the drawer's handle. Commands are tiered everyday, maintenance

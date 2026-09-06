@@ -234,8 +234,14 @@ Ember's radii, plus two smaller steps the app needs for controls: 8px (`sm`) for
 
 ## Components
 
-### The check card (`.cards`, `.card-check`, `.card-check__head`, `.card-check__name`, `.card-check__state`, `.card-check__line`, `.card-check__body`, `.card-check--open`)
-The dashboard's unit: ten peer cards in one grid (two columns at 900px and up, 20px gap), six answers then four checks. Ember's card atom: Surface, 1px Mist, 18px radius, 24px padding, no shadow, nothing nested. The head is a `<button>` with `aria-expanded` and `aria-controls`: the name in Figtree 700 15px Paper, then the state word at the end (`ink-2` "ready", Sun "needs you", `ink-3` "optional"; typed lowercase, uppercased at 0.1em). Under it one line in `ink-2` 15px clamped to two lines: the answer's first sentence, or the check's plain sentence. Opening swaps the line for `.card-check__body` (prose at 62ch or finding rows, one ghost action), widens the card to the full row (`grid-column: 1 / -1`), closes any other open card, and reveals once in 0.22s (4px rise and fade); Escape closes and refocuses the head.
+### App bar (`.topbar`, `.crumbs`, `.topbar__brain`, `.crumbs__here`, `.topbar__tools`)
+52px, sticky, on every width: Ink at 82% behind `--blur-nav`, hairline below, 32px gutters (16px below 900). Left, the drawer button (below 900) and the breadcrumb: brain name in Paper 700 15px, the sprite chevron, the section in `ink-3`. Right, two ghost icon buttons (Re-check, Open in Claude Code) at 36px, labels visually hidden below 640.
+
+### Status tile (`.strip`, `.tile`, `.tile__label`, `.tile__value`, `.tile__line`, `.state`)
+Four peer tiles in a row (2x2 below 900), each a `<button>` to its panel: Ember card (Surface, Mist, 18px radius, 20px padding, no shadow), eyebrow label, value in Bricolage 600 28px tabular, one `ink-2` 15px line, then the state word (`.state`: `ink-2` "ready", Sun "needs you", `ink-3` "optional"; typed lowercase, uppercased at 0.1em). Hover lifts the border to `control-line`; never Ember.
+
+### Panel (`.panel`, `.panel__head`, `.panel__title`, `.panel__end`, `.todos`, `.arows`, `.qas`)
+Ember's card with a head: title in Figtree 700 16px, an optional count or ghost action at the right. Rows inside are hairline-separated, never boxed: to-do rows (severity icon, sentence, fix line, one secondary action), answer rows (name, state word, first line clamped to one line, ghost Change; the head is a button and opening swaps the line for the prose, one open at a time, Escape closes) and quick-action rows (sprite icon, label, chevron). The prompt box and the terminal blocks are the one contained element a panel may hold. Layout: 8/4 columns at 1100px and up, one column below; 20px gaps.
 
 ### The next-action row (`.next__title`, `.next__body`, `.next__actions`)
 Bricolage 600 22px title, `ink-3` 15px body at 56ch, then the view's one primary button and a ghost beside it.
