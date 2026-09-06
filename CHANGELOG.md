@@ -34,6 +34,9 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ### Fixed
 
+- **The mobile drawer contains focus.** Open, it now puts a scrim over the page, makes the
+  page inert so no Tab stop or screen reader lands behind it, closes on a tap outside, and
+  closes on Escape from anywhere rather than only while focus was already inside it.
 - **The dashboard reads findings to the operator in plain words.** The hero card keyed
   a fixed sentence off the next-action id, so a missing `CONTRACT.md` was announced as
   "files are not where the schema expects them" with a migrate button that could not
