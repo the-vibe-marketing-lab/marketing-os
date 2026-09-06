@@ -1364,7 +1364,8 @@
     return { title: title, fix: copy.fix };
   }
 
-  function findingRow(group) {
+  function findingRow(group, opts) {
+    var behind = Boolean(opts && opts.pathsBehind);
     var look = severityIcon(group.severity);
     var words = findingWords(group);
     var paths = group.items
@@ -1375,7 +1376,22 @@
     var body = [el("p", { class: "row__msg", text: words.title })];
     if (words.fix) body.push(el("p", { class: "row__sub", text: words.fix }));
     // Envelope-reported file locations: the checker's own data, not our prose.
-    if (paths.length === 1) {
+    if (behind && paths.length) {
+      body.push(
+        tech(
+          [
+            el(
+              "ul",
+              { class: "row__paths", role: "list" },
+              paths.map(function (path) {
+                return el("li", { class: "row__path", text: path });
+              })
+            ),
+          ],
+          "Show where"
+        )
+      );
+    } else if (paths.length === 1) {
       body.push(el("p", { class: "row__path", text: paths[0] }));
     } else if (paths.length > 1) {
       body.push(
@@ -1400,8 +1416,14 @@
     ]);
   }
 
-  function findingRows(findings) {
-    return el("ul", { class: "rows", role: "list" }, groupFindings(findings).map(findingRow));
+  function findingRows(findings, opts) {
+    return el(
+      "ul",
+      { class: "rows", role: "list" },
+      groupFindings(findings).map(function (group) {
+        return findingRow(group, opts);
+      })
+    );
   }
 
   function emptyState(title, body, iconName) {
@@ -1514,23 +1536,27 @@
 
     add(
       body,
-      el("div", { class: "result__head" }, [
+      el("div", { class: "result__head" + (opts.compact ? " result__head--compact" : "") }, [
         el("h2", { class: "result__title", text: opts.title || "What came back" }),
         el("span", {
           class: envelope.ok ? "pill pill--ok" : "pill pill--err",
           text: !envelope.ok
-            ? "Needs attention"
+            ? "Needs you"
             : envelope.planned
               ? "Preview only, nothing written"
               : "Done",
         }),
-        errors.length
+        // Inside a row or a panel the head carries one label; the findings rows below
+        // say what is wrong, and the elapsed time goes behind the disclosure.
+        errors.length && !opts.compact
           ? el("span", { class: "pill pill--err", text: plural(errors.length, "problem") })
           : null,
-        warnings.length
+        warnings.length && !opts.compact
           ? el("span", { class: "pill pill--warn", text: plural(warnings.length, "warning") })
           : null,
-        el("span", { class: "result__elapsed", text: (result.elapsed / 1000).toFixed(1) + "s" }),
+        opts.compact
+          ? null
+          : el("span", { class: "result__elapsed", text: (result.elapsed / 1000).toFixed(1) + "s" }),
       ])
     );
 
@@ -1570,6 +1596,15 @@
         "Show the command line and the raw result"
       )
     );
+    if (opts.compact) {
+      // The command line and the raw result live behind one disclosure; the elapsed
+      // time goes in with them.
+      var raw = body.querySelector("details.tech");
+      var rawBody = raw && raw.querySelector(".tech__body");
+      if (rawBody) {
+        add(rawBody, el("p", { class: "result__elapsed", text: "Took " + (result.elapsed / 1000).toFixed(1) + "s." }));
+      }
+    }
     return body;
   }
 
@@ -1802,7 +1837,7 @@
           },
         },
       });
-      add(chip, [el("span", { class: "chip__tick", "aria-hidden": "true" }), option.label]);
+      add(chip, [el("span", { class: "chip__tick", "aria-hidden": "true" }, [icon("check")]), option.label]);
       return chip;
     });
     fill($("path-chips"), nodes);
@@ -4031,7 +4066,7 @@
     $("dash-title").textContent = (status.business && status.business.name) || "This brain";
     var health = $("dash-health");
     if (health) {
-      health.textContent = healthy ? "healthy" : "needs attention";
+      health.textContent = healthy ? "ready" : "needs you";
       health.className = "ov-head__health" + (healthy ? "" : " ov-head__health--needs");
     }
 
@@ -4281,6 +4316,11 @@
       var plan = repair.actions.filter(function (action) {
         return action.kind === "plan-apply" && action.command === "onboard";
       })[0];
+      // The header's primary already runs this plan; one control per action.
+      var lead = heroPlan(status).actions[0];
+      if (plan && lead && lead.kind === "plan-apply" && lead.command === "onboard") {
+        return el("p", { class: "todo__pointer", text: "Use the button above." });
+      }
       if (plan) return heroButton(plan, container, false);
       return heroButton({ kind: "run", label: "Show everything the check found", command: "validate" }, container, false);
     }
@@ -4369,7 +4409,7 @@
       }
       kids.push(tech([promptBox(fixPromptText(status, findings))], "Ask Claude Code to fix it"));
     }
-    var built = panel("todo", "Do this next", groups.length ? [el("span", { class: "panel__count", text: plural(findingsTotal(status), "thing") })] : null, kids);
+    var built = panel("todo", "Do this next", groups.length ? [el("span", { class: "panel__count", text: groups.length + " to do" })] : null, kids);
     built.readouts = readouts;
     return built;
   }
@@ -4387,7 +4427,7 @@
     var panelId = "answer-" + String(key).replace(/[^a-z0-9-]/gi, "-");
     var api = {};
     var built = false;
-    var word = stateWord(answered ? "ready" : isRequired ? "needs you" : "optional");
+    var word = stateWord(answered ? "" : isRequired ? "needs you" : "optional");
     var line = el("span", { class: "arow__line", text: info.body });
     var head = el(
       "button",
@@ -4419,7 +4459,10 @@
       var question = record && record.question ? String(record.question) : "";
       var where = source === "discovered" ? field.discovered_path || "" : "";
       if (text) {
-        return [prose(text), where ? el("p", { class: "row__path", text: "Found in " + where }) : null];
+        return [
+          prose(text),
+          where ? tech([el("p", { class: "row__path", text: where })], "Show where this was found") : null,
+        ];
       }
       return [
         el("div", { class: "ledger__prose" }, [
@@ -4488,6 +4531,7 @@
       "answers",
       "Your answers",
       [
+        stateWord(counts.requiredDone === counts.required ? "ready" : "needs you"),
         el("button", {
           class: "btn btn--ghost btn--sm",
           type: "button",
@@ -4631,6 +4675,7 @@
             resultCard(result, {
               emptyChanges: "Everything is already in place.",
               title: "What came back",
+              compact: true,
             }),
           ]),
         ]);
@@ -4681,7 +4726,7 @@
       busy(apply, true, "Applying");
       run(action.command, args).then(function (applied) {
         fill(panel, [
-          el("div", { class: "readout__body" }, [resultCard(applied, { title: "What changed" })]),
+          el("div", { class: "readout__body" }, [resultCard(applied, { title: "What changed", compact: true })]),
         ]);
         refresh(false);
         // This button has just been removed from the DOM. Put the operator on the result
@@ -4969,7 +5014,7 @@
                   " out of date",
             }),
           ]),
-          el("span", { class: "row__end" }, [stateWord(runtime.ready ? "ready" : "needs you")]),
+          runtime.ready ? null : el("span", { class: "row__end" }, [stateWord("needs you")]),
         ]);
       })
     );
@@ -5025,7 +5070,7 @@
         // The rows carry the sentence once findings exist; the line stands in until then.
         fill(body, [
           findings.length ? null : line,
-          findings.length ? findingRows(findings) : null,
+          findings.length ? findingRows(findings, { pathsBehind: true }) : null,
           findings.length
             ? planAction(
                 { kind: "plan-apply", label: "Rebuild the navigation", command: "index sync", applyLabel: "Rebuild it" },

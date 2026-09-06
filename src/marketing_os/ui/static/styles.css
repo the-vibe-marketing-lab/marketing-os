@@ -1032,6 +1032,10 @@ details[open] > summary .disc {
   font-size: 15px;
 }
 
+.meta__item {
+  white-space: nowrap;
+}
+
 .meta__item + .meta__item::before {
   content: "\00b7";
   margin: 0 9px;
@@ -1092,8 +1096,12 @@ details[open] > summary .disc {
   display: none;
 }
 
+.ov-head .em-rule {
+  margin-top: 14px;
+}
+
 .ov-head .page-head__meta {
-  margin-top: 8px;
+  margin-top: 12px;
 }
 
 .ov-head__actions {
@@ -1309,6 +1317,31 @@ details[open] > summary .disc {
   padding-bottom: 14px;
 }
 
+.todo__pointer {
+  color: var(--ink-3);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* A readout inside a row or a panel sits under the panel's title: row-size title, one
+   label, the elapsed time behind the disclosure. */
+.todo__readouts .result__title,
+.panel__readouts .result__title {
+  font-family: var(--font);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.todo__readouts .result__head,
+.panel__readouts .result__head {
+  margin-bottom: 12px;
+}
+
+details.raw .result__elapsed {
+  margin-top: 8px;
+}
+
 /* Your answers: a dense list, one row per question. The head is the button. */
 .arows {
   display: grid;
@@ -1437,11 +1470,26 @@ details[open] > summary .disc {
 }
 
 .qa-tech .tech__sum {
+  gap: 12px;
   min-height: 48px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.qa-tech .tech__sum:hover .qa__label {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.qa-tech .tech__sum .disc {
+  font-size: 16px;
 }
 
 .qa-tech .tech__body {
-  padding: 4px 0 16px;
+  padding: 12px 0 16px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -1578,18 +1626,23 @@ details[open] > summary .disc {
 
 /* Not colour alone (SC 1.4.1): a completed step swaps its digit for a tick, and
    .stepper__state carries the word for anyone who cannot see either. */
+.stepper__tick {
+  display: none;
+  font-size: 14px;
+  color: var(--ok-ink);
+}
+
 .stepper__item[data-state="done"] .stepper__dot {
   border-color: var(--ink);
   background: var(--ink);
-  color: transparent;
-  font-size: 0;
 }
 
-.stepper__item[data-state="done"] .stepper__dot::after {
-  content: "\2713";
-  color: var(--ok-ink);
-  font-size: 13px;
-  font-weight: 700;
+.stepper__item[data-state="done"] .stepper__num {
+  display: none;
+}
+
+.stepper__item[data-state="done"] .stepper__tick {
+  display: block;
 }
 
 .stepper__item[data-state="current"] {
@@ -1828,12 +1881,14 @@ details[open] > summary .disc {
   background: var(--ink);
 }
 
-.chip--place[aria-pressed="true"] .chip__tick::after {
-  content: "\2713";
+.chip__tick .icon {
+  display: none;
+  font-size: 12px;
   color: var(--ok-ink);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
+}
+
+.chip--place[aria-pressed="true"] .chip__tick .icon {
+  display: block;
 }
 
 /* SC 2.5.8: the label box is the target, so it carries the 24px minimum itself and

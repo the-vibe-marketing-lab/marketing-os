@@ -406,7 +406,8 @@ def test_the_selected_place_is_not_signalled_by_colour_alone() -> None:
     """Both critics found neither option rendering as selected."""
     assert '"aria-pressed": pressed ? "true" : "false"' in JS
     assert '.chip--place[aria-pressed="true"]' in CSS
-    assert ".chip--place[aria-pressed=\"true\"] .chip__tick::after" in CSS
+    # The tick is the sprite's check, shown only when pressed (it used to be a text glyph).
+    assert ".chip--place[aria-pressed=\"true\"] .chip__tick .icon" in CSS
 
 
 def test_the_confirmation_and_the_option_are_built_from_one_phrase() -> None:
