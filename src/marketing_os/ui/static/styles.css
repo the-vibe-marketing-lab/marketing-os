@@ -1201,6 +1201,58 @@ details[open] > summary .disc {
   margin-top: 18px;
 }
 
+/* A result that lands inside a row: a hairline above it and nothing around it. */
+.readout__body {
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.result__next {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--ink-2);
+}
+
+.result__next .icon {
+  flex: none;
+  margin-top: 4px;
+  color: var(--ink-3);
+}
+
+/* A prompt the operator pastes into Claude Code: the same block as a terminal line, in
+   prose rather than mono, with the copy button underneath. */
+.prompt {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r);
+  background: var(--term-bg);
+}
+
+.prompt__cap {
+  margin: 0 0 8px;
+  color: var(--ink-3);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.prompt__text {
+  margin: 0;
+  color: var(--term-ink);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.prompt .btn-row {
+  margin-top: 12px;
+}
+
 /* ---------------------------------------------------------------- wizard -- */
 .wizard {
   max-width: var(--column);

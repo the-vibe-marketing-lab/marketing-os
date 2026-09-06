@@ -7,6 +7,10 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ### Changed
 
+- **A prompt to paste into Claude Code.** The Structure and Findings cards, and the
+  next-action row behind "Ask Claude Code to fix it", carry a copyable prompt built from
+  the checker's findings: what is wrong, where, and what to do about each, with the
+  brain's own onboard command filled in.
 - **The local app wears the Lab's Ember system, and the dashboard is a ledger.** The app
   is branded MarketingOS: a live-text wordmark in Bricolage Grotesque, Figtree for
   everything else, both vendored as woff2 inside the wheel because the page's CSP allows

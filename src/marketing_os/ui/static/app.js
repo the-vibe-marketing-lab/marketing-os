@@ -1211,6 +1211,103 @@
     },
   };
 
+  /* What to ask Claude Code to do about a finding, one clause per code. The prompt the
+   * operator copies is built from these plus the checker's own paths; a code without a
+   * clause gets a generic one, so the prompt is never empty. Authored copy. */
+  var FIX_STEP = {
+    "missing-file":
+      "add the missing required files by running the onboard command for this brain with " +
+      "--plan first and then with --yes; it only creates what does not exist",
+    "missing-directory":
+      "add the missing required folders by running the onboard command for this brain with " +
+      "--plan first and then with --yes; it only creates what does not exist",
+    "missing-frontmatter":
+      "add the summary header (the contract block described in CONTRACT.md at the root of " +
+      "the brain) to each document listed, keeping its body exactly as it is",
+    "missing-connective-key":
+      "add a sources, related, or produced_by line to the summary header of each document " +
+      "listed",
+    "output-without-sources": "add the sources each deliverable listed was built from to its summary header",
+    "unlinked-document": "run mos related with --plan, review the proposed links, then run it with --yes",
+    "unknown-top-level": "run mos migrate with --plan, review where each item would go, then apply it",
+    "no-catalog": "run the index build command",
+    "stale-catalog": "run the index build command",
+    "invalid-type": "correct the type in each summary header listed to one the contract allows",
+    "invalid-status": "correct the status in each summary header listed to one the contract allows",
+  };
+
+  function fixPromptText(status, findings) {
+    var repo = status.repo || App.path;
+    var name = (status.business || {}).name || "";
+    var mode = status.mode || "in-house";
+    var groups = groupFindings(findings);
+    var lines = groups.map(function (group) {
+      var words = findingWords(group);
+      var paths = group.items
+        .map(function (item) {
+          return item.path;
+        })
+        .filter(Boolean);
+      var shown = paths.slice(0, 12);
+      var more = paths.length - shown.length;
+      return (
+        "- " +
+        words.title +
+        (shown.length ? " (" + shown.join(", ") + (more > 0 ? ", and " + more + " more" : "") + ")" : "")
+      );
+    });
+    var steps = [];
+    var seen = {};
+    groups.forEach(function (group) {
+      var step = FIX_STEP[group.code] || "fix what the checker's message describes";
+      if (seen[step]) return;
+      seen[step] = true;
+      steps.push("- " + findingWords(group).title + " " + step + ".");
+    });
+    var onboard =
+      'mos onboard --name "' + name + '" --mode ' + mode + (mode === "client" ? ' --agency "<agency name>"' : "") + " --plan .";
+    var NL = "\n";
+    return (
+      "I am working in the MarketingOS brain at " +
+      repo +
+      ". Running `mos validate .` there reports:" +
+      NL +
+      NL +
+      lines.join(NL) +
+      NL +
+      NL +
+      "Please fix each one, in this folder:" +
+      NL +
+      steps.join(NL) +
+      NL +
+      NL +
+      "The onboard command for this brain is: " +
+      onboard +
+      " (then the same with --yes instead of --plan). Leave my answers and the body of every " +
+      "document exactly as they are. When you are done, run `mos validate .` again and show " +
+      "me what it reports."
+    );
+  }
+
+  function promptBox(text) {
+    return el("div", { class: "prompt" }, [
+      el("p", { class: "prompt__cap", text: "Paste this into Claude Code" }),
+      el("pre", { class: "prompt__text", text: text }),
+      el("div", { class: "btn-row" }, [
+        el("button", {
+          class: "btn btn--secondary btn--sm",
+          type: "button",
+          text: "Copy the prompt",
+          on: {
+            click: function () {
+              copy(text, "Prompt copied");
+            },
+          },
+        }),
+      ]),
+    ]);
+  }
+
   /* Findings that share a code are one thing that is wrong in several places, and are
    * read as one row: ten documents without a header is one sentence and a list of ten
    * paths, not ten sentences. Order is the checker's, errors first, first appearance. */
@@ -4217,6 +4314,19 @@
     plan.actions.forEach(function (action, index) {
       actions.appendChild(heroButton(action, body, index === 0));
     });
+    // The same fix, as a prompt for the operator's own assistant: one click away so the
+    // row keeps its one action, and never empty because it is built from the findings.
+    var problems = findingsOf(status).filter(function (item) {
+      return item && item.severity === "error";
+    });
+    if (!problems.length) {
+      problems = findingsOf(status).filter(function (item) {
+        return item && item.severity === "warning";
+      });
+    }
+    if (problems.length) {
+      add(body, tech([promptBox(fixPromptText(status, problems))], "Ask Claude Code to fix it"));
+    }
     return ledgerRow("Do this next", body, null, "ledger__row--next");
   }
 
@@ -4538,6 +4648,7 @@
             ? findingRows(findings)
             : el("p", { class: "card__sub", text: "The last check found nothing out of place." }),
           plan && !ok ? planAction(plan, body) : null,
+          findings.length ? promptBox(fixPromptText(status, findings)) : null,
         ]);
         return [body];
       }
@@ -4676,6 +4787,7 @@
                 class: "card__sub",
                 text: "The last check came back clean. Anything that needs doing is at the top of this page.",
               }),
+          findings.length ? promptBox(fixPromptText(status, findings)) : null,
           // The count is the checker's own, always. Only the rows are ever shortened,
           // and when they are this says so.
           withheld
