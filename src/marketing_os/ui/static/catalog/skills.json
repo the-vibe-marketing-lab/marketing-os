@@ -1,0 +1,322 @@
+{
+  "schema": "mos.skill-catalog.v1",
+  "generated": "2026-09-06",
+  "org": "https://github.com/orgs/the-vibe-marketing-lab/repositories",
+  "repos": [
+    {
+      "repo": "marketing-os",
+      "label": "Built in",
+      "blurb": "Ships with MarketingOS. Installed by mos install.",
+      "description": "An AI second brain to scale your marketing \u2014 files you own, driven by a deterministic CLI.",
+      "url": "https://github.com/the-vibe-marketing-lab/marketing-os",
+      "branch": "main",
+      "count": 9
+    },
+    {
+      "repo": "marketing-os-skills",
+      "label": "Knowledge library",
+      "blurb": "The default wiki skills and the index of every pack.",
+      "description": "The default skills that ship alongside the MarketingOS engine: a self-maintaining knowledge library (wiki ingest, query, lint) plus the index of every mos-*-skills pack. From The Vibe Marketing Lab.",
+      "url": "https://github.com/the-vibe-marketing-lab/marketing-os-skills",
+      "branch": "main",
+      "count": 3
+    },
+    {
+      "repo": "mos-copywriting-skills",
+      "label": "Copywriting",
+      "blurb": "Research ladder, framework-driven copy, proofread QA.",
+      "description": "The Copywriting Blueprint for Claude Code: a 6-step research ladder, framework-driven copywriting (Sugarman, Kennedy, Ogilvy, Caples, Halbert) and a single-lens proofread QA. From The Vibe Marketing Lab.",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-copywriting-skills",
+      "branch": "main",
+      "count": 3
+    },
+    {
+      "repo": "mos-geo-skills",
+      "label": "GEO",
+      "blurb": "Getting cited by AI search.",
+      "description": "GEO skills for Claude Code. Skill 1: mos-geo-llm-buttons, which scrapes a client site, detects the stack, extracts the brand palette, and generates an implementation brief, code reference and in-brand demo for LLM share buttons.",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-geo-skills",
+      "branch": "main",
+      "count": 1
+    },
+    {
+      "repo": "mos-hormozi-skills",
+      "label": "Offers",
+      "blurb": "Avatar, offer and money-model workbooks, the $100M chain.",
+      "description": "Offer-building skills for Claude Code: customer avatar, offer and money-model workbooks, plus the interactive $100M chain (offer, leads, money models, GTM one-pager). Independent implementations of Alex Hormozi's frameworks. From The Vibe Marketing Lab.",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-hormozi-skills",
+      "branch": "main",
+      "count": 5
+    },
+    {
+      "repo": "mos-smma-skills",
+      "label": "Social",
+      "blurb": "LinkedIn and X posts in your voice.",
+      "description": "Social media marketing skills for Claude Code: LinkedIn and X posts in your voice, from a topic or repurposed from long-form content. From The Vibe Marketing Lab.",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-smma-skills",
+      "branch": "main",
+      "count": 2
+    },
+    {
+      "repo": "mos-yt-skills",
+      "label": "YouTube",
+      "blurb": "Channel transcripts and subtitles, fast.",
+      "description": "YouTube research skills for Claude Code: scrape a whole channel into readable Markdown transcripts in seconds (no API key), or download SRT subtitles. From The Vibe Marketing Lab.",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-yt-skills",
+      "branch": "main",
+      "count": 2
+    }
+  ],
+  "skills": [
+    {
+      "name": "mos-bet",
+      "command": "/mos-bet",
+      "repo": "marketing-os",
+      "path": "src/marketing_os/assets/skills/mos-bet",
+      "url": "https://github.com/the-vibe-marketing-lab/marketing-os/tree/main/src/marketing_os/assets/skills/mos-bet",
+      "summary": "Open, update, close, list, or narrate a falsifiable business bet stored as a dated decision artifact.",
+      "description": "Open, update, close, list, or narrate a falsifiable business bet stored as a dated decision artifact.",
+      "bundled": true
+    },
+    {
+      "name": "mos-end",
+      "command": "/mos-end",
+      "repo": "marketing-os",
+      "path": "src/marketing_os/assets/skills/mos-end",
+      "url": "https://github.com/the-vibe-marketing-lab/marketing-os/tree/main/src/marketing_os/assets/skills/mos-end",
+      "summary": "Close a marketing-os session by recording the current focus, logging what changed, and proposing a safe commit.",
+      "description": "Close a marketing-os session by recording the current focus, logging what changed, and proposing a safe commit.",
+      "bundled": true
+    },
+    {
+      "name": "mos-help",
+      "command": "/mos-help",
+      "repo": "marketing-os",
+      "path": "src/marketing_os/assets/skills/mos-help",
+      "url": "https://github.com/the-vibe-marketing-lab/marketing-os/tree/main/src/marketing_os/assets/skills/mos-help",
+      "summary": "Explain marketing-os setup, architecture, routing, status, validation, and Claude Code or Codex wiring.",
+      "description": "Explain marketing-os setup, architecture, routing, status, validation, and Claude Code or Codex wiring.",
+      "bundled": true
+    },
+    {
+      "name": "mos-migrate",
+      "command": "/mos-migrate",
+      "repo": "marketing-os",
+      "path": "src/marketing_os/assets/skills/mos-migrate",
+      "url": "https://github.com/the-vibe-marketing-lab/marketing-os/tree/main/src/marketing_os/assets/skills/mos-migrate",
+      "summary": "Migrate a messy folder into the canonical marketing-os structure.",
+      "description": "Migrate a messy folder into the canonical marketing-os structure. You produce the routing plan (the judgement); `mos migrate` applies it deterministically and safely. Use when files exist but are not in canonical locations, or when adopting an existing folder.",
+      "bundled": true
+    },
+    {
+      "name": "mos-onboard",
+      "command": "/mos-onboard",
+      "repo": "marketing-os",
+      "path": "src/marketing_os/assets/skills/mos-onboard",
+      "url": "https://github.com/the-vibe-marketing-lab/marketing-os/tree/main/src/marketing_os/assets/skills/mos-onboard",
+      "summary": "Create a new marketing brain or complete an existing one \u2014 scaffold, git, the context interview, and (for agencies) client registration.",
+      "description": "Create a new marketing brain or complete an existing one \u2014 scaffold, git, the context interview, and (for agencies) client registration. Use this whenever someone wants to set up, create, initialise, scaffold, onboard, or finish setting up a marketing-os business brain, whether it's a brand-new folder or an existing repo missing its context. The single front door for standing up a brain.",
+      "bundled": true
+    },
+    {
+      "name": "mos-start",
+      "command": "/mos-start",
+      "repo": "marketing-os",
+      "path": "src/marketing_os/assets/skills/mos-start",
+      "url": "https://github.com/the-vibe-marketing-lab/marketing-os/tree/main/src/marketing_os/assets/skills/mos-start",
+      "summary": "Start or resume work from deterministic repository facts and recommend one useful next action.",
+      "description": "Start or resume work from deterministic repository facts and recommend one useful next action.",
+      "bundled": true
+    },
+    {
+      "name": "mos-status",
+      "command": "/mos-status",
+      "repo": "marketing-os",
+      "path": "src/marketing_os/assets/skills/mos-status",
+      "url": "https://github.com/the-vibe-marketing-lab/marketing-os/tree/main/src/marketing_os/assets/skills/mos-status",
+      "summary": "Give a deterministic marketing-os briefing of what is healthy, what context is missing, and the single next action.",
+      "description": "Give a deterministic marketing-os briefing of what is healthy, what context is missing, and the single next action.",
+      "bundled": true
+    },
+    {
+      "name": "mos-think",
+      "command": "/mos-think",
+      "repo": "marketing-os",
+      "path": "src/marketing_os/assets/skills/mos-think",
+      "url": "https://github.com/the-vibe-marketing-lab/marketing-os/tree/main/src/marketing_os/assets/skills/mos-think",
+      "summary": "Research a marketing question from repository truth, decide with the operator, and codify the decision as durable memory.",
+      "description": "Research a marketing question from repository truth, decide with the operator, and codify the decision as durable memory.",
+      "bundled": true
+    },
+    {
+      "name": "mos-update",
+      "command": "/mos-update",
+      "repo": "marketing-os",
+      "path": "src/marketing_os/assets/skills/mos-update",
+      "url": "https://github.com/the-vibe-marketing-lab/marketing-os/tree/main/src/marketing_os/assets/skills/mos-update",
+      "summary": "Update the marketing-os engine, then refresh the bundled skills and verify runtime wiring.",
+      "description": "Update the marketing-os engine, then refresh the bundled skills and verify runtime wiring.",
+      "bundled": true
+    },
+    {
+      "name": "mos-wiki-ingest",
+      "command": "/mos-wiki-ingest",
+      "repo": "marketing-os-skills",
+      "path": "mos-wiki-ingest",
+      "url": "https://github.com/the-vibe-marketing-lab/marketing-os-skills/tree/main/mos-wiki-ingest",
+      "summary": "Ingest source material into the LLM Wiki \u2014 reads sources from knowledge/raw/, URLs, or conversation context, then compiles into wiki pages with wikilinks, updates indexes, and logs the ingest.",
+      "description": "Ingest source material into the LLM Wiki \u2014 reads sources from knowledge/raw/, URLs, or conversation context, then compiles into wiki pages with wikilinks, updates indexes, and logs the ingest. Use when: user says 'ingest this', 'ingest knowledge/raw/', 'process this source', 'add to wiki', 'compile this into the wiki', 'wiki ingest', drops a file in knowledge/raw/ and wants it processed, pastes content and says to add it to the knowledge base, or provides a URL to compile into wiki pages. Also triggers when the user asks a research question and the answer should be filed into the wiki.",
+      "bundled": false
+    },
+    {
+      "name": "mos-wiki-lint",
+      "command": "/mos-wiki-lint",
+      "repo": "marketing-os-skills",
+      "path": "mos-wiki-lint",
+      "url": "https://github.com/the-vibe-marketing-lab/marketing-os-skills/tree/main/mos-wiki-lint",
+      "summary": "Health check the LLM Wiki \u2014 scan for orphan pages, stale data, missing cross-references, contradictions, index mismatches, and data gaps.",
+      "description": "Health check the LLM Wiki \u2014 scan for orphan pages, stale data, missing cross-references, contradictions, index mismatches, and data gaps. Produces an actionable report and optionally auto-fixes issues. Use when: user says 'wiki lint', 'health check the wiki', 'wiki health check', 'check the wiki', 'lint wiki', 'wiki audit', 'clean up the wiki', 'wiki maintenance', or wants to verify wiki integrity. Also useful after a large batch of ingests or when the wiki feels stale.",
+      "bundled": false
+    },
+    {
+      "name": "mos-wiki-query",
+      "command": "/mos-wiki-query",
+      "repo": "marketing-os-skills",
+      "path": "mos-wiki-query",
+      "url": "https://github.com/the-vibe-marketing-lab/marketing-os-skills/tree/main/mos-wiki-query",
+      "summary": "Answer questions from the LLM Wiki the disciplined way \u2014 read the index first, open only the pages you need, synthesise a cited answer, then file genuinely new knowledge back into the wiki.",
+      "description": "Answer questions from the LLM Wiki the disciplined way \u2014 read the index first, open only the pages you need, synthesise a cited answer, then file genuinely new knowledge back into the wiki. Use when: user asks a question about a wiki domain, says 'query the wiki', 'ask the wiki', 'what does the wiki say about', 'what do we know about', 'search my knowledge base', 'pull from the wiki', 'wiki query', or wants an answer grounded in their compiled knowledge rather than re-read from raw sources.",
+      "bundled": false
+    },
+    {
+      "name": "mos-copy-research",
+      "command": "/mos-copy-research",
+      "repo": "mos-copywriting-skills",
+      "path": "mos-copy-research",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-copywriting-skills/tree/main/mos-copy-research",
+      "summary": "Mandatory research preflight that runs the 6-step research ladder BEFORE any copywriting is written, so copy is grounded in real reader language, not guesses.",
+      "description": "Mandatory research preflight that runs the 6-step research ladder BEFORE any copywriting is written, so copy is grounded in real reader language, not guesses. Maintains a COMPOUNDING avatar knowledge system \u2014 an append-only Avatar Knowledge Log (every new learning about the reader) synthesised into the canonical Research Bank (One Reader, DNIC, Transformation & Decision map, IVOC, FABD) \u2014 and locks the per-piece One Idea / Offer / Action. Interactive: mines real sources, then confirms via clickable questions. Modes: full ladder, express, --learn (capture one new insight), --harvest (auto-mine new DMs/calls), --refresh (re-synthesise). Multi-avatar (your main business by default; each client or separate offer gets its own library). Use when: user says 'copy research', 'research preflight', 'research ladder', 'build the research bank', 'refresh the research', 'capture this about the avatar', 'log this learning', 'harvest the DMs', OR automatically as the gate before any copywriting skill (skool post, X, LinkedIn, email, about page, sales page, offer) when no fresh Research Bank exists.",
+      "bundled": false
+    },
+    {
+      "name": "mos-copywriting",
+      "command": "/mos-copywriting",
+      "repo": "mos-copywriting-skills",
+      "path": "mos-copywriting",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-copywriting-skills/tree/main/mos-copywriting",
+      "summary": "Write, review, or improve marketing copy using distilled frameworks from Sugarman, Kennedy, Ogilvy, Caples, and Halbert.",
+      "description": "Write, review, or improve marketing copy using distilled frameworks from Sugarman, Kennedy, Ogilvy, Caples, and Halbert. Supports headlines, ads, emails, landing pages, sales letters, VSLs, social posts, and copy reviews. Use when: user says 'write copy', 'copywriting', 'headlines', 'sales letter', 'email copy', 'ad copy', 'landing page copy', 'VSL script', 'review my copy', 'copy review', 'critique this copy', 'map triggers', or wants help with any marketing copy.",
+      "bundled": false
+    },
+    {
+      "name": "mos-proofread",
+      "command": "/mos-proofread",
+      "repo": "mos-copywriting-skills",
+      "path": "mos-proofread",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-copywriting-skills/tree/main/mos-proofread",
+      "summary": "World-class copywriting QA / proofread.",
+      "description": "World-class copywriting QA / proofread. Runs a draft through ordered single-lens passes (strategic \u2192 structure \u2192 clarity \u2192 CUT \u2192 voice \u2192 mechanics \u2192 read-aloud), scores each, and returns line-referenced rewrites. Use when: user says 'proofread', 'proofread my copy', 'QA this copy', 'qa my copy', 'review the mechanics', 'tighten this copy', 'cut this copy', 'is this copy ready to ship', 'edit this draft', '/mos-proofread', or hands over any near-final email / landing page / ad / post / sales letter / VSL and wants it pressure-tested before publishing. This is the QA/feedback layer \u2014 for writing copy from scratch use mos-copywriting.",
+      "bundled": false
+    },
+    {
+      "name": "mos-geo-llm-buttons",
+      "command": "/mos-geo-llm-buttons",
+      "repo": "mos-geo-skills",
+      "path": "mos-geo-llm-buttons",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-geo-skills/tree/main/mos-geo-llm-buttons",
+      "summary": "Build a complete, client-ready LLM share buttons package for a website \u2014 scrape the client's site first, detect its stack, extract its brand palette, then generate an implementation brief, a code refe",
+      "description": "Build a complete, client-ready LLM share buttons package for a website \u2014 scrape the client's site first, detect its stack, extract its brand palette, then generate an implementation brief, a code reference, and a live in-brand HTML demo. LLM share buttons are the row of buttons at the top of an article that open ChatGPT, Claude, Perplexity, Grok or Google AI Mode in a new tab with a summarise-this-page prompt already typed. USE WHEN the user says \"llm buttons\", \"LLM share buttons\", \"AI share buttons\", \"ask AI about this page\", \"chat with ChatGPT button\", \"summarise in ChatGPT button\", \"GEO buttons\", \"AI share bar\", \"share to AI\", \"citemet\", \"CiteMET\", \"add AI buttons to a client site\", or describes the outcome without the jargon \u2014 \"put buttons on our articles that open ChatGPT with the page already loaded\", \"let readers send our guides straight into an AI\", \"one click so someone gets our article summarised by AI\", \"seed our URLs into ChatGPT conversations\", \"the thing those comparison sites have at the top of their guides\". Also use when someone asks what we would scope, quote or hand over for an LLM-buttons engagement. NOT FOR structured data and schema markup (use pm-schema-optimisation), auditing how AI systems currently read or cite a site (use pm-ai-extraction-audit), or writing an SEO content brief (use rdg-seo-brief).",
+      "bundled": false
+    },
+    {
+      "name": "mos-100m-avatar",
+      "command": "/mos-100m-avatar",
+      "repo": "mos-hormozi-skills",
+      "path": "mos-100m-avatar",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-hormozi-skills/tree/main/mos-100m-avatar",
+      "summary": "Step 1 of the $100M chain: build the customer avatar workbook the rest of the chain reads.",
+      "description": "Step 1 of the $100M chain: build the customer avatar workbook the rest of the chain reads. Run this first, or whenever /mos-100m-offer says it cannot find an avatar. Build a customer avatar workbook from your business reference files. 10-section avatar with parallel agent generation, validation, and optional image generation. Use when: (1) Creating a customer avatar for a business (2) User says customer avatar, dream customer, target market, avatar workbook, who is my customer (3) Rebuilding or updating an existing avatar with new reference material.",
+      "bundled": false
+    },
+    {
+      "name": "mos-100m-leads",
+      "command": "/mos-100m-leads",
+      "repo": "mos-hormozi-skills",
+      "path": "mos-100m-leads",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-hormozi-skills/tree/main/mos-100m-leads",
+      "summary": "Build a $100M Leads marketing plan faithfully following Alex Hormozi's $100M Leads methodology \u2014 linear, chapter-by-chapter, interactive.",
+      "description": "Build a $100M Leads marketing plan faithfully following Alex Hormozi's $100M Leads methodology \u2014 linear, chapter-by-chapter, interactive. Ten stops, takes your existing Grand Slam Offer as input, builds your lead magnet + ONE chosen advertising channel into a complete leads plan + one-pager. ALWAYS use this skill when the user mentions: $100M Leads, Hormozi leads, lead magnet, engaged leads, the Core Four, warm outreach / cold outreach / paid ads / posting content as a plan, lead getters, the four horsemen (referrals/employees/agencies/affiliates), 'get leads', a marketing plan, an advertising plan, or asks to build a lead-gen plan the 'Hormozi way' or 'by the book.' Runs AFTER /mos-100m-offer and BEFORE /mos-100m-money-models then /mos-100m-onepager in the $100M chain (offer \u2192 leads \u2192 money-models \u2192 onepager).",
+      "bundled": false
+    },
+    {
+      "name": "mos-100m-money-models",
+      "command": "/mos-100m-money-models",
+      "repo": "mos-hormozi-skills",
+      "path": "mos-100m-money-models",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-hormozi-skills/tree/main/mos-100m-money-models",
+      "summary": "Build a $100M Money Model faithfully following Alex Hormozi's $100M Money Models methodology \u2014 linear, chapter-by-chapter, interactive.",
+      "description": "Build a $100M Money Model faithfully following Alex Hormozi's $100M Money Models methodology \u2014 linear, chapter-by-chapter, interactive. Six stops, takes your existing Grand Slam Offer + leads plan as input, sequences attraction/upsell/downsell/continuity offers into a money model that pays back acquisition cost inside 30 days (client-financed acquisition). ALWAYS use this skill when the user mentions: $100M Money Models, Hormozi money model, offer sequencing, attraction/upsell/downsell/continuity offers, client-financed acquisition (CFA), 30-day payback/cash, win your money back, anchor/rollover upsell, payment-plan downsell, continuity/waived-fee offers, a product/value ladder with cashflow, or asks to build a money model the 'Hormozi way' or 'by the book.' This is the THIRD skill in the $100M chain \u2014 runs AFTER /mos-100m-offer and /mos-100m-leads, and is followed by the /mos-100m-onepager capstone (offer \u2192 leads \u2192 money-models \u2192 onepager).",
+      "bundled": false
+    },
+    {
+      "name": "mos-100m-offer",
+      "command": "/mos-100m-offer",
+      "repo": "mos-hormozi-skills",
+      "path": "mos-100m-offer",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-hormozi-skills/tree/main/mos-100m-offer",
+      "summary": "Build a Grand Slam Offer faithfully following Alex Hormozi's $100M Offers methodology \u2014 linear, chapter-by-chapter, interactive.",
+      "description": "Build a Grand Slam Offer faithfully following Alex Hormozi's $100M Offers methodology \u2014 linear, chapter-by-chapter, interactive. Twelve stops (one per chapter), uses existing avatar work as input, produces a complete offer workbook + one-pager. ALWAYS use this skill when the user mentions: $100M Offers, Hormozi offer, Grand Slam Offer, value equation, MAGIC naming, premium pricing, starving crowd, scarcity + urgency stack, guarantee with teeth, the offer book, or asks to build an offer the 'Hormozi way' or 'by the book.' Requires the avatar from /mos-100m-avatar; if it is missing, send the user there first.",
+      "bundled": false
+    },
+    {
+      "name": "mos-100m-onepager",
+      "command": "/mos-100m-onepager",
+      "repo": "mos-hormozi-skills",
+      "path": "mos-100m-onepager",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-hormozi-skills/tree/main/mos-100m-onepager",
+      "summary": "Distil the three $100M trilogy files (offer / leads / money model) into a single go-to-market one-pager \u2014 what we sell + how we grow + how we monetise, on one page.",
+      "description": "Distil the three $100M trilogy files (offer / leads / money model) into a single go-to-market one-pager \u2014 what we sell + how we grow + how we monetise, on one page. Produces THREE outputs: a clean markdown one-pager, a client-facing .docx, and a polished branded HTML (via /frontend-design). ALWAYS use this skill when the user says: one-pager, GTM one-pager, distil the trilogy, summarise the offer/leads/money model, strategy one-pager, client-facing summary, the business on one page, or wants the offer + marketing plan + money model condensed into a single scannable page. This is the CAPSTONE \u2014 runs AFTER /mos-100m-offer, /mos-100m-leads, and /mos-100m-money-models.",
+      "bundled": false
+    },
+    {
+      "name": "mos-linkedin-post",
+      "command": "/mos-linkedin-post",
+      "repo": "mos-smma-skills",
+      "path": "mos-linkedin-post",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-smma-skills/tree/main/mos-linkedin-post",
+      "summary": "Generate LinkedIn posts from topics or repurpose long-form content into LinkedIn posts.",
+      "description": "Generate LinkedIn posts from topics or repurpose long-form content into LinkedIn posts. Use when: user says 'linkedin post', 'linkedin content', 'write a linkedin post', 'repurpose this for linkedin', 'social post for linkedin'. NOT for X/Twitter (use /mos-x-post). NOT for Reels/TikTok/carousels. NOT for Skool posts.",
+      "bundled": false
+    },
+    {
+      "name": "mos-x-post",
+      "command": "/mos-x-post",
+      "repo": "mos-smma-skills",
+      "path": "mos-x-post",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-smma-skills/tree/main/mos-x-post",
+      "summary": "Generate X/Twitter posts from topics or repurpose long-form content into X posts.",
+      "description": "Generate X/Twitter posts from topics or repurpose long-form content into X posts. Use when: user says 'X post', 'tweet', 'thread', 'twitter post', 'write a thread', 'repurpose this into tweets', 'social content for X'. For LinkedIn posts, use /mos-linkedin-post.",
+      "bundled": false
+    },
+    {
+      "name": "mos-yt-fast-scrape",
+      "command": "/mos-yt-fast-scrape",
+      "repo": "mos-yt-skills",
+      "path": "mos-yt-fast-scrape",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-yt-skills/tree/main/mos-yt-fast-scrape",
+      "summary": "Scrape YouTube transcripts in bulk, fast \u2014 an entire channel (hundreds of videos) in under a minute, as clean readable Markdown you can search, feed to Claude, or ingest into your wiki.",
+      "description": "Scrape YouTube transcripts in bulk, fast \u2014 an entire channel (hundreds of videos) in under a minute, as clean readable Markdown you can search, feed to Claude, or ingest into your wiki. Pulls captions straight from YouTube's own caption endpoint, 25 videos in parallel, no API key, no Apify, no video download. Use this whenever the user wants transcripts from YouTube: 'scrape this channel', 'get every transcript from', 'pull the transcripts', 'download all of [creator]'s videos as text', 'turn this channel into a knowledge base', 'what does [creator] say about X across their videos', 'fast scrape', 'mos-yt-fast-scrape', or drops a YouTube channel/playlist/video URL and wants the words, not the video. Prefer it over mos-yt-transcribe unless the user specifically needs SRT subtitle files with per-line timestamps.",
+      "bundled": false
+    },
+    {
+      "name": "mos-yt-transcribe",
+      "command": "/mos-yt-transcribe",
+      "repo": "mos-yt-skills",
+      "path": "mos-yt-transcribe",
+      "url": "https://github.com/the-vibe-marketing-lab/mos-yt-skills/tree/main/mos-yt-transcribe",
+      "summary": "Download SRT subtitle transcripts from YouTube and save them to a local research library.",
+      "description": "Download SRT subtitle transcripts from YouTube and save them to a local research library. Use when: user provides a YouTube URL (single video, channel, or playlist), or says 'download transcripts', 'get transcripts from', 'save subtitles from YouTube', 'transcribe a youtube channel', 'extract subtitles'. Two modes \u2014 single video URL needs no setup, channel/playlist needs an Apify token for video discovery at scale.",
+      "bundled": false
+    }
+  ]
+}
