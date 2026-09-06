@@ -265,6 +265,21 @@ adapters. It reports a `checks` block (`structure`, `runtime_wiring`,
 `context_ready`) and is `ok` only when structure is sound **and** Claude Code and
 Codex skill discovery are both ready.
 
+### `mos open`
+
+```text
+mos open [path] [--in claude|codex] [--json]
+```
+
+Opens the assistant in the brain's folder, in a new terminal window, so the operator does
+not type the lines themselves. Never a shell: a fixed argv with the executable resolved
+on the PATH. WSL hands off to Windows Terminal (or a console window) running
+`wsl.exe --cd <folder> --exec <assistant>`; Windows uses Windows Terminal or a console
+window; macOS opens Terminal on a one-line `.command` file under `~/.marketing-os/launch`;
+Linux uses the first of gnome-terminal, konsole, x-terminal-emulator, xterm. Findings:
+`runtime-not-found`, `no-terminal`, `launch-failed`, `not-marketing-os`; the envelope
+carries `launched`, `platform` and `terminal`.
+
 ### `mos rename`
 
 ```text

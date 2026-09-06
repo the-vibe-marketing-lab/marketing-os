@@ -15,6 +15,7 @@ from marketing_os.core.context import STDIN_SENTINEL, set_context, show_context
 from marketing_os.core.index import status_repo as index_status_repo
 from marketing_os.core.index import sync_repo as index_sync_repo
 from marketing_os.core.ingest import ingest_repo, pending_sources
+from marketing_os.core.launch import launch_repo
 from marketing_os.core.migrate import migrate_repo
 from marketing_os.core.onboard import onboard_repo
 from marketing_os.core.query import query_repo
@@ -161,6 +162,16 @@ def build_parser(
     )
     index_status.add_argument("path", nargs="?", default=".")
     _add_output(index_status)
+
+    open_cmd = commands.add_parser(
+        "open", help="Open an assistant in the brain's folder, in a new terminal window."
+    )
+    open_cmd.add_argument("path", nargs="?", default=".")
+    open_cmd.add_argument(
+        "--in", dest="runtime", choices=("claude", "codex"), default="claude",
+        help="Which assistant to start (default: claude).",
+    )
+    _add_output(open_cmd)
 
     rename = commands.add_parser("rename", help="Rename the business a brain belongs to.")
     rename.add_argument("path", nargs="?", default=".")
@@ -413,6 +424,8 @@ def dispatch(args: argparse.Namespace) -> dict[str, Any]:
             return index_sync_repo(_path(args.path), apply=_mutation_mode(args))
         if args.index_command == "status":
             return index_status_repo(_path(args.path))
+    if args.command == "open":
+        return launch_repo(_path(args.path), args.runtime)
     if args.command == "rename":
         return rename_repo(_path(args.path), args.name, apply=_mutation_mode(args))
     if args.command == "related":

@@ -7,6 +7,10 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ### Added
 
+- **`mos open`.** Opens Claude Code (or Codex) in the brain's folder in a new terminal
+  window, per platform, with a fixed argv and no shell. The local app's "Open this brain
+  in Claude Code" is now a button that does this, with the exact lines kept as the
+  fallback.
 - **`mos rename`.** Changes the business name a brain belongs to, in its settings file
   and nowhere else, with the usual `--plan` then `--yes`. The local app renames from the
   overview header.
