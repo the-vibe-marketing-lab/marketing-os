@@ -22,7 +22,7 @@ import shutil
 import subprocess
 import sys
 from collections.abc import Callable
-from pathlib import Path
+from pathlib import Path, PurePath, PurePosixPath
 from typing import Any
 
 from marketing_os.core.results import envelope, finding, next_action
@@ -93,7 +93,7 @@ def _plan(
     which: Callable[[str], str | None],
     launch_dir: Path,
     prompt: str | None = None,
-) -> tuple[list[str], Path | None, str] | None:
+) -> tuple[list[str], PurePath | None, str] | None:
     """The argv, working directory and terminal name for one platform, or None.
 
     Without a prompt the argv is what it always was. With one, the assistant is started
@@ -114,7 +114,12 @@ def _plan(
         if which("wt.exe"):
             return (["wt.exe", *handoff], None, "Windows Terminal")
         if which("cmd.exe"):
-            return (["cmd.exe", "/c", "start", "", *handoff], Path("/mnt/c"), "a console window")
+            # A WSL path, spelled the WSL way whatever host runs the tests.
+            return (
+                ["cmd.exe", "/c", "start", "", *handoff],
+                PurePosixPath("/mnt/c"),
+                "a console window",
+            )
         return None
     if platform == "windows":
         if prompt:
