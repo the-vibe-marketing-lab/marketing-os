@@ -5,8 +5,79 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ## [Unreleased]
 
+### Added
+
+- **A Skills page in the local app.** The Commands tab is now a marketplace of every skill
+  across the organisation's repositories, from a bundled catalogue: search, a chip per
+  repository, and cards that open to the slash command, the full description, an install
+  prompt to copy, and a link to the skill on GitHub. The command runner is one link away.
+- **One-click Claude Code, and prompts you can read first.** "Open this brain in Claude
+  Code" launches it in a new terminal through `mos open`, with the exact lines kept as
+  the fallback. "Sync the assistant skills" opens to an update-now button or a prompt.
+  Every "Copy the prompt" has a "View the prompt" beside it that shows the prompt in a
+  card with Copy at the top right before anything is copied.
+- **`mos open`.** Opens Claude Code (or Codex) in the brain's folder in a new terminal
+  window, per platform, with a fixed argv and no shell. The local app's "Open this brain
+  in Claude Code" is now a button that does this, with the exact lines kept as the
+  fallback.
+- **`mos rename`.** Changes the business name a brain belongs to, in its settings file
+  and nowhere else, with the usual `--plan` then `--yes`. The local app renames from the
+  overview header.
+
+### Changed
+
+- **The command runner reads like the Skills page.** Search, a chip per group, and one
+  card per command with its title, what it does, the exact `mos` line and whether it
+  writes; opening a card brings the run form, the result and the copyable command line
+  into it.
+- **A prompt to paste into Claude Code.** The Structure and Findings cards, and the
+  next-action row behind "Ask Claude Code to fix it", carry a copyable prompt built from
+  the checker's findings: what is wrong, where, and what to do about each, with the
+  brain's own onboard command filled in.
+- **The local app wears the Lab's Ember system, and the dashboard is a ledger.** The app
+  is branded MarketingOS: a live-text wordmark in Bricolage Grotesque, Figtree for
+  everything else, both vendored as woff2 inside the wheel because the page's CSP allows
+  same-origin fonts only. Warm dark ground, one Ember object per view, Sun for status,
+  hairlines between rows, no card shadows, no gradients, no light theme. The dashboard's
+  hero card, two health tiles, checklist card, assistants card and findings card are gone;
+  in their place is one column of rows: the next action with its fix, then one row per
+  business question showing the first line of the operator's own answer, its state and a
+  Change button, then one status row (assistants, structure, answers by count, findings
+  with a count that open in place), then how to open the brain in Claude Code with the
+  exact lines behind the technical disclosure. A row opens in place into the whole answer
+  as prose. Pinned on 2026-09-06: the six answers and four checks (structure,
+  assistants, findings, navigation) are one grid of Ember cards, each with a ready or
+  needs-you state word and one line, opening in place to its details. Pinned again the same day: the app reads as a SaaS overview, with a 52px app bar
+  on every width, a compact header carrying the one action, four status tiles, and
+  panels for what needs doing, the answers, quick actions, the assistants and the
+  navigation check. The answers are read once per brain through `mos context show` and reach the
+  page as text, never markup. The rail carries the brains, Set up a brain (or another),
+  the two section links, and Attach a folder beside Refresh; the top bar is drawn only
+  below 900px, where it is the drawer's handle. Commands are tiered everyday, maintenance
+  and advanced, with advanced folded by default. The wizard's preview tree shows the
+  documents a person will open and folds the skills, dot folders and git steps into one
+  faint row. The interview shows the answer on file as prose above the box that edits it.
+  The token names the contract tests read are unchanged; `--ink-3` sits at Paper 54%
+  rather than Ember's 50% because 50% measures under 4.5:1 on two surfaces and the accent
+  wash, and accent text on the wash is Ember Bright, which the two affected contrast
+  pairs now measure.
+
 ### Fixed
 
+- **The mobile drawer contains focus.** Open, it now puts a scrim over the page, makes the
+  page inert so no Tab stop or screen reader lands behind it, closes on a tap outside, and
+  closes on Escape from anywhere rather than only while focus was already inside it.
+- **The dashboard reads findings to the operator in plain words.** The hero card keyed
+  a fixed sentence off the next-action id, so a missing `CONTRACT.md` was announced as
+  "files are not where the schema expects them" with a migrate button that could not
+  create a file, on every brain alike. It is now built from the worst finding: a missing
+  required file previews and applies a scaffold that adds only what is missing; documents
+  without a header or links get their own sentence and fix. Findings that share a code
+  are one row with a count and a closed list of where, instead of ten copies of the
+  checker's terminal message. `FINDING_COPY` in `app.js` carries one sentence and one
+  recovery per checker code, and a contract test fails when a code ships without one.
+  The word "schema" no longer reaches a reader; GitHub naming and the git setup steps sit
+  behind the technical disclosure.
 - **`mos doctor` checks the install when no brain is there.** Run right after
   `mos install`, in a folder with no `.mos/config.yaml`, doctor read the folder's own
   `.claude/skills` and reported a correctly wired install as `runtime-not-ready`. It now

@@ -271,6 +271,32 @@ instead: the bundled skills wired under `~/.claude/skills` and `~/.agents/skills
 it reports `runtime-not-ready` and a `run-install` next action. This is the check to run
 right after installing, before any brain exists.
 
+### `mos open`
+
+```text
+mos open [path] [--in claude|codex] [--json]
+```
+
+Opens the assistant in the brain's folder, in a new terminal window, so the operator does
+not type the lines themselves. Never a shell: a fixed argv with the executable resolved
+on the PATH. WSL hands off to Windows Terminal (or a console window) running
+`wsl.exe --cd <folder> --exec <assistant>`; Windows uses Windows Terminal or a console
+window; macOS opens Terminal on a one-line `.command` file under `~/.marketing-os/launch`;
+Linux uses the first of gnome-terminal, konsole, x-terminal-emulator, xterm. Findings:
+`runtime-not-found`, `no-terminal`, `launch-failed`, `not-marketing-os`; the envelope
+carries `launched`, `platform` and `terminal`.
+
+### `mos rename`
+
+```text
+mos rename [path] --name NAME (--plan | --yes) [--json]
+```
+
+Changes the business name a brain belongs to, in `.mos/config.yaml`, and nothing else.
+Documents that mention the old name are left as they are. `--plan` names the change
+without writing; `--yes` applies it. The envelope carries `name` and `previous_name`.
+The same name is `ok` with no changes; an empty name is a `missing-name` error.
+
 ### `mos skills sync`
 
 ```text

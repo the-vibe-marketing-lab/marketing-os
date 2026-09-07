@@ -16,6 +16,7 @@ from typing import NamedTuple
 import pytest
 
 from marketing_os.core import assist as assist_engine
+from marketing_os.core import graphlint, skills, status, validation
 from marketing_os.ui.server import static_root
 
 STATIC = static_root()
@@ -188,7 +189,9 @@ PAIRS = [
     ("card sub on surface", "ink-3", "surface", 4.5),
     ("control border on surface", "control-line", "surface", 3.0),
     ("control border on surface-2", "control-line", "surface-2", 3.0),
-    ("selected place chip", "accent", "accent-soft", 4.5),
+    # Accent text on the accent wash is Ember Bright (--accent-hover), never base Ember:
+    # the Ember system's own rule, and base Ember measures 4.30:1 on the wash.
+    ("selected place chip", "accent-hover", "accent-soft", 4.5),
     ("assist question on its panel", "ink", "accent-soft", 4.5),
     ("assist meta on its panel", "ink-3", "accent-soft", 4.5),
     # The sidebar: a brain or a section at rest, the open one on its accent ground, the
@@ -196,7 +199,7 @@ PAIRS = [
     ("sidebar item on surface", "ink-2", "surface", 4.5),
     ("open brain on its ground", "ink", "accent-soft", 4.5),
     ("open brain sub on its ground", "ink-3", "accent-soft", 4.5),
-    ("current marker on its ground", "accent", "accent-soft", 4.5),
+    ("current marker on its ground", "accent-hover", "accent-soft", 4.5),
     ("needs-attach tag on its ground", "warn", "warn-soft", 4.5),
     ("open section icon on its ground", "accent", "accent-soft", 3.0),
 ]
@@ -256,6 +259,8 @@ NOT_COPY = {
     "/api/browse",
     "/api/pick-folder",
     "/api/brains",
+    # The bundled skill catalogue, served like the fonts: a route, never rendered.
+    "/static/catalog/skills.json",
     "http://www.w3.org/2000/svg",
 }
 
@@ -403,7 +408,8 @@ def test_the_selected_place_is_not_signalled_by_colour_alone() -> None:
     """Both critics found neither option rendering as selected."""
     assert '"aria-pressed": pressed ? "true" : "false"' in JS
     assert '.chip--place[aria-pressed="true"]' in CSS
-    assert ".chip--place[aria-pressed=\"true\"] .chip__tick::after" in CSS
+    # The tick is the sprite's check, shown only when pressed (it used to be a text glyph).
+    assert ".chip--place[aria-pressed=\"true\"] .chip__tick .icon" in CSS
 
 
 def test_the_confirmation_and_the_option_are_built_from_one_phrase() -> None:
@@ -855,3 +861,52 @@ def test_found_brains_come_from_a_look_at_the_chosen_place_never_a_home_sweep() 
     assert '"/api/browse"' in refresh
     assert "wizPlace() !== place" in refresh
     assert "existing_brains" not in JS
+
+
+# --- findings reach the reader in plain words ----------------------------------------
+# The checker's messages are written for a terminal: "No contract block. See CONTRACT.md
+# for the five required keys." told a marketer to open the file the row above said was
+# missing. FINDING_COPY in app.js carries one sentence and one recovery per code. This
+# reads the codes the checker can emit back against that table, so a new code cannot ship
+# without its sentence; an untranslated code still renders the checker's words, so the
+# failure mode is dull, never silent.
+
+CHECKER_MODULES = (validation, graphlint, status, skills)
+
+
+def checker_codes() -> set[str]:
+    codes: set[str] = set()
+    for module in CHECKER_MODULES:
+        source = Path(module.__file__).read_text(encoding="utf-8")
+        codes.update(re.findall(r'finding\(\s*"([a-z-]+)"', source))
+    return codes
+
+
+def finding_copy_codes() -> set[str]:
+    table = JS.split("var FINDING_COPY = {", 1)[1].split("\n  };", 1)[0]
+    return set(re.findall(r'^\s+"([a-z-]+)": \{', table, re.M))
+
+
+def test_every_checker_code_has_a_plain_sentence() -> None:
+    assert checker_codes() - finding_copy_codes() == set()
+
+
+def test_the_plain_sentences_carry_a_count_where_more_than_one_can_happen() -> None:
+    """A `many` sentence that never says how many reads as if there were one."""
+    table = JS.split("var FINDING_COPY = {", 1)[1].split("\n  };", 1)[0]
+    entries = re.findall(r'"([a-z-]+)": \{\s*one: "([^"]+)",\s*many: "([^"]+)"', table)
+    assert entries, "the table did not parse"
+    for code, one, many in entries:
+        if one != many:
+            assert "{n}" in many, f"{code}: the many sentence has no count"
+
+
+def test_the_reader_is_never_told_about_a_schema() -> None:
+    """The brain has folders and files where it expects them; it has no schema."""
+    # A bare kebab-case literal is a code the envelope carries, never a sentence shown.
+    hits = [
+        text
+        for text in user_facing_copy()
+        if not re.fullmatch(r"[a-z-]+", text) and re.search(r"\bschemas?\b", text, re.I)
+    ]
+    assert hits == [], hits

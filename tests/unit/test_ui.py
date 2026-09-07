@@ -48,6 +48,9 @@ PLANNED_ALLOWLIST = {
     "statusline",
     "context show",
     "context set",
+    # The rename and open commands landed with the overview header controls.
+    "rename",
+    "open",
 }
 
 #: A full path, spelled the way the platform running these tests spells one. The probe asks
@@ -841,6 +844,7 @@ def browser() -> dict:
         status = run_argv(["status", str(brain)])
         doctor = run_argv(["doctor", str(brain)])
         context = run_argv(["context", "show", str(brain)])
+        rename = run_argv(["rename", str(brain), "--name", "Test Gym Two", "--plan"])
         fixture = {
             "static": str(ui_static_root()),
             "state": {
@@ -868,7 +872,28 @@ def browser() -> dict:
                 "status": status,
                 "doctor": doctor,
             },
-            "envelopes": {"status": status, "doctor": doctor, "context show": context},
+            "envelopes": {
+                "status": status,
+                "doctor": doctor,
+                "context show": context,
+                "rename": rename,
+                # `mos open` would pop a terminal here; the app only needs its shape.
+                "open": {
+                    "schema": "mos.open.v1",
+                    "command": "open",
+                    "ok": True,
+                    "repo": str(brain),
+                    "changes": [],
+                    "findings": [],
+                    "next_action": {
+                        "id": "type-start",
+                        "reason": "Claude Code is opening in a console window, in this "
+                        "brain's folder. Type /mos-start there.",
+                    },
+                    "launched": True,
+                    "terminal": "a console window",
+                },
+            },
             "probe": {
                 "schema": "mos.assist.v1",
                 "command": "assist",
@@ -1048,9 +1073,10 @@ def test_found_brains_are_the_ones_in_the_chosen_folder(browser: dict) -> None:
     found = browser["foundBrainsFollowThePlace"]
     assert found["asked"] == ["/home/you/Desktop"], "one look, at the chosen place only"
     assert found["lede"].startswith("Brains already in this folder (2).")
+    # The twins are told apart with "in <folder>": the Ember retheme retired em dashes.
     assert [b[0] for b in found["buttons"]] == [
-        "Open Cascade Strength Co. \u2014 cascade",
-        "Open Cascade Strength Co. \u2014 cascade-old",
+        "Open Cascade Strength Co. in cascade",
+        "Open Cascade Strength Co. in cascade-old",
     ], "two brains with one name are told apart by folder name, not by path"
 
 
@@ -1784,3 +1810,33 @@ def test_attaching_a_folder_while_a_window_is_open_says_so_and_nothing_else(
     assert busy["pending"] == 2
     assert busy["pendingLive"] == "A folder window is already open. Finish with that one."
     assert busy["afterCancel"] == "No folder chosen."
+
+
+def test_the_business_can_be_renamed_from_the_header(browser: dict) -> None:
+    """The title gives way to a form; the plan is previewed, the apply is the one filled
+    button while it is offered, and a rename closes the form, says so and re-reads."""
+    seen = browser["renameFromHeader"]
+    root = browser["root"]
+    assert seen["opened"] is True and seen["prefilled"] == "Test Gym"
+    assert seen["focused"] is True, "focus moves into the input"
+    assert seen["titleHidden"] is True
+    assert seen["headerPrimary"] == 0, "the header action steps back while editing"
+    assert seen["planned"] == [{"path": root, "name": "Test Gym Two", "plan": True}]
+    assert seen["applyShown"] is True
+    assert seen["readoutLabel"] == "Preview only, nothing written"
+    assert seen["calls"][-1] == {"path": root, "name": "Test Gym Two", "yes": True}
+    assert "status" in seen["afterApply"] and "doctor" in seen["afterApply"], "re-read after"
+    assert seen["toast"] == "Renamed to Test Gym Two"
+    assert seen["closed"] is True and seen["titleShown"] is True
+    assert seen["focusedAfter"] == "btn-rename"
+    assert seen["headerPrimaryAfter"] == 1, "the header action comes back"
+
+
+def test_open_in_claude_code_is_one_press_and_says_where_it_opened(browser: dict) -> None:
+    """The quick action runs `mos open` for this brain and repeats the envelope's own
+    sentence; the lines stay behind their closed disclosure as the fallback."""
+    seen = browser["openFromQuickActions"]
+    assert seen["calls"] == [{"path": browser["root"]}]
+    assert seen["toast"].startswith("Claude Code is opening in a console window")
+    assert seen["linesOpen"] is False
+    assert seen["failShown"] is False

@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>marketing-os</title>
-    <meta name="color-scheme" content="light dark" />
+    <title>MarketingOS</title>
+    <meta name="color-scheme" content="dark" />
     <!--
       The server replaces __MOS_SESSION_TOKEN__ with a fresh session token every time
       this page is served. app.js reads it from this meta tag and sends it as the
@@ -14,10 +14,19 @@
       in a real file under /static. No inline <script>, no CDN, no external fetches.
     -->
     <meta name="mos-token" content="__MOS_SESSION_TOKEN__" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%235b46e5'/%3E%3Cg fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 8.5 3.5 3.5L6 15.5'/%3E%3Cpath d='M12.5 16.5H18'/%3E%3C/g%3E%3C/svg%3E" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3Cfilter id='g' x='-50%' y='-50%' width='200%' height='200%'%3E%3CfeGaussianBlur stdDeviation='2.2'/%3E%3C/filter%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='#0d0b0a'/%3E%3Crect x='38.5' y='14.8' width='6' height='34.4' rx='3' fill='#c96442' opacity='.55' filter='url%28#g%29'/%3E%3Crect x='19.3' y='34.4' width='6' height='14.8' rx='3' fill='#faf7f2'/%3E%3Crect x='28.9' y='25.3' width='6' height='23.9' rx='3' fill='#faf7f2'/%3E%3Crect x='38.5' y='14.8' width='6' height='34.4' rx='3' fill='#c96442'/%3E%3C/svg%3E" />
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" />
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
+    <!--
+THESIS: The brain read as a SaaS overview: health first, one action, the operator's own words one row away. Refuses the single-column landing page.
+OWN-WORLD: Ember. Ink #0d0b0a ground, Surface #1a1614 panels, Paper #faf7f2 text at 100/78/50/32%, one Ember #c96442 accent object per view plus the 56x3 Lab Rule under the header title (Ember Bright #e2794f for accent text and focus), Sun #f4c24b for status only, Mist #2c2622 borders, Divider #241f1c hairlines. Bricolage Grotesque 800/600 display, Figtree 400-800 body at 18px, mono only inside code and terminal blocks. Pill buttons, 18px radius, no card shadows, no gradients beyond one hero atmosphere, dark only.
+STORY: A marketer opens the overview, reads the four tiles for ready or needs you, takes the one action at the top, checks an answer in their own words, and opens the brain in Claude Code from the quick actions.
+FIRST VIEWPORT: Rail left (240px): MarketingOS wordmark, brains, set up, footer credit. A 52px app bar on every width: breadcrumb (brain, then Overview) at left, Re-check and Open in Claude Code as ghost utilities at right. Content full width to 1240px: a compact header with the business name in Bricolage 800 at 32px, a ready / needs-you word beside it, the mode eyebrow above and the meta line below, and the one Ember action at the right; then four status tiles (Answers, Structure, Assistants, Findings) with a number, a line and a ready / needs-you word; then two columns, 8/4: the Do this next to-do list and Your answers at left, Quick actions, Assistants and Navigation at right.
+FORM: The Ledger, index 4 of the grounded list, seed dce123ad. Pinned by the product owner on 2026-09-06: cards with a pass/fail state. Pinned by the product owner on 2026-09-06: SaaS overview shell from Mobbin references.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+    -->
     <a class="skip" href="#main">Skip to content</a>
 
     <svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0">
@@ -43,9 +52,6 @@
       <symbol id="i-refresh" viewBox="0 0 24 24">
         <path d="M20 11a8 8 0 1 0-.7 4.5" /><path d="M20 5v6h-6" />
       </symbol>
-      <symbol id="i-brain" viewBox="0 0 24 24">
-        <path d="m6 8.5 3.5 3.5L6 15.5" /><path d="M12.5 16.5H18" />
-      </symbol>
       <symbol id="i-terminal" viewBox="0 0 24 24"><path d="m5 8 4 4-4 4" /><path d="M12 17h7" /></symbol>
       <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /></symbol>
       <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14" /><path d="M5 12h14" /></symbol>
@@ -67,33 +73,50 @@
       <symbol id="i-home" viewBox="0 0 24 24">
         <path d="m4 10.5 8-6.5 8 6.5V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z" />
       </symbol>
+      <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" /></symbol>
+      <symbol id="i-external" viewBox="0 0 24 24">
+        <path d="M14 4h6v6" /><path d="M20 4 11 13" /><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+      </symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24">
+        <path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /><path d="m13.5 6.5 3 3" />
+      </symbol>
     </svg>
 
-    <!-- The bar carries the drawer button and the name of the brain on screen. Everything
-         else that used to live here (the mark, the section tabs, Refresh) is in the
-         sidebar, which is the drawer the button opens on a narrow screen. -->
+    <!-- The app bar, on every width: the drawer button (narrow screens only), the
+         breadcrumb (brain, then section), and two utilities. -->
     <header class="topbar" id="topbar">
       <button class="btn btn--ghost btn--icon menu-btn" id="btn-menu" type="button"
         aria-expanded="false" aria-controls="sidebar">
         <svg viewBox="0 0 24 24" class="icon"><use href="#i-menu" /></svg>
         <span>Menu</span>
       </button>
-      <p class="topbar__brain" id="topbar-brain"></p>
+      <nav class="crumbs" aria-label="Where you are">
+        <p class="topbar__brain" id="topbar-brain"></p>
+        <svg viewBox="0 0 24 24" class="icon crumbs__sep" aria-hidden="true"><use href="#i-chevron" /></svg>
+        <p class="crumbs__here" id="topbar-section"></p>
+      </nav>
+      <div class="topbar__tools">
+        <button class="btn btn--ghost btn--icon" id="btn-recheck-top" type="button"
+          title="Re-check this brain" hidden>
+          <svg viewBox="0 0 24 24" class="icon"><use href="#i-refresh" /></svg>
+          <span>Re-check</span>
+        </button>
+        <button class="btn btn--ghost btn--icon" id="btn-open-cc" type="button"
+          title="Open this brain in Claude Code" hidden>
+          <svg viewBox="0 0 24 24" class="icon"><use href="#i-terminal" /></svg>
+          <span>Open in Claude Code</span>
+        </button>
+      </div>
     </header>
 
     <div class="shell">
-      <!-- One labelled landmark for the whole left panel: the brains, the sections, and
-           Refresh. The tablist keeps its own semantics inside it. -->
+      <!-- One labelled landmark for the whole rail: the brains, the sections, and the
+           footer tools. The tablist keeps its own semantics inside it. -->
       <nav class="sidebar" id="sidebar" aria-label="Brains and sections" hidden>
         <div class="sidebar__top">
           <a class="brand" href="/">
-            <span class="brand__mark" aria-hidden="true">
-              <svg viewBox="0 0 24 24" class="icon"><use href="#i-brain" /></svg>
-            </span>
-            <span class="brand__text">
-              <span class="brand__name">marketing&#8209;os</span>
-              <span class="brand__sub" id="brand-sub">the local app</span>
-            </span>
+            <span class="brand__name">MarketingOS</span>
           </a>
           <button class="btn btn--ghost btn--icon drawer-close" id="btn-drawer-close" type="button"
             title="Close the menu">
@@ -103,7 +126,7 @@
         </div>
 
         <section class="sidebar__section" aria-labelledby="sb-brains-title">
-          <h2 class="sidebar__title" id="sb-brains-title">Brains</h2>
+          <h2 class="sidebar__title eyebrow" id="sb-brains-title">brains</h2>
           <!-- Re-filled on every change; a live region would read the whole list. -->
           <ul class="brains" id="brains" role="list"></ul>
           <div class="sidebar__actions">
@@ -111,38 +134,43 @@
               <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="#i-plus" /></svg>
               <span>Set up another brain</span>
             </button>
-            <button class="sidebar__action" id="btn-attach-folder" type="button">
-              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="#i-folder" /></svg>
-              <span>Attach a folder&hellip;</span>
-            </button>
           </div>
         </section>
 
-        <section class="sidebar__section" id="tabs" aria-labelledby="sb-nav-title" hidden>
-          <h2 class="sidebar__title" id="sb-nav-title">Navigation</h2>
+        <section class="sidebar__section" id="tabs" aria-label="Sections" hidden>
           <div class="tabs" role="tablist" aria-label="Sections" aria-orientation="vertical">
             <button class="tab" id="tab-dashboard" type="button" role="tab" aria-selected="true"
               aria-controls="dashboard">
               <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="#i-home" /></svg>
-              <span>Dashboard</span>
+              <span>Overview</span>
             </button>
             <button class="tab" id="tab-commands" type="button" role="tab" aria-selected="false"
               aria-controls="commands">
               <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="#i-terminal" /></svg>
-              <span>Commands</span>
+              <span>Skills</span>
             </button>
           </div>
         </section>
 
         <footer class="sidebar__foot">
-          <button class="btn btn--ghost btn--icon" id="btn-refresh" type="button" hidden
-            title="Re-read the folder">
-            <svg viewBox="0 0 24 24" class="icon"><use href="#i-refresh" /></svg>
-            <span>Refresh</span>
-          </button>
+          <div class="sidebar__tools">
+            <button class="btn btn--ghost btn--icon" id="btn-refresh" type="button" hidden
+              title="Re-read the folder">
+              <svg viewBox="0 0 24 24" class="icon"><use href="#i-refresh" /></svg>
+              <span>Refresh</span>
+            </button>
+            <button class="btn btn--ghost btn--icon" id="btn-attach-folder" type="button"
+              title="Attach a folder from an older layout">
+              <svg viewBox="0 0 24 24" class="icon"><use href="#i-folder" /></svg>
+              <span>Attach a folder&hellip;</span>
+            </button>
+          </div>
+          <p class="credit"><span class="credit__mark">tvml</span> &middot; The Vibe Marketing Lab</p>
         </footer>
       </nav>
 
+    <!-- The drawer's scrim: below the drawer, above the page, closes it on tap. -->
+    <div class="scrim" id="scrim" hidden></div>
     <main id="main" class="main">
       <!-- ---------- boot / fatal ---------- -->
       <section class="boot" id="boot" aria-labelledby="boot-title">
@@ -158,22 +186,21 @@
       <!-- ---------- onboarding wizard ---------- -->
       <section class="wizard" id="wizard" aria-label="Set up a business brain" hidden>
         <ol class="stepper" id="stepper" role="list" aria-label="Setup progress">
-          <li class="stepper__item" data-step="1"><span class="stepper__dot" aria-hidden="true">1</span><span class="stepper__state sr-only"></span><span class="stepper__label">Folder</span></li>
-          <li class="stepper__item" data-step="2"><span class="stepper__dot" aria-hidden="true">2</span><span class="stepper__state sr-only"></span><span class="stepper__label">Who it's for</span></li>
-          <li class="stepper__item" data-step="3"><span class="stepper__dot" aria-hidden="true">3</span><span class="stepper__state sr-only"></span><span class="stepper__label">Name</span></li>
-          <li class="stepper__item" data-step="4"><span class="stepper__dot" aria-hidden="true">4</span><span class="stepper__state sr-only"></span><span class="stepper__label">Preview</span></li>
-          <li class="stepper__item" data-step="5"><span class="stepper__dot" aria-hidden="true">5</span><span class="stepper__state sr-only"></span><span class="stepper__label">Create</span></li>
+          <li class="stepper__item" data-step="1"><span class="stepper__dot" aria-hidden="true"><span class="stepper__num">1</span><svg viewBox="0 0 24 24" class="icon stepper__tick"><use href="#i-check" /></svg></span><span class="stepper__state sr-only"></span><span class="stepper__label">Folder</span></li>
+          <li class="stepper__item" data-step="2"><span class="stepper__dot" aria-hidden="true"><span class="stepper__num">2</span><svg viewBox="0 0 24 24" class="icon stepper__tick"><use href="#i-check" /></svg></span><span class="stepper__state sr-only"></span><span class="stepper__label">Who it's for</span></li>
+          <li class="stepper__item" data-step="3"><span class="stepper__dot" aria-hidden="true"><span class="stepper__num">3</span><svg viewBox="0 0 24 24" class="icon stepper__tick"><use href="#i-check" /></svg></span><span class="stepper__state sr-only"></span><span class="stepper__label">Name</span></li>
+          <li class="stepper__item" data-step="4"><span class="stepper__dot" aria-hidden="true"><span class="stepper__num">4</span><svg viewBox="0 0 24 24" class="icon stepper__tick"><use href="#i-check" /></svg></span><span class="stepper__state sr-only"></span><span class="stepper__label">Preview</span></li>
+          <li class="stepper__item" data-step="5"><span class="stepper__dot" aria-hidden="true"><span class="stepper__num">5</span><svg viewBox="0 0 24 24" class="icon stepper__tick"><use href="#i-check" /></svg></span><span class="stepper__state sr-only"></span><span class="stepper__label">Create</span></li>
         </ol>
 
         <div class="wizard__card">
           <div class="wizard__body">
             <!-- Step 1 -->
             <div class="step" data-step="1">
-              <p class="step__eyebrow">Step 1 of 5</p>
               <h1 class="step__title" id="step-title">Let&rsquo;s set up your business brain</h1>
               <p class="step__lede">
                 The brain is one folder of ordinary files that holds everything
-                marketing&#8209;os learns about your business &mdash; your brand, how you sound,
+                MarketingOS learns about your business: your brand, how you sound,
                 who you sell to, what you sell. We have already picked a good place to keep it.
               </p>
 
@@ -189,7 +216,7 @@
                 </div>
 
                 <details class="tech tech--quiet tech--choice" id="where-tech">
-                  <summary class="tech__sum">Put it somewhere else</summary>
+                  <summary class="tech__sum"><svg viewBox="0 0 24 24" class="icon disc" aria-hidden="true"><use href="#i-down" /></svg><span>Put it somewhere else</span></summary>
                   <div class="tech__body">
                     <p class="field__label" id="where-pick">Other places</p>
                     <div class="chips" id="path-chips" role="group" aria-labelledby="where-pick"></div>
@@ -209,7 +236,6 @@
 
             <!-- Step 2 -->
             <div class="step" data-step="2" hidden>
-              <p class="step__eyebrow">Step 2 of 5</p>
               <h1 class="step__title">Who is this brain for?</h1>
               <p class="step__lede">
                 This is the one answer that changes what you get. Pick the sentence that sounds
@@ -226,7 +252,7 @@
                     <span class="mode__text">
                       <span class="mode__title">I market my own business<span class="mode__tag">most people</span></span>
                       <span class="mode__body">
-                        One business that belongs to you — your gym, your shop, your software.
+                        One business that belongs to you: your gym, your shop, your software.
                         Everything in here is about that one brand: how it sounds, who it is for,
                         what it sells.
                       </span>
@@ -246,9 +272,9 @@
                     <span class="mode__text">
                       <span class="mode__title">I market other people's businesses</span>
                       <span class="mode__body">
-                        You take on clients. This folder becomes your agency's own home base — your
-                        positioning, your process — and it carries a client list where every client
-                        you sign gets a row.
+                        You take on clients. This folder becomes your agency's own home base, with
+                        your positioning and your process, and it carries a client list where every
+                        client you sign gets a row.
                       </span>
                       <span class="mode__delta">
                         <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="#i-right" /></svg>
@@ -267,7 +293,7 @@
                     <span class="mode__text">
                       <span class="mode__title">Someone hired me to market theirs</span>
                       <span class="mode__body">
-                        The business in here is not yours — you work on it for an agency. Build one
+                        The business in here is not yours; you work on it for an agency. Build one
                         of these per client. It holds that client's brand rather than your own, and
                         we ask which agency it belongs to.
                       </span>
@@ -292,7 +318,7 @@
               </div>
 
               <details class="tech tech--quiet">
-                <summary class="tech__sum">Show the technical bit</summary>
+                <summary class="tech__sum"><svg viewBox="0 0 24 24" class="icon disc" aria-hidden="true"><use href="#i-down" /></svg><span>Show the technical bit</span></summary>
                 <div class="tech__body">
                   <p class="tech__line">
                     Your answer sets <code>--mode</code>. Agency also scaffolds
@@ -305,7 +331,6 @@
 
             <!-- Step 3 -->
             <div class="step" data-step="3" hidden>
-              <p class="step__eyebrow">Step 3 of 5</p>
               <h1 class="step__title">What's the business called?</h1>
               <p class="step__lede">
                 Use the name real customers use. It goes on the front page of the brain and into
@@ -326,7 +351,6 @@
 
             <!-- Step 4 -->
             <div class="step" data-step="4" hidden>
-              <p class="step__eyebrow">Step 4 of 5</p>
               <h1 class="step__title">Here's exactly what gets created</h1>
               <p class="step__lede">
                 Nothing has been written yet. This is the real plan, read back from the command
@@ -337,7 +361,6 @@
 
             <!-- Step 5 -->
             <div class="step" data-step="5" hidden>
-              <p class="step__eyebrow">Step 5 of 5</p>
               <h1 class="step__title" id="apply-title">Building your brain</h1>
               <p class="step__lede" id="apply-lede">
                 Writing the files, then checking the result. This usually takes a few seconds.
@@ -362,7 +385,7 @@
       </section>
 
       <!-- ---------- the interview: mos context, one question per screen ---------- -->
-      <section class="view interview" id="interview" aria-labelledby="iv-title" hidden>
+      <section class="view view--form interview" id="interview" aria-labelledby="iv-title" hidden>
         <header class="page-head">
           <div class="page-head__main">
             <p class="page-head__eyebrow" id="iv-eyebrow">&nbsp;</p>
@@ -381,10 +404,10 @@
       </section>
 
       <!-- ---------- attach: a brain from an older layout, plan first ---------- -->
-      <section class="view" id="attach" aria-labelledby="attach-title" hidden>
+      <section class="view view--form" id="attach" aria-labelledby="attach-title" hidden>
         <header class="page-head">
           <div class="page-head__main">
-            <p class="page-head__eyebrow">Older layout</p>
+            <p class="page-head__eyebrow">older layout</p>
             <h1 class="page-head__title" id="attach-title">&nbsp;</h1>
             <p class="page-head__lede" id="attach-lede"></p>
           </div>
@@ -392,36 +415,74 @@
         <div id="attach-body"></div>
       </section>
 
-      <!-- ---------- dashboard ---------- -->
+      <!-- ---------- dashboard: the overview ---------- -->
       <section class="view" id="dashboard" role="tabpanel" tabindex="0"
         aria-labelledby="tab-dashboard" hidden>
-        <header class="page-head">
-          <div class="page-head__main">
-            <p class="page-head__eyebrow" id="dash-eyebrow">Business brain</p>
-            <h1 class="page-head__title" id="dash-title">&nbsp;</h1>
+        <header class="ov-head">
+          <div class="ov-head__main">
+            <p class="page-head__eyebrow" id="dash-eyebrow">business brain</p>
+            <div class="ov-head__row" id="dash-title-row">
+              <h1 class="ov-head__title" id="dash-title">&nbsp;</h1>
+              <button class="btn btn--ghost btn--icon ov-head__rename" id="btn-rename" type="button"
+                aria-label="Rename this business" title="Rename this business">
+                <svg viewBox="0 0 24 24" class="icon"><use href="#i-edit" /></svg>
+                <span class="sr-only">Rename</span>
+              </button>
+              <span class="ov-head__health" id="dash-health"></span>
+            </div>
+            <!-- The title swaps in place for the rename form; built by app.js on demand. -->
+            <div id="rename-host" hidden></div>
+            <div class="em-rule" aria-hidden="true"></div>
             <div class="page-head__meta" id="dash-meta"></div>
           </div>
-          <div class="page-head__end" id="dash-health"></div>
+          <div class="ov-head__actions" id="dash-actions"></div>
         </header>
         <div id="dash-body"></div>
       </section>
 
-      <!-- ---------- commands ---------- -->
+      <!-- ---------- skills: the catalogue, with the command runner as a sub-view -------- -->
       <section class="view" id="commands" role="tabpanel" tabindex="0"
         aria-labelledby="tab-commands" hidden>
-        <header class="page-head">
-          <div class="page-head__main">
-            <p class="page-head__eyebrow">Every command, one click away</p>
-            <h1 class="page-head__title">Commands</h1>
-            <p class="page-head__lede">
-              These are the same commands the terminal runs. Each one shows you the exact line to
-              type, so you can do it yourself next time.
-            </p>
+        <div id="skills-page">
+          <header class="page-head page-head--skills">
+            <div class="page-head__main">
+              <h1 class="page-head__title">Skills</h1>
+              <p class="page-head__lede">
+                Every skill you can install, from MarketingOS and its packs. Search, open one,
+                copy its install prompt.
+              </p>
+            </div>
+          </header>
+          <div class="skills-toolbar" id="skills-toolbar"></div>
+          <div id="skills-body"></div>
+          <footer class="skills-foot">
+            <button class="btn btn--ghost" id="btn-runner" type="button">
+              <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="#i-terminal" /></svg>
+              <span>Run any command yourself</span>
+            </button>
+          </footer>
+        </div>
+        <div id="runner" hidden>
+          <header class="page-head runner__head">
+            <div class="page-head__main">
+              <h2 class="page-head__title">Commands</h2>
+              <p class="page-head__lede">
+                These are the same commands the terminal runs. Each one shows you the exact line to
+                type, so you can do it yourself next time.
+              </p>
+            </div>
+            <div class="page-head__end">
+              <button class="btn btn--ghost" id="btn-runner-back" type="button">
+                <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><use href="#i-left" /></svg>
+                <span>Back to skills</span>
+              </button>
+            </div>
+          </header>
+          <div class="skills-toolbar" id="cmd-toolbar"></div>
+          <div class="cmd-layout">
+            <nav class="cmd-list" id="cmd-list" aria-label="Commands"></nav>
+            <div class="cmd-panel" id="cmd-panel" hidden></div>
           </div>
-        </header>
-        <div class="cmd-layout">
-          <nav class="cmd-list" id="cmd-list" aria-label="Commands"></nav>
-          <div class="cmd-panel" id="cmd-panel"></div>
         </div>
       </section>
     </main>

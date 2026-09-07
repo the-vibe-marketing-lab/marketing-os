@@ -18,3 +18,7 @@ dist/
 .mos-shots-bar/
 .mos-blind/
 .mos-proof/
+
+# Impeccable decision-page state (session scratch)
+.impeccable/questions/
+.impeccable/review/
