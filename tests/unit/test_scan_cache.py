@@ -361,9 +361,9 @@ def test_doctor_inside_a_reuse_block_does_not_walk_the_brain_again(
 
     assert len(walks) == 1, "one brain, one walk"
     assert doctor["findings"][: len(status["findings"])] == status["findings"]
-    assert doctor["checks"]["structure"] is (not [
-        item for item in status["findings"] if item["severity"] == "error"
-    ])
+    assert doctor["checks"]["structure"] is (
+        not [item for item in status["findings"] if item["severity"] == "error"]
+    )
 
 
 def test_outside_a_reuse_block_nothing_is_kept(

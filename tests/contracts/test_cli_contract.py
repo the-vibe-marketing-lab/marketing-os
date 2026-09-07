@@ -128,9 +128,7 @@ def test_help_lists_all_commands(capsys) -> None:
 
 def test_ingest_envelope_and_pending(tmp_path: Path, capsys) -> None:
     target = _make_repo(tmp_path, capsys)
-    code = main(
-        ["ingest", "a short captured note about pricing", str(target), "--yes", "--json"]
-    )
+    code = main(["ingest", "a short captured note about pricing", str(target), "--yes", "--json"])
     payload = json.loads(capsys.readouterr().out)
     assert code == 0
     assert payload["schema"] == "mos.ingest.v1"
@@ -493,9 +491,7 @@ def test_context_set_reads_the_answer_from_stdin(tmp_path: Path, capsys, monkeyp
 def test_context_stdin_sentinel_never_reaches_a_server_thread(tmp_path: Path, capsys) -> None:
     """run_argv is the local app's seam; reading stdin there would hang the request."""
     target = _make_repo(tmp_path, capsys)
-    result = run_argv(
-        ["context", "set", str(target), "--field", "brand", "--text", "-", "--yes"]
-    )
+    result = run_argv(["context", "set", str(target), "--field", "brand", "--text", "-", "--yes"])
     assert result["ok"] is False
     assert result["findings"][0]["code"] == "command-error"
     assert "stdin" in result["findings"][0]["message"]

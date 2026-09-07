@@ -120,9 +120,17 @@ def test_load_catalog_is_none_when_absent_or_corrupt(tmp_path: Path) -> None:
 
 def test_coverage_excludes_generated_navigation_files() -> None:
     docs = {
-        "a.md": {"has_frontmatter": True, "description": "x", "links_out": ["b"],
-                 "has_related_block": False},
-        "_index.md": {"has_frontmatter": True, "description": "x", "links_out": [],
-                      "has_related_block": False},
+        "a.md": {
+            "has_frontmatter": True,
+            "description": "x",
+            "links_out": ["b"],
+            "has_related_block": False,
+        },
+        "_index.md": {
+            "has_frontmatter": True,
+            "description": "x",
+            "links_out": [],
+            "has_related_block": False,
+        },
     }
     assert coverage(docs)["documents"] == 1

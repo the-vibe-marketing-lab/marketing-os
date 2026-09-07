@@ -704,9 +704,13 @@ def parse_reply(text: str, *, must_draft: bool) -> tuple[str, str, str]:
 
     if must_draft:
         if not draft:
-            return "", "", (
-                f"The assistant had used all {MAX_QUESTIONS} questions and was asked for a "
-                "draft, but did not return one."
+            return (
+                "",
+                "",
+                (
+                    f"The assistant had used all {MAX_QUESTIONS} questions and was asked for a "
+                    "draft, but did not return one."
+                ),
             )
         question = ""
     if draft:
@@ -863,9 +867,7 @@ def ask_turn(root: Path, field: str, transcript_json: str | None = None) -> dict
             asked,
             "no-runtime",
             "No agent runtime on this machine answered, so there is no assistant to ask.",
-            next_action(
-                "answer-in-your-own-words", "Answer this field in your own words instead."
-            ),
+            next_action("answer-in-your-own-words", "Answer this field in your own words instead."),
         )
     chosen = live[0]
     spec = next(item for item in RUNTIMES if item.name == chosen["name"])
@@ -882,30 +884,56 @@ def ask_turn(root: Path, field: str, transcript_json: str | None = None) -> dict
     retry = next_action("retry-or-answer-yourself", "Try again, or answer in your own words.")
     if result.reason == "timeout":
         return _refuse(
-            found, field, runtime, turn, asked, "assist-timeout",
-            f"{runtime} did not answer within {TURN_TIMEOUT:g} seconds.", retry, detail=detail,
+            found,
+            field,
+            runtime,
+            turn,
+            asked,
+            "assist-timeout",
+            f"{runtime} did not answer within {TURN_TIMEOUT:g} seconds.",
+            retry,
+            detail=detail,
         )
     if result.reason == "too-large":
         return _refuse(
-            found, field, runtime, turn, asked, "assist-reply-too-large",
-            f"{runtime} returned more than {MAX_REPLY_BYTES} bytes.", retry, detail=detail,
+            found,
+            field,
+            runtime,
+            turn,
+            asked,
+            "assist-reply-too-large",
+            f"{runtime} returned more than {MAX_REPLY_BYTES} bytes.",
+            retry,
+            detail=detail,
         )
     if result.reason == "spawn-failed":
         return _refuse(
-            found, field, runtime, turn, asked, "assist-not-runnable",
-            f"{runtime} resolved but could not be run.", retry, detail=detail,
+            found,
+            field,
+            runtime,
+            turn,
+            asked,
+            "assist-not-runnable",
+            f"{runtime} resolved but could not be run.",
+            retry,
+            detail=detail,
         )
     if result.returncode != 0:
         return _refuse(
-            found, field, runtime, turn, asked, "assist-failed",
-            f"{runtime} exited {result.returncode}.", retry, detail=detail,
+            found,
+            field,
+            runtime,
+            turn,
+            asked,
+            "assist-failed",
+            f"{runtime} exited {result.returncode}.",
+            retry,
+            detail=detail,
         )
 
     question, draft, error = parse_reply(result.stdout, must_draft=must_draft)
     if error:
-        return _refuse(
-            found, field, runtime, turn, asked, "assist-unusable-reply", error, retry
-        )
+        return _refuse(found, field, runtime, turn, asked, "assist-unusable-reply", error, retry)
 
     if draft:
         return envelope(

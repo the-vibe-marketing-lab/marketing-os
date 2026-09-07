@@ -22,7 +22,7 @@ import shutil
 import subprocess
 import sys
 from collections.abc import Callable
-from pathlib import Path
+from pathlib import Path, PurePath, PurePosixPath
 from typing import Any
 
 from marketing_os.core.results import envelope, finding, next_action
@@ -47,38 +47,106 @@ def _sh_quote(value: str) -> str:
     return "'" + value.replace("'", "'\\''") + "'"
 
 
+def _ps_quote(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
+def _script(launch_dir: Path, root: Path, command: list[str], kind: str) -> Path:
+    """A launcher file that changes to the brain and starts the assistant, with the
+    prompt (when there is one) quoted inside it. The prompt never reaches a Windows
+    command line this way: Windows Terminal splits its own command line on ``;`` and
+    ``cmd.exe`` expands ``%VAR%`` and breaks on newlines, and a prompt is prose.
+
+    ``kind`` is ``sh`` (a POSIX script, also the macOS ``.command`` file) or ``ps1`` (a
+    PowerShell script for native Windows, run with ``-ExecutionPolicy Bypass -File``).
+    The file name carries a digest of the folder and the command, so two prompts for
+    the same brain do not overwrite each other mid-launch.
+    """
+    launch_dir.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256("\0".join([str(root), *command]).encode("utf-8")).hexdigest()[:12]
+    if kind == "ps1":
+        script = launch_dir / f"open-{digest}.ps1"
+        body = (
+            "Set-Location -LiteralPath " + _ps_quote(str(root)) + "\n"
+            "& " + " ".join(_ps_quote(part) for part in command) + "\n"
+        )
+        script.write_text(body, encoding="utf-8")
+        return script
+    suffix = ".command" if sys.platform == "darwin" else ".sh"
+    script = launch_dir / f"open-{digest}{suffix}"
+    script.write_text(
+        "#!/bin/sh\ncd "
+        + _sh_quote(str(root))
+        + " && exec "
+        + " ".join(_sh_quote(part) for part in command)
+        + "\n",
+        encoding="utf-8",
+    )
+    script.chmod(0o755)
+    return script
+
+
 def _plan(
-    platform: str, root: Path, executable: str, which: Callable[[str], str | None], launch_dir: Path
-) -> tuple[list[str], Path | None, str] | None:
-    """The argv, working directory and terminal name for one platform, or None."""
+    platform: str,
+    root: Path,
+    executable: str,
+    which: Callable[[str], str | None],
+    launch_dir: Path,
+    prompt: str | None = None,
+) -> tuple[list[str], PurePath | None, str] | None:
+    """The argv, working directory and terminal name for one platform, or None.
+
+    Without a prompt the argv is what it always was. With one, the assistant is started
+    from a launcher file (see ``_script``) on WSL, Windows and macOS, and given the
+    prompt as one argv element on Linux, where the terminal takes argv, not a string.
+    """
+    command = [executable] + ([prompt] if prompt else [])
     if platform == "wsl":
-        handoff = ["wsl.exe", "--cd", str(root), "--exec", executable]
+        if prompt:
+            handoff = [
+                "wsl.exe",
+                "--exec",
+                "/bin/sh",
+                str(_script(launch_dir, root, command, "sh")),
+            ]
+        else:
+            handoff = ["wsl.exe", "--cd", str(root), "--exec", executable]
         if which("wt.exe"):
             return (["wt.exe", *handoff], None, "Windows Terminal")
         if which("cmd.exe"):
-            return (["cmd.exe", "/c", "start", "", *handoff], Path("/mnt/c"), "a console window")
+            # A WSL path, spelled the WSL way whatever host runs the tests.
+            return (
+                ["cmd.exe", "/c", "start", "", *handoff],
+                PurePosixPath("/mnt/c"),
+                "a console window",
+            )
         return None
     if platform == "windows":
+        if prompt:
+            script = _script(launch_dir, root, command, "ps1")
+            start = [
+                "powershell.exe",
+                "-NoExit",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(script),
+            ]
+        else:
+            start = [executable]
         if which("wt.exe"):
-            return (["wt.exe", "-d", str(root), executable], root, "Windows Terminal")
+            return (["wt.exe", "-d", str(root), *start], root, "Windows Terminal")
         if which("cmd.exe"):
-            return (["cmd.exe", "/c", "start", "", executable], root, "a console window")
+            return (["cmd.exe", "/c", "start", "", *start], root, "a console window")
         return None
     if platform == "darwin":
-        launch_dir.mkdir(parents=True, exist_ok=True)
-        digest = hashlib.sha256(str(root).encode("utf-8")).hexdigest()[:12]
-        script = launch_dir / f"open-{digest}.command"
-        script.write_text(
-            "#!/bin/sh\ncd " + _sh_quote(str(root)) + " && exec " + _sh_quote(executable) + "\n",
-            encoding="utf-8",
-        )
-        script.chmod(0o755)
+        script = _script(launch_dir, root, command, "sh")
         return (["open", "-a", "Terminal", str(script)], root, "Terminal")
     for name, argv in (
-        ("gnome-terminal", ["gnome-terminal", "--working-directory", str(root), "--", executable]),
-        ("konsole", ["konsole", "--workdir", str(root), "-e", executable]),
-        ("x-terminal-emulator", ["x-terminal-emulator", "-e", executable]),
-        ("xterm", ["xterm", "-e", executable]),
+        ("gnome-terminal", ["gnome-terminal", "--working-directory", str(root), "--", *command]),
+        ("konsole", ["konsole", "--workdir", str(root), "-e", *command]),
+        ("x-terminal-emulator", ["x-terminal-emulator", "-e", *command]),
+        ("xterm", ["xterm", "-e", *command]),
     ):
         if which(name):
             return (argv, root, name)
@@ -89,6 +157,7 @@ def launch_repo(
     root: Path,
     runtime: str = "claude",
     *,
+    prompt: str | None = None,
     platform: str | None = None,
     which: Callable[[str], str | None] = shutil.which,
     popen: Callable[..., Any] = subprocess.Popen,
@@ -127,7 +196,12 @@ def launch_repo(
     assert executable is not None  # narrowed above
     where = platform or detect_platform()
     plan = _plan(
-        where, root, executable, which, launch_dir or Path.home() / ".marketing-os" / "launch"
+        where,
+        root,
+        executable,
+        which,
+        launch_dir or Path.home() / ".marketing-os" / "launch",
+        prompt,
     )
     if plan is None:
         return envelope(
@@ -171,11 +245,15 @@ def launch_repo(
         root,
         ok=True,
         action=next_action(
-            "type-start",
-            f"{label} is opening in {terminal}, in this brain's folder. Type /mos-start there.",
+            "watch-terminal" if prompt else "type-start",
+            f"{label} is opening in {terminal} with the fix already typed in. Watch it there."
+            if prompt
+            else f"{label} is opening in {terminal}, in this brain's folder. "
+            "Type /mos-start there.",
         ),
         runtime=runtime,
         launched=True,
+        prompted=bool(prompt),
         platform=where,
         terminal=terminal,
         argv=argv,

@@ -62,9 +62,7 @@ COMMANDS: dict[str, CommandSpec] = {
     "validate": CommandSpec(("validate",), positionals=("path",), flags=("strict",)),
     "doctor": CommandSpec(("doctor",), positionals=("path",)),
     "statusline": CommandSpec(("statusline",), positionals=("path",)),
-    "install": CommandSpec(
-        ("install",), options=("runtime",), flags=(*_MUTATION, "no-ui")
-    ),
+    "install": CommandSpec(("install",), options=("runtime",), flags=(*_MUTATION, "no-ui")),
     "onboard": CommandSpec(
         ("onboard",),
         positionals=("path",),
@@ -84,10 +82,8 @@ COMMANDS: dict[str, CommandSpec] = {
     "index build": CommandSpec(("index", "build"), positionals=("path",)),
     "index sync": CommandSpec(("index", "sync"), positionals=("path",), flags=_MUTATION),
     "index status": CommandSpec(("index", "status"), positionals=("path",)),
-    "open": CommandSpec(("open",), positionals=("path",), options=("in",)),
-    "rename": CommandSpec(
-        ("rename",), positionals=("path",), options=("name",), flags=_MUTATION
-    ),
+    "open": CommandSpec(("open",), positionals=("path",), options=("in", "prompt")),
+    "rename": CommandSpec(("rename",), positionals=("path",), options=("name",), flags=_MUTATION),
     "related": CommandSpec(
         ("related",), positionals=("path",), options=("limit",), flags=_MUTATION
     ),
@@ -164,9 +160,7 @@ def _positional(name: str, value: Any) -> str:
     """
     text = _scalar(name, value)
     if text.startswith("-"):
-        raise CommandError(
-            f"argument {name!r} must not begin with '-'; it is a value, not a flag"
-        )
+        raise CommandError(f"argument {name!r} must not begin with '-'; it is a value, not a flag")
     if name == "path" and not Path(text).expanduser().is_absolute():
         # The CLI resolves a relative path against its own cwd, which for the app is
         # wherever the server was started: a Windows spelling such as ``C:/Users/x``

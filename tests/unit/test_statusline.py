@@ -73,9 +73,7 @@ def test_statusline_omits_invalid_mode_but_keeps_fact(tmp_path: Path) -> None:
     config_path = root / ".mos" / "config.yaml"
     config = json.loads(config_path.read_text(encoding="utf-8"))
     config["mode"] = "franchise"
-    config_path.write_text(
-        json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    config_path.write_text(json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     result = statusline_repo(root)
     # The invalid value is carried verbatim in facts but never rendered on the line.
     assert result["mode"] == "franchise"
@@ -101,9 +99,7 @@ def test_statusline_counts_mismatched_skills_as_not_installed(tmp_path: Path) ->
 
     # Make one installed Claude skill stale so its content hash no longer matches.
     skill_file = next(
-        path
-        for path in sorted((root / ".claude" / "skills").rglob("*"))
-        if path.is_file()
+        path for path in sorted((root / ".claude" / "skills").rglob("*")) if path.is_file()
     )
     skill_file.write_text(
         skill_file.read_text(encoding="utf-8") + "\nstale drift\n", encoding="utf-8"

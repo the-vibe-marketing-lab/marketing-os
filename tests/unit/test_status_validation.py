@@ -14,9 +14,7 @@ def _rewrite_config(root: Path, **changes: object) -> None:
             config.pop(key, None)
         else:
             config[key] = value
-    config_path.write_text(
-        json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    config_path.write_text(json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def _complete_context(root: Path) -> None:

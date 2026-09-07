@@ -248,9 +248,7 @@ def test_pid_alive_never_signals_anything_on_windows(monkeypatch) -> None:
     assert kernel32.OpenProcess.calls == [(_SYNCHRONIZE, 0, 500)]
 
 
-@pytest.mark.parametrize(
-    ("wait", "expected"), [(_WAIT_TIMEOUT, True), (_WAIT_OBJECT_0, False)]
-)
+@pytest.mark.parametrize(("wait", "expected"), [(_WAIT_TIMEOUT, True), (_WAIT_OBJECT_0, False)])
 def test_the_windows_probe_reads_the_wait_and_always_closes_the_handle(
     monkeypatch, wait, expected
 ) -> None:
@@ -984,9 +982,7 @@ def test_the_app_falling_over_is_the_same_promise(browser: dict) -> None:
 
 def test_four_questions_then_a_draft_lands_in_the_box(browser: dict) -> None:
     full = browser["fullInterview"]
-    assert full["metas"] == [
-        f"Question {n} of up to 4, from Claude Code" for n in (1, 2, 3, 4)
-    ]
+    assert full["metas"] == [f"Question {n} of up to 4, from Claude Code" for n in (1, 2, 3, 4)]
     assert full["transcriptLengths"] == [0, 1, 2, 3, 4], "the interview is bounded at four"
     assert full["draftInBox"] == DRAFTED
     assert full["reviewBlocked"] == "false", "a drafted answer is reviewable straight away"
@@ -1341,8 +1337,17 @@ def _picker_says(monkeypatch, **answer):
 
     def fake(start, **kwargs):
         seen.append(start)
-        return dict({"path": None, "cancelled": False, "available": True, "busy": False,
-                     "error": None, "backend": "wsl"}, **answer)
+        return dict(
+            {
+                "path": None,
+                "cancelled": False,
+                "available": True,
+                "busy": False,
+                "error": None,
+                "backend": "wsl",
+            },
+            **answer,
+        )
 
     monkeypatch.setattr("marketing_os.ui.server.pick_folder", fake)
     return seen
@@ -1363,14 +1368,21 @@ def test_pick_folder_reports_a_closed_window(tree: Path, monkeypatch) -> None:
     with _serving(tree) as server:
         status, body = _post(server, "/api/pick-folder", {"start": None})
     assert status == 200
-    assert body == {"path": None, "cancelled": True, "available": True, "busy": False,
-                    "error": None, "backend": "wsl"}
+    assert body == {
+        "path": None,
+        "cancelled": True,
+        "available": True,
+        "busy": False,
+        "error": None,
+        "backend": "wsl",
+    }
     assert seen == [None]
 
 
 def test_pick_folder_reports_that_no_window_can_open(tree: Path, monkeypatch) -> None:
-    _picker_says(monkeypatch, available=False, error="No folder window can open here.",
-                 backend="none")
+    _picker_says(
+        monkeypatch, available=False, error="No folder window can open here.", backend="none"
+    )
     with _serving(tree) as server:
         status, body = _post(server, "/api/pick-folder", {})
     assert status == 200
@@ -1683,9 +1695,7 @@ def test_run_refuses_a_windows_path_outside_wsl(tree: Path, monkeypatch) -> None
     assert body["envelope"]["findings"][0]["code"] == "bad-path"
 
 
-def test_run_converts_a_windows_path_under_wsl_before_dispatch(
-    tree: Path, monkeypatch
-) -> None:
+def test_run_converts_a_windows_path_under_wsl_before_dispatch(tree: Path, monkeypatch) -> None:
     seen: list[str] = []
 
     def convert(value: str) -> str:
@@ -1773,7 +1783,10 @@ def test_a_listed_folder_that_lost_its_brain_is_greyed_and_forgettable(browser: 
     assert hollow["stillHere"] == "Test Gym" and hollow["stateCalls"] == 0
     # Rows without the flag (an older server, or a real brain) are untouched.
     assert hollow["others"] == [
-        ["Test Gym", None], ["Second Co", None], ["Gone Co", "true"], ["Old Co", None]
+        ["Test Gym", None],
+        ["Second Co", None],
+        ["Gone Co", "true"],
+        ["Old Co", None],
     ]
 
 

@@ -224,17 +224,13 @@ def test_a_foreign_origin_is_refused(tmp_path: Path) -> None:
 def test_the_server_own_origin_is_accepted(tmp_path: Path) -> None:
     with running(tmp_path) as server:
         for host in ("127.0.0.1", "localhost"):
-            status, _, _ = call(
-                server, "/api/state", origin=f"http://{host}:{server.port}"
-            )
+            status, _, _ = call(server, "/api/state", origin=f"http://{host}:{server.port}")
             assert status == 200
 
 
 def test_a_loopback_origin_on_another_port_is_refused(tmp_path: Path) -> None:
     with running(tmp_path) as server:
-        status, _, _ = call(
-            server, "/api/state", origin=f"http://127.0.0.1:{server.port + 1}"
-        )
+        status, _, _ = call(server, "/api/state", origin=f"http://127.0.0.1:{server.port + 1}")
     assert status == 403
 
 
@@ -467,9 +463,10 @@ def test_context_show_is_allowlisted_read_only(tmp_path: Path, capsys) -> None:
             method="POST",
             body={"command": "context show", "args": {"path": str(brain)}},
         )
-        specs = {item["command"]: item for item in as_json(call(server, "/api/state")[1])[
-            "command_specs"
-        ]}
+        specs = {
+            item["command"]: item
+            for item in as_json(call(server, "/api/state")[1])["command_specs"]
+        }
     payload = as_json(body)
     assert status == 200
     assert payload["envelope"]["schema"] == "mos.context.v1"
@@ -507,9 +504,7 @@ def test_the_browser_can_answer_a_question_through_the_real_cli(tmp_path: Path, 
         state = as_json(call(server, "/api/state")[1])
     assert applied["envelope"]["applied"] is True
     assert "--yes" in applied["command_line"]
-    assert CONTEXT_ANSWER in (brain / "business" / "brand" / "brand.md").read_text(
-        encoding="utf-8"
-    )
+    assert CONTEXT_ANSWER in (brain / "business" / "brand" / "brand.md").read_text(encoding="utf-8")
     assert state["status"]["context"]["missing"] == ["voice", "audience", "offer"]
 
 

@@ -72,8 +72,13 @@ def test_the_sidebar_is_one_labelled_navigation_landmark() -> None:
     assert nav is not None
     assert 'aria-label="Brains and sections"' in nav.group(0)
     sidebar = HTML.split('<nav class="sidebar"', 1)[1].split("</nav>", 1)[0]
-    for needle in ('id="brains"', 'role="tablist"', 'id="btn-refresh"', 'id="btn-new-brain"',
-                   'id="btn-attach-folder"'):
+    for needle in (
+        'id="brains"',
+        'role="tablist"',
+        'id="btn-refresh"',
+        'id="btn-new-brain"',
+        'id="btn-attach-folder"',
+    ):
         assert needle in sidebar, needle
     assert 'aria-orientation="vertical"' in sidebar
     assert "Set up another brain" in sidebar and "Attach a folder&hellip;" in sidebar
@@ -110,7 +115,7 @@ def test_the_open_brain_is_marked_in_words_and_switching_is_one_request() -> Non
     assert 'text: "Forget"' in section
     assert "title: brain.path" in section
     assert '"aria-current": isActive ? "true" : null' in section
-    assert ".brain__open[aria-current=\"true\"]" in CSS
+    assert '.brain__open[aria-current="true"]' in CSS
     switching = JS.split("function switchBrain(", 1)[1].split("\n  }\n", 1)[0]
     assert 'request("/api/state?path=" + encodeURIComponent(path))' in switching
     assert 'announce("Now showing "' in switching
@@ -202,6 +207,10 @@ PAIRS = [
     ("current marker on its ground", "accent-hover", "accent-soft", 4.5),
     ("needs-attach tag on its ground", "warn", "warn-soft", 4.5),
     ("open section icon on its ground", "accent", "accent-soft", 3.0),
+    # The badges: green is ready, Sun is optional or minor, Ember Bright needs you.
+    ("ready badge", "good", "good-soft", 4.5),
+    ("needs-you badge", "err", "err-soft", 4.5),
+    ("minor badge", "warn", "warn-soft", 4.5),
 ]
 
 
@@ -334,7 +343,7 @@ def _js_section(start: str, end: str) -> str:
 def test_the_desktop_is_named_as_a_place_in_words() -> None:
     """The default folder sits on the desktop, and the page says so, not its path."""
     assert "on your desktop" in JS
-    assert "inside \" + up.name + \", on your desktop" in JS
+    assert 'inside " + up.name + ", on your desktop' in JS
 
 
 def test_the_folder_browser_speaks_in_words_and_carries_paths_in_titles() -> None:
@@ -409,7 +418,7 @@ def test_the_selected_place_is_not_signalled_by_colour_alone() -> None:
     assert '"aria-pressed": pressed ? "true" : "false"' in JS
     assert '.chip--place[aria-pressed="true"]' in CSS
     # The tick is the sprite's check, shown only when pressed (it used to be a text glyph).
-    assert ".chip--place[aria-pressed=\"true\"] .chip__tick .icon" in CSS
+    assert '.chip--place[aria-pressed="true"] .chip__tick .icon' in CSS
 
 
 def test_the_confirmation_and_the_option_are_built_from_one_phrase() -> None:
@@ -610,7 +619,6 @@ def test_what_it_costs_is_said_where_the_choice_is_made() -> None:
 def test_the_manual_path_is_still_offered_in_words() -> None:
     assert "or write it yourself" in ASSIST_JS
     assert ".assist-or::before" in CSS and ".assist-or::after" in CSS
-
 
 
 # --- copy may not deny a capability the app ships -----------------------------------
@@ -910,3 +918,26 @@ def test_the_reader_is_never_told_about_a_schema() -> None:
         if not re.fullmatch(r"[a-z-]+", text) and re.search(r"\bschemas?\b", text, re.I)
     ]
     assert hits == [], hits
+
+
+def test_every_finding_leads_to_the_same_two_things() -> None:
+    """The dashboard's one job is to get the operator to fix it: open Claude Code with the
+    fix typed in, or copy the prompt. No row points at a button elsewhere, and no row
+    previews a command the operator would have to understand first."""
+    assert "Fix in Claude Code" in JS and "Copy the prompt" in JS
+    assert 'args["in"] = "claude"' in JS and "args.prompt = " in JS, "open carries the fix"
+    for gone in (
+        "Use the button above.",
+        "Preview the fix",
+        "Preview the missing pieces",
+        "Preview the links",
+    ):
+        assert gone not in JS, gone
+
+
+def test_the_badges_read_without_their_colour() -> None:
+    """A dot and a word, so ready, minor and needs-you are told apart by more than green,
+    Sun and Ember Bright."""
+    for word in ("state--good", "state--needs", "state--minor"):
+        assert word in CSS and word in JS
+    assert ".state::before" in CSS

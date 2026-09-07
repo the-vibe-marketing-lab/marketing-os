@@ -93,9 +93,7 @@ def test_setup_client_requires_agency(tmp_path: Path) -> None:
 
 def test_setup_client_records_agency_and_repo_name(tmp_path: Path) -> None:
     target = tmp_path / "brain"
-    result = setup_repo(
-        target, "Client Brand", "all", mode="client", agency="Acme Co", apply=True
-    )
+    result = setup_repo(target, "Client Brand", "all", mode="client", agency="Acme Co", apply=True)
     assert result["ok"] is True
     assert result["suggested_repo_name"] == "acme-co-client-brand"
     config = json.loads((target / ".mos" / "config.yaml").read_text(encoding="utf-8"))

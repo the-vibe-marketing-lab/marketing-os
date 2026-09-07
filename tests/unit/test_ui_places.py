@@ -68,23 +68,24 @@ def test_wsl_environment_marker_uses_windows_desktop(tmp_path: Path) -> None:
             return _completed(args, "C:\\Users\\Operator\n")
         return _completed(args, f"{profile}\n")
 
-    assert desktop_dir(
-        env={"WSL_DISTRO_NAME": "Ubuntu"},
-        home=tmp_path / "home",
-        proc_version="ordinary Linux",
-        run=run,
-        platform_name="posix",
-        wsl_users_root=tmp_path / "unused",
-    ) == desktop
+    assert (
+        desktop_dir(
+            env={"WSL_DISTRO_NAME": "Ubuntu"},
+            home=tmp_path / "home",
+            proc_version="ordinary Linux",
+            run=run,
+            platform_name="posix",
+            wsl_users_root=tmp_path / "unused",
+        )
+        == desktop
+    )
 
 
 @pytest.mark.parametrize(
     "failure",
     ["missing", "nonzero", "timeout", "empty", "literal", "multiline"],
 )
-def test_wsl_process_failures_fall_back_to_profile_scan(
-    tmp_path: Path, failure: str
-) -> None:
+def test_wsl_process_failures_fall_back_to_profile_scan(tmp_path: Path, failure: str) -> None:
     users = tmp_path / "mnt" / "c" / "Users"
     public = users / "Public" / "Desktop"
     expected = users / "Operator" / "Desktop"
@@ -214,18 +215,16 @@ def test_posix_suggestions_put_desktop_before_home(tmp_path: Path) -> None:
     desktop = tmp_path / "Desktop"
     desktop.mkdir()
 
-    assert suggested_places(
-        env={}, home=tmp_path, proc_version="Linux", platform_name="posix"
-    ) == [
+    assert suggested_places(env={}, home=tmp_path, proc_version="Linux", platform_name="posix") == [
         {"path": str(desktop), "kind": "desktop"},
         {"path": str(tmp_path), "kind": "home"},
     ]
 
 
 def test_posix_suggestions_use_home_alone_without_desktop(tmp_path: Path) -> None:
-    assert suggested_places(
-        env={}, home=tmp_path, proc_version="Linux", platform_name="posix"
-    ) == [{"path": str(tmp_path), "kind": "home"}]
+    assert suggested_places(env={}, home=tmp_path, proc_version="Linux", platform_name="posix") == [
+        {"path": str(tmp_path), "kind": "home"}
+    ]
 
 
 def test_native_windows_uses_userprofile(tmp_path: Path) -> None:
@@ -233,18 +232,24 @@ def test_native_windows_uses_userprofile(tmp_path: Path) -> None:
     desktop = profile / "Desktop"
     desktop.mkdir(parents=True)
 
-    assert desktop_dir(
-        env={"USERPROFILE": str(profile)},
-        home=tmp_path / "other-home",
-        proc_version="not WSL",
-        platform_name="nt",
-    ) == desktop
-    assert desktop_dir(
-        env={},
-        home=tmp_path / "other-home",
-        proc_version="not WSL",
-        platform_name="nt",
-    ) is None
+    assert (
+        desktop_dir(
+            env={"USERPROFILE": str(profile)},
+            home=tmp_path / "other-home",
+            proc_version="not WSL",
+            platform_name="nt",
+        )
+        == desktop
+    )
+    assert (
+        desktop_dir(
+            env={},
+            home=tmp_path / "other-home",
+            proc_version="not WSL",
+            platform_name="nt",
+        )
+        is None
+    )
 
 
 def test_suggestions_deduplicate_a_desktop_resolving_to_home(tmp_path: Path) -> None:
@@ -409,9 +414,7 @@ def test_a_desktop_holding_many_folders_is_scanned_past_the_first_fifty(
 
 def _legacy_brain(root: Path) -> Path:
     (root / ".mos").mkdir(parents=True)
-    (root / ".mos" / "config.yaml").write_text(
-        "mode: agency\nname: Legacy Lab\n", encoding="utf-8"
-    )
+    (root / ".mos" / "config.yaml").write_text("mode: agency\nname: Legacy Lab\n", encoding="utf-8")
     (root / "BRAIN.md").write_text("# Mine\n", encoding="utf-8")
     (root / "business").mkdir()
     return root

@@ -41,9 +41,7 @@ def _is_wsl(env: Mapping[str, str], proc_version: str | None) -> bool:
         return True
     if proc_version is None:
         try:
-            proc_version = Path("/proc/version").read_text(
-                encoding="utf-8", errors="replace"
-            )
+            proc_version = Path("/proc/version").read_text(encoding="utf-8", errors="replace")
         except OSError:
             # A missing or unreadable proc file means this marker gives no evidence.
             proc_version = ""

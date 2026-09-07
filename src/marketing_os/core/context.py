@@ -82,8 +82,7 @@ FIELDS: dict[str, FieldSpec] = {
         hint="Describe the tone, the words you reach for, and the words you never use.",
         title="Voice",
         description=(
-            "How the business sounds at its best, with the language to use and the "
-            "habits to avoid."
+            "How the business sounds at its best, with the language to use and the habits to avoid."
         ),
         related=("business/brand/brand.md", "business/audience/primary.md"),
     ),
@@ -111,8 +110,7 @@ FIELDS: dict[str, FieldSpec] = {
         hint="Name the ground you are choosing and why you beat the alternatives on it.",
         title="Strategy",
         description=(
-            "Where the business plays and how it wins; the choice every other decision "
-            "answers to."
+            "Where the business plays and how it wins; the choice every other decision answers to."
         ),
         related=("business/strategy/goals.md", "business/brand/brand.md"),
     ),

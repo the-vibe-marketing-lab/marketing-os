@@ -1130,12 +1130,6 @@
     return { name: "info", cls: "row__icon--info" };
   }
 
-  function severityPill(severity) {
-    if (severity === "error") return "pill pill--err";
-    if (severity === "warning") return "pill pill--warn";
-    return "pill";
-  }
-
   /* One plain sentence per checker code, and what to do about it. The checker's own
    * messages are written for a terminal and a maintainer; the operator reading this page
    * is neither. `one` and `many` take the count of findings that share the code; `fix`
@@ -1349,7 +1343,7 @@
       steps.push("- " + findingWords(group).title.replace(/\.$/, "") + ": " + step + ".");
     });
     var onboard =
-      'mos onboard --name "' + name + '" --mode ' + mode + (mode === "client" ? ' --agency "<agency name>"' : "") + " --plan .";
+      "mos onboard --name '" + name + "' --mode " + mode + (mode === "client" ? " --agency '<agency name>'" : "") + " --plan .";
     var NL = "\n";
     return (
       "I am working in the MarketingOS brain at " +
@@ -1440,6 +1434,86 @@
     return api;
   }
 
+
+  /* ---- fix it in Claude Code ------------------------------------------------ */
+
+  /* Every finding resolves to the same two things: open Claude Code with the fix already
+   * typed in, or copy the prompt and paste it wherever you like. "View the prompt" shows
+   * the text before either. One factory builds the pair so every row reads the same. */
+  var opening = { busy: false };
+
+  function launchFix(button, text, onFail) {
+    if (opening.busy) {
+      toast("Claude Code is still opening");
+      return Promise.resolve(null);
+    }
+    opening.busy = true;
+    if (button) busy(button, true, "Opening");
+    var args = baseArgs("open");
+    args["in"] = "claude";
+    // The exact text the card shows: `mos open` keeps it off every command line.
+    args.prompt = String(text);
+    function settle() {
+      opening.busy = false;
+      if (button) busy(button, false);
+    }
+    return run("open", args).then(function (result) {
+      settle();
+      var envelope = result.envelope;
+      if (envelope && envelope.ok) {
+        var said = (envelope.next_action && envelope.next_action.reason) || "Claude Code is opening with the fix typed in.";
+        toast(said);
+        announce(said);
+        return result;
+      }
+      var groups = envelope ? groupFindings(findingsOf(envelope)) : [];
+      var words = groups.length ? findingWords(groups[0]) : { title: "Claude Code could not be opened.", fix: "" };
+      words.fix = "Copy the prompt and paste it into Claude Code yourself.";
+      if (onFail) onFail(words, result);
+      announce(words.title);
+      return result;
+    }, function (error) {
+      settle();
+      var words = { title: "Claude Code could not be opened.", fix: "Copy the prompt and paste it into Claude Code yourself." };
+      if (onFail) onFail(words, null);
+      announce(words.title);
+      return null;
+    });
+  }
+
+  function fixActions(text, opts) {
+    opts = opts || {};
+    var prompt = typeof text === "function" ? text : function () { return text; };
+    var view = promptReveal(prompt);
+    var fail = el("p", { class: "fix__fail", hidden: true });
+    var open = el("button", {
+      class: opts.primary ? "btn btn--primary" : "btn btn--secondary btn--sm",
+      type: "button",
+      title: "Opens Claude Code in this brain's folder with the fix typed in",
+      on: {
+        click: function () {
+          launchFix(open, prompt(), function (words) {
+            fill(fail, [el("span", { text: words.title + " " + words.fix })]);
+            show(fail, true);
+            view.open();
+          });
+        },
+      },
+    }, [icon("terminal", "icon"), el("span", { text: opts.label || "Fix in Claude Code" })]);
+    var copyBtn = el("button", {
+      class: opts.primary ? "btn btn--secondary" : "btn btn--secondary btn--sm",
+      type: "button",
+      text: "Copy the prompt",
+      on: {
+        click: function () {
+          copy(prompt(), "Prompt copied");
+        },
+      },
+    });
+    var row = el("div", { class: "btn-row fix__row" }, [open, copyBtn, view.button]);
+    return { row: row, host: view.host, fail: fail, open: open, view: view };
+  }
+
   /* Findings that share a code are one thing that is wrong in several places, and are
    * read as one row: ten documents without a header is one sentence and a list of ten
    * paths, not ten sentences. Order is the checker's, errors first, first appearance. */
@@ -1519,7 +1593,7 @@
       icon(look.name, "row__icon " + look.cls),
       el("div", { class: "row__body" }, body),
       el("span", { class: "row__end" }, [
-        el("span", { class: severityPill(group.severity), text: group.severity }),
+        stateWord(group.severity === "error" ? "needs you" : "minor"),
       ]),
     ]);
   }
@@ -4264,7 +4338,9 @@
     return el("span", {
       class:
         "state" +
+        (word === "ready" ? " state--good" : "") +
         (word === "needs you" ? " state--needs" : "") +
+        (word === "minor" ? " state--minor" : "") +
         (word === "optional" ? " state--optional" : ""),
       text: word,
     });
@@ -4409,7 +4485,7 @@
         "findings",
         String(total),
         total ? plural(errors, "error") + ", " + plural(warnings, "warning") : "nothing to fix",
-        total ? "needs you" : "ready",
+        total ? (errors ? "needs you" : "minor") : "ready",
         "todo"
       ),
     ]);
@@ -4420,64 +4496,28 @@
   var TODO_LIMIT = 6;
 
   function todoAction(status, group, container, slots) {
-    var code = group.code;
-    if (code === "missing-file" || code === "missing-directory") {
-      var repair = repairPlan(status);
-      var plan = repair.actions.filter(function (action) {
-        return action.kind === "plan-apply" && action.command === "onboard";
-      })[0];
-      // The header's primary already runs this plan; one control per action.
-      var lead = heroPlan(status).actions[0];
-      if (plan && lead && lead.kind === "plan-apply" && lead.command === "onboard") {
-        return el("p", { class: "todo__pointer", text: "Use the button above." });
-      }
-      if (plan) return heroButton(plan, container, false);
-      return heroButton({ kind: "run", label: "Show everything the check found", command: "validate" }, container, false);
-    }
-    if (code === "unlinked-document") {
-      return heroButton(
-        { kind: "plan-apply", label: "Preview the links", command: "related", applyLabel: "Add the links" },
-        container,
-        false
-      );
-    }
-    var text = fixPromptText(status, group.items);
-    var view = promptReveal(text);
-    if (slots && slots.after) add(slots.after, view.host);
-    return el("div", { class: "btn-row todo__prompts" }, [
-      el("button", {
-        class: "btn btn--secondary btn--sm",
-        type: "button",
-        text: "Copy the prompt",
-        title: "Copy a prompt for Claude Code that fixes this",
-        on: {
-          click: function () {
-            copy(text, "Prompt copied");
-          },
-        },
-      }),
-      view.button,
-    ]);
+    var fix = fixActions(function () {
+      return fixPromptText(status, group.items);
+    });
+    if (slots && slots.after) add(slots.after, [fix.fail, fix.host]);
+    return fix.row;
   }
 
-  function todoRow(status, group, panelReadouts) {
+  function todoRow(status, group) {
     var look = severityIcon(group.severity);
     var words = findingWords(group);
     var n = group.items.length;
     var readouts = el("div", { class: "todo__readouts" });
     var after = el("div", { class: "todo__after" });
     var action = todoAction(status, group, readouts, { after: after });
-    // The row that points at the header's button is where that button's result lands,
-    // so the result reads under the thing it answers rather than above it.
-    if (panelReadouts && action && action.className === "todo__pointer") {
-      add(readouts, [panelReadouts]);
-      panelReadouts.setAttribute("data-adopted", "true");
-    }
     return el("li", { class: "todo" }, [
       el("div", { class: "todo__row" }, [
         icon(look.name, "row__icon " + look.cls),
         el("div", { class: "todo__text" }, [
-          el("p", { class: "todo__title", text: words.title }),
+          el("div", { class: "todo__head" }, [
+            el("p", { class: "todo__title", text: words.title }),
+            stateWord(group.severity === "error" ? "needs you" : "minor"),
+          ]),
           el("p", {
             class: "todo__sub",
             text: (n > 1 ? "In " + plural(n, "place") + ". " : "") + (words.fix || ""),
@@ -4512,10 +4552,10 @@
       );
     } else {
       kids.push(el("ul", { class: "todos", role: "list" }, shown.map(function (group) {
-        return todoRow(status, group, readouts);
+        return todoRow(status, group);
       })));
-      // No row claimed the header's result: it follows the list, never precedes it.
-      if (readouts.getAttribute("data-adopted") !== "true") kids.push(readouts);
+      // The header's result, when it has one, follows the list and never precedes it.
+      kids.push(readouts);
       if (more > 0) {
         kids.push(
           el("div", { class: "btn-row panel__more" }, [
@@ -4534,7 +4574,12 @@
           ])
         );
       }
-      kids.push(tech([promptBox(fixPromptText(status, findings))], "Ask Claude Code to fix it"));
+      if (groups.length > 1 && heroPlan(status).actions[0].kind !== "fix") {
+        var all = fixActions(function () {
+          return fixPromptText(status, findings);
+        }, { label: "Fix all " + groups.length + " in Claude Code" });
+        kids.push(el("div", { class: "panel__foot" }, [all.row, all.fail, all.host]));
+      }
     }
     var built = panel("todo", "Do this next", groups.length ? [el("span", { class: "panel__count", text: groups.length + " to do" })] : null, kids);
     built.readouts = readouts;
@@ -4737,7 +4782,8 @@
         text: action.label,
         on: {
           click: function () {
-            copy(action.value, "Copied");
+            var value = typeof action.value === "function" ? action.value() : action.value;
+            copy(value, action.label === "Copy the prompt" ? "Prompt copied" : "Copied");
           },
         },
       });
@@ -4778,6 +4824,24 @@
           },
         },
       });
+    }
+    if (action.kind === "fix") {
+      var fixBtn = el("button", {
+        class: primary ? "btn btn--primary" : "btn btn--secondary",
+        type: "button",
+        title: "Opens Claude Code in this brain's folder with the fix typed in",
+      }, [icon("terminal", "icon"), el("span", { text: action.label })]);
+      fixBtn.addEventListener("click", function () {
+        launchFix(fixBtn, action.text(), function (words) {
+          if (!card) return;
+          fill(card, [
+            el("p", { class: "fix__fail", text: words.title + " " + words.fix }),
+            promptBox(action.text()),
+          ]);
+          land(card);
+        });
+      });
+      return fixBtn;
     }
 
     var button = el("button", {
@@ -4880,20 +4944,29 @@
         actions: [{ kind: "wizard", label: "Set up a brain" }],
       };
     }
-    if (id === "repair-structure") return repairPlan(status);
+    if (id === "repair-structure") {
+      var all = function () {
+        return fixPromptText(status, findingsOf(status));
+      };
+      return {
+        title: "The check found things to fix.",
+        body: "Claude Code can fix them for you. Open it with the fix typed in, or copy the prompt.",
+        actions: [
+          { kind: "fix", label: "Fix it in Claude Code", text: all },
+          { kind: "copy", label: "Copy the prompt", value: all },
+        ],
+      };
+    }
     if (id === "sync-skills") {
+      var sync = function () {
+        return syncPromptText(status);
+      };
       return {
         title: "Your assistants cannot see the latest skills.",
-        body:
-          "Claude Code and Codex each keep their own copy of the shared skills, and yours are " +
-          "missing or out of date. This previews the fix first, so nothing is written until you say so.",
+        body: "Claude Code can refresh them for you. Open it with the update typed in, or copy the prompt.",
         actions: [
-          {
-            kind: "plan-apply",
-            label: "Preview the fix",
-            command: "skills sync",
-            applyLabel: "Apply the sync",
-          },
+          { kind: "fix", label: "Fix it in Claude Code", text: sync },
+          { kind: "copy", label: "Copy the prompt", value: sync },
         ],
       };
     }
@@ -4933,81 +5006,6 @@
     };
   }
 
-  /* The next_action id only says "repair"; what to repair is in the findings. The hero is
-   * built from the worst one, so its title names the thing that is wrong and its button
-   * does the thing that fixes it. Setting the brain up again is safe on an existing brain:
-   * it creates only what is missing and never touches a file that exists. */
-  function repairPlan(status) {
-    var groups = groupFindings(findingsOf(status));
-    var top =
-      groups.filter(function (group) {
-        return group.severity === "error";
-      })[0] || groups[0];
-    var code = top ? top.code : "";
-    var n = top ? top.items.length : 0;
-    var name = (status.business || {}).name || "";
-    var mode = status.mode;
-    var canScaffold = Boolean(name) && (mode === "in-house" || mode === "agency");
-    var showAll = { kind: "run", label: "Show everything the check found", command: "validate" };
-
-    if (code === "missing-file" || code === "missing-directory") {
-      var what = plural(n, code === "missing-file" ? "required file" : "required folder");
-      return {
-        title: "The brain is missing " + what + ".",
-        body:
-          "Nothing else is affected. Setting it up again adds what is missing, plus any " +
-          "housekeeping files a newer version brought, and leaves every answer as it is. You " +
-          "see the full list before anything is written.",
-        actions: canScaffold
-          ? [
-              {
-                kind: "plan-apply",
-                label: "Preview the missing pieces",
-                command: "onboard",
-                args: { name: name, mode: mode },
-                applyLabel: "Add the missing pieces",
-              },
-              { kind: "run", label: showAll.label, command: "validate", subtle: true },
-            ]
-          : [showAll],
-      };
-    }
-    if (code === "missing-frontmatter") {
-      return {
-        title: findingWords(top).title,
-        body: FINDING_COPY["missing-frontmatter"].fix,
-        actions: [{ kind: "run", label: "Show which documents", command: "validate" }],
-      };
-    }
-    if (code === "unlinked-document") {
-      return {
-        title: findingWords(top).title,
-        body: FINDING_COPY["unlinked-document"].fix,
-        actions: [
-          {
-            kind: "plan-apply",
-            label: "Preview the links",
-            command: "related",
-            applyLabel: "Add the links",
-          },
-          { kind: "run", label: showAll.label, command: "validate", subtle: true },
-        ],
-      };
-    }
-    if (top && FINDING_COPY[code]) {
-      return {
-        title: findingWords(top).title,
-        body: FINDING_COPY[code].fix,
-        actions: [showAll, { kind: "goto", label: "Open the migrate tool", command: "migrate" }],
-      };
-    }
-    return {
-      title: "Some files are out of place.",
-      body: "Nothing is lost. Run the check to see exactly which, then move or rename them.",
-      actions: [showAll, { kind: "goto", label: "Open the migrate tool", command: "migrate" }],
-    };
-  }
-
   /* ---- the four checks ---------------------------------------------------- */
 
   /* Findings the structure check owns: where files and folders are, and whether the
@@ -5029,10 +5027,6 @@
     "set-mode-agency",
     "unexpected-clients-folder",
   ];
-
-  function planAction(action, container) {
-    return el("div", { class: "btn-row" }, [heroButton(action, container, false)]);
-  }
 
   /* ---- quick actions ----------------------------------------------------- */
 
@@ -5084,7 +5078,6 @@
     return spec && (spec.positionals || []).indexOf("path") !== -1 ? { path: App.path } : {};
   }
 
-  var opening = { busy: false };
 
   /* `mos open`: a terminal in the brain's folder with the assistant started. On success
    * the envelope's own sentence is the toast; on failure the plain sentence for its
@@ -5193,10 +5186,20 @@
     ].join(NL);
   }
 
+  function navPromptText(status) {
+    var repo = status.repo || App.path;
+    var NL = "\n";
+    return [
+      "I am working in the MarketingOS brain at " + repo + ". Rebuild its navigation catalogue:",
+      "run `mos index sync . --plan`, review it, then `mos index sync . --yes`; then",
+      "`mos index status .` and show me what it reports.",
+    ].join(NL);
+  }
+
   function syncBlock(status) {
-    var view = promptReveal(function () {
+    var fix = fixActions(function () {
       return syncPromptText(status);
-    });
+    }, { label: "Update in Claude Code" });
     var browse = el("button", {
       class: "btn btn--ghost btn--sm",
       type: "button",
@@ -5217,11 +5220,13 @@
         el("p", {
           class: "panel__line",
           text:
-            "Ask Claude Code to update MarketingOS and refresh this brain's skills, or find " +
+            "Claude Code can update MarketingOS and refresh this brain's skills, or find " +
             "every skill on the Skills page.",
         }),
-        el("div", { class: "btn-row" }, [view.button, browse]),
-        view.host,
+        fix.row,
+        el("div", { class: "btn-row" }, [browse]),
+        fix.fail,
+        fix.host,
       ]),
     ]);
     return details;
@@ -5236,6 +5241,9 @@
       return runtimes[key].ready;
     });
     var body = el("div", { class: "panel__stack" });
+    var syncFix = fixActions(function () {
+      return syncPromptText(status);
+    });
     var rows = el(
       "ul",
       { class: "rows", role: "list" },
@@ -5256,18 +5264,15 @@
                   " out of date",
             }),
           ]),
-          runtime.ready ? null : el("span", { class: "row__end" }, [stateWord("needs you")]),
+          el("span", { class: "row__end" }, [stateWord(runtime.ready ? "ready" : "needs you")]),
         ]);
       })
     );
     fill(body, [
       keys.length ? rows : el("p", { class: "panel__line", text: "No assistants detected. Nothing reported a skill folder here." }),
-      keys.length && !allReady
-        ? planAction(
-            { kind: "plan-apply", label: "Preview the fix", command: "skills sync", applyLabel: "Apply the sync" },
-            body
-          )
-        : null,
+      keys.length && !allReady ? syncFix.row : null,
+      keys.length && !allReady ? syncFix.fail : null,
+      keys.length && !allReady ? syncFix.host : null,
       keys.length
         ? tech(
             [
@@ -5296,6 +5301,9 @@
     var line = el("p", { class: "panel__line", text: "Checking the navigation." });
     var body = el("div", { class: "panel__stack" }, [line]);
     var built = panel("navigation", "Navigation", [word], [body]);
+    var navFix = fixActions(function () {
+      return navPromptText(App.status || {});
+    }, { label: "Rebuild in Claude Code" });
     entry.node = built.node;
     entry.head = built.head;
     entry.card = {
@@ -5304,7 +5312,11 @@
       },
       setState: function (text) {
         word.textContent = text;
-        word.className = "state" + (text === "needs you" ? " state--needs" : "");
+        word.className =
+          "state" +
+          (text === "needs you" ? " state--needs" : "") +
+          (text === "minor" ? " state--minor" : "") +
+          (text === "ready" ? " state--good" : "");
       },
       rebuild: function () {
         var envelope = entry.envelope;
@@ -5313,12 +5325,9 @@
         fill(body, [
           findings.length ? null : line,
           findings.length ? findingRows(findings, { pathsBehind: true }) : null,
-          findings.length
-            ? planAction(
-                { kind: "plan-apply", label: "Rebuild the navigation", command: "index sync", applyLabel: "Rebuild it" },
-                body
-              )
-            : null,
+          findings.length ? navFix.row : null,
+          findings.length ? navFix.fail : null,
+          findings.length ? navFix.host : null,
         ]);
       },
     };
@@ -5337,7 +5346,9 @@
       if (envelope) {
         entry.envelope = envelope;
         entry.card.setLine(navigationLine(envelope));
-        entry.card.setState(findingsTotal(envelope) ? "needs you" : "ready");
+        entry.card.setState(
+          severityCount(envelope, "error") ? "needs you" : findingsTotal(envelope) ? "minor" : "ready"
+        );
       } else {
         entry.failed = true;
         entry.card.setLine("The navigation could not be checked.");

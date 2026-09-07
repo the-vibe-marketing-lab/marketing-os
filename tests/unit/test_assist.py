@@ -52,7 +52,7 @@ STDERR_MARKER = "NOISE-FROM-THE-CHILD-STREAM"
 # decides what one interview turn does; ``MOS_FAKE_CAPTURE`` records the argv and the
 # stdin of every invocation, which is how the argument-injection tests see what the
 # child was actually handed.
-FAKE = '''\
+FAKE = """\
 import json
 import os
 import sys
@@ -129,7 +129,7 @@ if mode == "grandchild":
     sys.exit(0)
 sys.stdout.write(json.dumps({"question": "What do you sell?"}))
 sys.exit(0)
-'''.replace("__MARKER__", STDERR_MARKER)
+""".replace("__MARKER__", STDERR_MARKER)
 
 
 # --- harness ------------------------------------------------------------------------
@@ -619,9 +619,7 @@ def test_assist_ask_requires_a_field(runtime) -> None:
     assert "--field" in result["findings"][0]["message"]
 
 
-def test_the_terminal_shows_the_question_it_was_given(
-    runtime, tmp_path: Path, capsys
-) -> None:
+def test_the_terminal_shows_the_question_it_was_given(runtime, tmp_path: Path, capsys) -> None:
     runtime.install("claude")
     code = main(["assist", "ask", str(brain(tmp_path)), "--field", "brand"])
     output = capsys.readouterr().out
