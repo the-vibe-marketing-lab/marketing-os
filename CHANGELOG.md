@@ -7,6 +7,18 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ### Added
 
+- **Every finding on the dashboard leads to the same two things.** "Fix in Claude Code"
+  opens Claude Code in the brain's folder with the fix already typed in, through
+  `mos open --prompt`; "Copy the prompt" gives the same text to paste anywhere, and "View
+  the prompt" shows it first. The header, every to-do row, the assistants panel, the
+  navigation panel and the skills sync all use the pair; the preview-and-apply buttons
+  stay in the command runner.
+- **Status badges.** Ready is a green badge, an unanswered optional question or a
+  warning-only finding is Sun, and anything that needs you is Ember Bright, each with a
+  dot and the word so the state reads without its colour.
+- **`mos open --prompt`.** Passes text to Claude Code or Codex as its first message, on
+  every platform, as one argv element that is never interpolated.
+
 - **A Skills page in the local app.** The Commands tab is now a marketplace of every skill
   across the organisation's repositories, from a bundled catalogue: search, a chip per
   repository, and cards that open to the slash command, the full description, an install

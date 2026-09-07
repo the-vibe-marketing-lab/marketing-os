@@ -189,9 +189,9 @@ The app reads as a SaaS project overview, not a landing page. A 240px rail, a 52
 
 **Key Characteristics:**
 - Ember's warm dark ground and Paper text, dark only, no toggle.
-- One Ember object per view: the primary button. Every other emphasis is a Paper word; Sun is for "needs you" and nothing else.
+- One Ember object per view: the primary button. Status lives in three badges: green for ready, Sun for optional or minor, Ember Bright for needs you (the product owner's call on 2026-09-08; Ember itself has no green).
 - Bricolage Grotesque for the business name, tile values, step and card titles and the wordmark; Figtree for everything else, including panel titles.
-- Hairlines, not boxes. Status is a tracked uppercase word, not a capsule.
+- Hairlines, not boxes. Status is a badge: a dot and a lowercase word in a soft-filled capsule, the one capsule the app allows.
 - Mono inside `code`, `pre`, `.term` and `.row__path` only; never a label, never prose.
 
 ## Colors
@@ -224,13 +224,16 @@ Ember's warm neutrals and single accent, re-keyed to the app's own semantic name
 - **Paper 54** (`ink-3`): eyebrows, help lines, ghost buttons, disclosure summaries, meta, counts, the "optional" state word, the credit. Ember's own text-muted is 50%; the app steps to 54% because 50% measured 4.25:1 on Surface-2 and 4.33:1 on the accent wash.
 
 ### Status
-- **Sun** (`warn`): the "needs you" health word, the "needs you" state word in tiles and panel heads, warning icons and the "warning" word on a finding row. Never a call to action.
-- **Paper** (`ok`): a completed step dot, a done run-step, a done checkbox. Success is not green.
+- **Green** (`good`, `#6fcf97` on `good-soft` `#14261b` with `good-line`): the "ready" badge on the health word, tiles, panel heads, assistant rows and result heads, and the done icon on a row. Added on the product owner's instruction on 2026-09-08 so ready reads at a glance; Ember has no green and this is the app's one departure.
+- **Sun** (`warn`): the "minor" badge on a warning-only finding, the "optional" badge on an unanswered optional question, warning icons. Never a call to action.
+- **Ember Bright** (`err`): the "needs you" badge and the error icon.
+- **Paper** (`ok`): a completed step dot, a done run-step, a done checkbox.
 
 ### Named Rules
 **The One Ember Object Rule.** A view gets one Ember fill, and it is the primary button. The open brain's "current" marker, the "ready" word and every other emphasis is a Paper word.
-**The Ready / Needs-You Rule.** Every fact on the overview resolves to one of two words, typed lowercase: "ready" in Paper 78, "needs you" in Sun. "optional" in Paper 54 is the third, used only for an unanswered optional question. `test_one_status_system_per_fact_on_the_dashboard` pins one status system per fact.
-**The No Red, No Green Rule.** Error is Ember Bright (`err`); done is Paper (`ok`). `test_the_mode_consequences_are_not_dressed_as_success` pins that `--ok` never colours a static label.
+**The Three Badges Rule.** Every fact on the overview resolves to one badge, typed lowercase: "ready" in green, "minor" or "optional" in Sun, "needs you" in Ember Bright. Each badge is a dot and the word, so the state reads without its colour (`test_the_badges_read_without_their_colour`). `test_one_status_system_per_fact_on_the_dashboard` pins one status system per fact.
+**The Fix Pair Rule.** Every finding leads to the same two things: "Fix in Claude Code", which runs `mos open --prompt` so Claude Code opens in the brain's folder with the fix typed in, and "Copy the prompt". "View the prompt" shows the text first. Preview-and-apply buttons live in the command runner, never on the overview (`test_every_finding_leads_to_the_same_two_things`).
+**The No Red Rule.** Error is Ember Bright (`err`), never a red. `test_the_mode_consequences_are_not_dressed_as_success` pins that `--ok` never colours a static label.
 **The Fifty-Four Rule.** Muted text is Paper at 54%, not Ember's 50%, because every audited pair must clear its ratio. `test_audited_contrast_pairs_clear_aa` measures twenty-one pairs from `:root` on every run: 4.5:1 for `ink-3` on `surface`, `surface-2`, `surface-3`, `bg` and `accent-soft`; `accent-ink` on `accent`; `ink` and `accent-hover` on `accent-soft`; `ink-2` on `surface`; `warn` on `warn-soft`; and 3:1 for `ok-ink` on `ok`, `err-ink` on `err`, `accent` on `surface` and on `accent-soft`, and `control-line` on `surface` and `surface-2`.
 
 ## Typography
@@ -300,8 +303,8 @@ Four peer tiles in a row (2x2 below 900), each a `<button>` that scrolls to its 
 ### Panel (`.panel`, `.panel__head`, `.panel__title`, `.panel__end`, `.panel__count`, `.panel__line`, `.panel__more`)
 Surface, Mist, 18px radius, 24px padding (18px below 640). Head: title in Figtree 700 16px, right end holds a count in `ink-3` 14px, a state word, or a small ghost button; 14px below. Rows inside are hairline-separated, never boxed. A "nothing to do" panel carries one `ink-2` 15px line. A disclosure at the foot (`.panel__more`) sits 14px under the rows.
 
-### To-do row (`.todos`, `.todo`, `.todo__row`, `.todo__title`, `.todo__sub`, `.todo__action`, `.todo__pointer`, `.todo__readouts`)
-One row per finding group, 14px 0, hairline below: a severity icon at 16px (`row__icon--err` Ember Bright, `--warn` Sun), the sentence in Paper 700 15px, the fix line in `ink-3` 14px, and one action at the right (a small secondary button, or a pointer in `ink-3` 14px when the fix is the header button). A preview's readout opens inside the row above its text, and the row resolves in place. Below 640 the action drops under the text, indented 28px.
+### To-do row (`.todos`, `.todo`, `.todo__row`, `.todo__head`, `.todo__title`, `.todo__sub`, `.todo__action`, `.fix__row`, `.fix__fail`, `.todo__readouts`)
+One row per finding group, 14px 0, hairline below: a severity icon at 16px (`row__icon--err` Ember Bright, `--warn` Sun), then the sentence in Paper 700 15px with its badge beside it ("needs you" for an error, "minor" for a warning), the fix line in `ink-3` 14px, and under the text, indented 28px, the fix pair: "Fix in Claude Code" and "Copy the prompt" as small secondary buttons and "View the prompt" as a ghost. A failed launch writes one Ember Bright sentence (`.fix__fail`) under the pair and opens the prompt card. Below 640 the open button takes the row and the other two share the next. When the header's primary is not the fix-all, the panel's foot carries "Fix all N in Claude Code" with the same pair.
 
 ### Answer row (`.arows`, `.arow`, `.arow__head`, `.arow__name`, `.arow__line`, `.arow__end`, `.arow__body`, `.ledger__prose`)
 One row per question. The head is a button, 44px minimum, 10px 0: an 11rem name column in Paper 700 15px, the state word, the first line in `ink-2` 15px clamped to one line; a small ghost "Change" at the right. Opening swaps the line for the prose (62ch, first paragraph in Paper, the rest `ink-2`) with the 0.22s reveal; one open at a time. Below 900 the name and the line stack, the line clamped to two.
@@ -327,8 +330,8 @@ Ink ground, Mist border, 12px radius, mono 14px, a dim prompt glyph and a small 
 - **Blocked:** `aria-disabled="true"`, opacity 0.5, still focusable; `test_buttons_are_never_disabled_out_of_the_tab_order` bans the `disabled` property in app.js. `aria-busy` shows a 13px spinner.
 - **Focus:** 2px Ember Bright outline, 3px offset, on every control.
 
-### Status words (`.state`, `.ov-head__health`, `.pill`)
-Not pills. Inline uppercase words at 12px 700, 0.1em tracking, no capsule. `.state` and the health word: `ink-2` "ready", Sun "needs you", `ink-3` "optional". `.pill` (the class name stays because the harness reads it): `ink-3` by default, `--ok` and `--accent` `ink-2`, `--warn` Sun, `--err` Ember Bright, `--found` a dashed underline for an answer filed away from its canonical place.
+### Status badges (`.state`, `.ov-head__health`, `.pill`)
+Capsules: 12px 700 uppercase at 0.08em, 3px 10px padding, pill radius, a 1px line and a soft fill, a 7px dot in the text colour before the word. `.state--good` green on `good-soft`, `.state--needs` Ember Bright on `err-soft`, `.state--minor` and `.state--optional` Sun on `warn-soft`; a bare `.state` is `ink-2` on Surface-2 and an empty one is hidden. The health badge beside the business name is the same at 4px 12px. `.pill` (the class name stays because the harness reads it) takes the same shape: `--ok` green, `--warn` Sun, `--err` Ember Bright, the default `ink-3` on Surface-2; `--accent` is the open brain's "current" marker in `ink-2` and `--found` adds a dashed underline.
 
 ### Eyebrow (`.eyebrow`, `.page-head__eyebrow`, `.tile__label`)
 Figtree 700 13px, 0.14em, uppercase, `ink-3`; 12px in a tile. `--accent` variant declared, unused.
@@ -382,13 +385,13 @@ Buttons, rail items, command items, tiles, answer heads and quick-action rows ga
 - **Do** keep one Ember fill per view and one Lab Rule per page.
 
 ### Don't:
-- **Don't** use blue, any cool grey, green or a red; Ember bans blue, and the app maps error to Ember Bright and done to Paper.
+- **Don't** use blue, any cool grey or a red; Ember bans blue, and the app maps error to Ember Bright. Green is the one token Ember lacks that the app carries (`good`), for the "ready" badge only.
 - **Don't** write `color: #fff;` anywhere; `test_the_dark_palette_never_hard_codes_a_glyph_colour` reads the stylesheet for it and requires `--ok-ink` and `--err-ink`.
 - **Don't** show a filesystem path outside `<code>` inside a `.tech` disclosure or an envelope-reported `.row__path`; `test_no_filesystem_path_in_the_markup_a_reader_sees` and `test_no_filesystem_path_is_written_into_the_apps_copy` read index.html and app.js for path shapes.
 - **Don't** let the word "schema" reach a reader; `test_the_reader_is_never_told_about_a_schema` reads every string literal and the page's visible text.
 - **Don't** write copy that denies a capability the app ships. `test_no_user_facing_copy_denies_a_capability_the_app_ships` matches a grammar, not a list: a bare "no assistant" or "without an agent" bounded by punctuation, "needs no / requires no / uses no <noun>", "never / cannot / does not need, use, open, touch, ask or call a <noun>", "nothing is <invented>", and "never / won't <verb>", for each capability whose evidence is in app.js.
 - **Don't** put a card around a section, a card inside a panel, or a shadow on anything but the primary button's hover.
-- **Don't** put metadata in a capsule; a status word is text. Pills are for buttons, place chips, the copy button and the toast.
+- **Don't** put a second thing in a capsule; status badges are the one capsule, and every other pill is a button, a place chip, the copy button or the toast.
 - **Don't** use mono outside `code`, `pre`, `.term` and `.row__path` (and their list forms), and never as a label; the prompt box is prose.
 - **Don't** add a light theme, a theme toggle, a gradient, a glow or a hero atmosphere; this app has none.
 - **Don't** set `.disabled = true` on a button; use `aria-disabled`.

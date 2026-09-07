@@ -202,6 +202,10 @@ PAIRS = [
     ("current marker on its ground", "accent-hover", "accent-soft", 4.5),
     ("needs-attach tag on its ground", "warn", "warn-soft", 4.5),
     ("open section icon on its ground", "accent", "accent-soft", 3.0),
+    # The badges: green is ready, Sun is optional or minor, Ember Bright needs you.
+    ("ready badge", "good", "good-soft", 4.5),
+    ("needs-you badge", "err", "err-soft", 4.5),
+    ("minor badge", "warn", "warn-soft", 4.5),
 ]
 
 
@@ -910,3 +914,21 @@ def test_the_reader_is_never_told_about_a_schema() -> None:
         if not re.fullmatch(r"[a-z-]+", text) and re.search(r"\bschemas?\b", text, re.I)
     ]
     assert hits == [], hits
+
+
+def test_every_finding_leads_to_the_same_two_things() -> None:
+    """The dashboard's one job is to get the operator to fix it: open Claude Code with the
+    fix typed in, or copy the prompt. No row points at a button elsewhere, and no row
+    previews a command the operator would have to understand first."""
+    assert "Fix in Claude Code" in JS and "Copy the prompt" in JS
+    assert '"prompt"' in JS and "args.prompt" in JS, "the open command carries the fix"
+    for gone in ("Use the button above.", "Preview the fix", "Preview the missing pieces", "Preview the links"):
+        assert gone not in JS, gone
+
+
+def test_the_badges_read_without_their_colour() -> None:
+    """A dot and a word, so ready, minor and needs-you are told apart by more than green,
+    Sun and Ember Bright."""
+    for word in ("state--good", "state--needs", "state--minor"):
+        assert word in CSS and word in JS
+    assert ".state::before" in CSS

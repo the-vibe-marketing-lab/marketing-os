@@ -274,8 +274,12 @@ right after installing, before any brain exists.
 ### `mos open`
 
 ```text
-mos open [path] [--in claude|codex] [--json]
+mos open [path] [--in claude|codex] [--prompt TEXT] [--json]
 ```
+
+`--prompt` hands the assistant its first message as one argv element, so the local app's
+"Fix in Claude Code" opens Claude Code already working on the fix. The envelope reports
+`prompted`.
 
 Opens the assistant in the brain's folder, in a new terminal window, so the operator does
 not type the lines themselves. Never a shell: a fixed argv with the executable resolved

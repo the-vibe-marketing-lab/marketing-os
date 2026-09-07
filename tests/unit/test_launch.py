@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from marketing_os.core.launch import launch_repo
+from marketing_os.core.launch import _sh_quote, launch_repo
 from marketing_os.core.setup import setup_repo
 
 
@@ -128,3 +128,65 @@ def test_no_terminal_is_a_finding(tmp_path: Path) -> None:
     )
     assert report["ok"] is False
     assert [item["code"] for item in report["findings"]] == ["no-terminal"]
+
+
+def test_a_prompt_rides_along_as_one_argument_on_every_platform(tmp_path: Path) -> None:
+    """The local app's "Fix in Claude Code": the fix text is the assistant's first
+    message, passed as one argv element, never interpolated into a command string."""
+    root = _brain(tmp_path)
+    text = "Fix the brain.\n- line two with 'quotes'"
+    popen = _Popen()
+    report = launch_repo(
+        root,
+        "claude",
+        prompt=text,
+        platform="wsl",
+        which=_which({"claude": "/home/me/.local/bin/claude", "wt.exe": "/mnt/c/wt.exe"}),
+        popen=popen,
+    )
+    assert report["ok"] is True and report["prompted"] is True
+    assert popen.calls[0]["argv"][-2:] == ["/home/me/.local/bin/claude", text]
+    assert "typed in" in report["next_action"]["reason"]
+
+    popen = _Popen()
+    launch_repo(
+        root,
+        prompt=text,
+        platform="windows",
+        which=_which({"claude": "C:/claude.exe", "wt.exe": "C:/wt.exe"}),
+        popen=popen,
+    )
+    assert popen.calls[0]["argv"] == ["wt.exe", "-d", str(root.resolve()), "C:/claude.exe", text]
+
+    popen = _Popen()
+    launch_dir = tmp_path / "launch"
+    launch_repo(
+        root,
+        prompt=text,
+        platform="darwin",
+        which=_which({"claude": "/usr/local/bin/claude", "open": "/usr/bin/open"}),
+        popen=popen,
+        launch_dir=launch_dir,
+    )
+    script = next(launch_dir.glob("open-*.command")).read_text(encoding="utf-8")
+    assert script.endswith(" && exec '/usr/local/bin/claude' " + _sh_quote(text) + "\n")
+
+    popen = _Popen()
+    launch_repo(
+        root,
+        prompt=text,
+        platform="linux",
+        which=_which({"claude": "/usr/bin/claude", "gnome-terminal": "/usr/bin/gnome-terminal"}),
+        popen=popen,
+    )
+    assert popen.calls[0]["argv"][-3:] == ["--", "/usr/bin/claude", text]
+
+    popen = _Popen()
+    report = launch_repo(
+        root,
+        platform="linux",
+        which=_which({"claude": "/usr/bin/claude", "xterm": "/usr/bin/xterm"}),
+        popen=popen,
+    )
+    assert report["prompted"] is False
+    assert popen.calls[0]["argv"] == ["xterm", "-e", "/usr/bin/claude"]

@@ -63,6 +63,10 @@
   --ok-ink: #0d0b0a;
   --ok-soft: #201e1d;
   --ok-line: #383534;
+  --good: #6fcf97;
+  --good-ink: #0d0b0a;
+  --good-soft: #14261b;
+  --good-line: #22503a;
   /* Sun is for status only, never a second call to action. */
   --warn: #f4c24b;
   --warn-soft: #2d2513;
@@ -896,10 +900,14 @@ details[open] > summary .disc {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill, 999px);
+  background: var(--surface-2);
   color: var(--ink-3);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   line-height: 1.4;
   text-transform: uppercase;
   white-space: nowrap;
@@ -910,18 +918,24 @@ details[open] > summary .disc {
 }
 
 .pill--ok {
-  color: var(--ink-2);
+  border-color: var(--good-line);
+  background: var(--good-soft);
+  color: var(--good);
 }
 
 .pill--warn {
+  border-color: var(--warn-line);
+  background: var(--warn-soft);
   color: var(--warn);
 }
 
 .pill--err {
+  border-color: var(--err-line);
+  background: var(--err-soft);
   color: var(--err);
 }
 
-/* The open brain's marker is a word in Paper: the page's one Ember object is its button. */
+/* The open brain's marker is a quiet badge: the page's one Ember object is its button. */
 .pill--accent {
   color: var(--ink-2);
 }
@@ -1160,15 +1174,34 @@ details[open] > summary .disc {
 }
 
 .ov-head__health {
-  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px;
+  border: 1px solid var(--good-line);
+  border-radius: 999px;
+  background: var(--good-soft);
+  color: var(--good);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
+.ov-head__health::before,
+.state::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
 .ov-head__health--needs {
-  color: var(--warn);
+  border-color: var(--err-line);
+  background: var(--err-soft);
+  color: var(--err);
 }
 
 .ov-head__health:empty {
@@ -1190,22 +1223,42 @@ details[open] > summary .disc {
   gap: 10px;
 }
 
-/* State words: ready in Paper, needs you in Sun, optional muted. Typed lowercase. */
+/* State badges: green is ready, Sun is optional or minor, Ember Bright needs you.
+   A dot plus the word, so the state reads without the colour. Typed lowercase. */
 .state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface-2);
   color: var(--ink-2);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
-.state--needs {
-  color: var(--warn);
+.state--good {
+  border-color: var(--good-line);
+  background: var(--good-soft);
+  color: var(--good);
 }
 
+.state--needs {
+  border-color: var(--err-line);
+  background: var(--err-soft);
+  color: var(--err);
+}
+
+.state--minor,
 .state--optional {
-  color: var(--ink-3);
+  border-color: var(--warn-line);
+  background: var(--warn-soft);
+  color: var(--warn);
 }
 
 .state:empty {
@@ -1358,6 +1411,7 @@ details[open] > summary .disc {
 
 .todo__row {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 12px;
   padding: 14px 0;
@@ -1373,11 +1427,38 @@ details[open] > summary .disc {
   flex: 1;
 }
 
+.todo__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
 .todo__title {
   color: var(--ink);
   font-size: 15px;
   font-weight: 700;
   line-height: 1.45;
+}
+
+/* The fix pair: open Claude Code with the fix typed in, copy the prompt, or read it. */
+.fix__row {
+  align-items: center;
+}
+
+.fix__fail {
+  margin-top: 8px;
+  color: var(--err);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.fix__fail:empty {
+  display: none;
+}
+
+.panel__foot {
+  margin-top: 16px;
 }
 
 .todo__sub {
@@ -1388,8 +1469,8 @@ details[open] > summary .disc {
 }
 
 .todo__action {
-  flex: none;
-  padding-top: 2px;
+  flex: 1 1 100%;
+  padding-left: 28px;
 }
 
 .todo__readouts {
@@ -2735,7 +2816,7 @@ details.raw .result__elapsed {
 }
 
 .row__icon--ok {
-  color: var(--ink-2);
+  color: var(--good);
 }
 
 .row__icon--info {
@@ -3860,13 +3941,17 @@ details.raw > summary:hover {
     flex: 1 1 auto;
   }
 
-  .todo__row {
-    flex-wrap: wrap;
+  .todo__action {
+    padding-left: 0;
   }
 
-  .todo__action {
+  /* On a phone the open button takes the row; copy and view share the next. */
+  .fix__row > .btn:first-child {
     flex: 1 1 100%;
-    padding-left: 28px;
+  }
+
+  .fix__row > .btn:not(:first-child) {
+    flex: 1 1 calc(50% - 5px);
   }
 
   .topbar__tools .btn--icon,

@@ -48,11 +48,21 @@ def _sh_quote(value: str) -> str:
 
 
 def _plan(
-    platform: str, root: Path, executable: str, which: Callable[[str], str | None], launch_dir: Path
+    platform: str,
+    root: Path,
+    executable: str,
+    which: Callable[[str], str | None],
+    launch_dir: Path,
+    prompt: str | None = None,
 ) -> tuple[list[str], Path | None, str] | None:
-    """The argv, working directory and terminal name for one platform, or None."""
+    """The argv, working directory and terminal name for one platform, or None.
+
+    ``prompt`` rides along as one more argv element after the executable: both Claude
+    Code and Codex take a positional prompt and open on it. It is never interpolated.
+    """
+    command = [executable] + ([prompt] if prompt else [])
     if platform == "wsl":
-        handoff = ["wsl.exe", "--cd", str(root), "--exec", executable]
+        handoff = ["wsl.exe", "--cd", str(root), "--exec", *command]
         if which("wt.exe"):
             return (["wt.exe", *handoff], None, "Windows Terminal")
         if which("cmd.exe"):
@@ -60,25 +70,29 @@ def _plan(
         return None
     if platform == "windows":
         if which("wt.exe"):
-            return (["wt.exe", "-d", str(root), executable], root, "Windows Terminal")
+            return (["wt.exe", "-d", str(root), *command], root, "Windows Terminal")
         if which("cmd.exe"):
-            return (["cmd.exe", "/c", "start", "", executable], root, "a console window")
+            return (["cmd.exe", "/c", "start", "", *command], root, "a console window")
         return None
     if platform == "darwin":
         launch_dir.mkdir(parents=True, exist_ok=True)
         digest = hashlib.sha256(str(root).encode("utf-8")).hexdigest()[:12]
         script = launch_dir / f"open-{digest}.command"
         script.write_text(
-            "#!/bin/sh\ncd " + _sh_quote(str(root)) + " && exec " + _sh_quote(executable) + "\n",
+            "#!/bin/sh\ncd "
+            + _sh_quote(str(root))
+            + " && exec "
+            + " ".join(_sh_quote(part) for part in command)
+            + "\n",
             encoding="utf-8",
         )
         script.chmod(0o755)
         return (["open", "-a", "Terminal", str(script)], root, "Terminal")
     for name, argv in (
-        ("gnome-terminal", ["gnome-terminal", "--working-directory", str(root), "--", executable]),
-        ("konsole", ["konsole", "--workdir", str(root), "-e", executable]),
-        ("x-terminal-emulator", ["x-terminal-emulator", "-e", executable]),
-        ("xterm", ["xterm", "-e", executable]),
+        ("gnome-terminal", ["gnome-terminal", "--working-directory", str(root), "--", *command]),
+        ("konsole", ["konsole", "--workdir", str(root), "-e", *command]),
+        ("x-terminal-emulator", ["x-terminal-emulator", "-e", *command]),
+        ("xterm", ["xterm", "-e", *command]),
     ):
         if which(name):
             return (argv, root, name)
@@ -89,6 +103,7 @@ def launch_repo(
     root: Path,
     runtime: str = "claude",
     *,
+    prompt: str | None = None,
     platform: str | None = None,
     which: Callable[[str], str | None] = shutil.which,
     popen: Callable[..., Any] = subprocess.Popen,
@@ -127,7 +142,12 @@ def launch_repo(
     assert executable is not None  # narrowed above
     where = platform or detect_platform()
     plan = _plan(
-        where, root, executable, which, launch_dir or Path.home() / ".marketing-os" / "launch"
+        where,
+        root,
+        executable,
+        which,
+        launch_dir or Path.home() / ".marketing-os" / "launch",
+        prompt,
     )
     if plan is None:
         return envelope(
@@ -171,11 +191,15 @@ def launch_repo(
         root,
         ok=True,
         action=next_action(
-            "type-start",
-            f"{label} is opening in {terminal}, in this brain's folder. Type /mos-start there.",
+            "watch-terminal" if prompt else "type-start",
+            f"{label} is opening in {terminal} with the fix already typed in. Watch it there."
+            if prompt
+            else f"{label} is opening in {terminal}, in this brain's folder. "
+            "Type /mos-start there.",
         ),
         runtime=runtime,
         launched=True,
+        prompted=bool(prompt),
         platform=where,
         terminal=terminal,
         argv=argv,

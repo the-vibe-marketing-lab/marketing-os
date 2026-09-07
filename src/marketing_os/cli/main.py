@@ -80,9 +80,7 @@ def _add_mutation(parser: argparse.ArgumentParser, *, required: bool = True) -> 
 def build_parser(
     parser_class: type[argparse.ArgumentParser] = argparse.ArgumentParser,
 ) -> argparse.ArgumentParser:
-    parser = parser_class(
-        prog="mos", description="Manage a file-based marketing brain."
-    )
+    parser = parser_class(prog="mos", description="Manage a file-based marketing brain.")
     parser.add_argument("--version", action="version", version=f"mos {__version__}")
     commands = parser.add_subparsers(dest="command", required=True)
 
@@ -168,8 +166,14 @@ def build_parser(
     )
     open_cmd.add_argument("path", nargs="?", default=".")
     open_cmd.add_argument(
-        "--in", dest="runtime", choices=("claude", "codex"), default="claude",
+        "--in",
+        dest="runtime",
+        choices=("claude", "codex"),
+        default="claude",
         help="Which assistant to start (default: claude).",
+    )
+    open_cmd.add_argument(
+        "--prompt", default=None, help="Text the assistant opens on, as its first message."
     )
     _add_output(open_cmd)
 
@@ -320,9 +324,7 @@ def build_parser(
     statusline.add_argument("path", nargs="?", default=".")
     _add_output(statusline)
 
-    ui = commands.add_parser(
-        "ui", help="Open the local app in a browser, or stop and inspect it."
-    )
+    ui = commands.add_parser("ui", help="Open the local app in a browser, or stop and inspect it.")
     ui.add_argument(
         "target",
         nargs="?",
@@ -425,13 +427,11 @@ def dispatch(args: argparse.Namespace) -> dict[str, Any]:
         if args.index_command == "status":
             return index_status_repo(_path(args.path))
     if args.command == "open":
-        return launch_repo(_path(args.path), args.runtime)
+        return launch_repo(_path(args.path), args.runtime, prompt=args.prompt)
     if args.command == "rename":
         return rename_repo(_path(args.path), args.name, apply=_mutation_mode(args))
     if args.command == "related":
-        return related_repo(
-            _path(args.path), apply=_mutation_mode(args), limit=args.limit
-        )
+        return related_repo(_path(args.path), apply=_mutation_mode(args), limit=args.limit)
     if args.command == "query":
         return query_repo(
             _path(args.path), args.question, limit=args.limit, literal=bool(args.grep)
@@ -478,9 +478,7 @@ def dispatch(args: argparse.Namespace) -> dict[str, Any]:
             apply=_mutation_mode(args),
         )
     if args.command == "migrate":
-        return migrate_repo(
-            _path(args.path), plan_file=args.plan_file, apply=_mutation_mode(args)
-        )
+        return migrate_repo(_path(args.path), plan_file=args.plan_file, apply=_mutation_mode(args))
     if args.command == "update":
         return update_engine(apply=_mutation_mode(args))
     if args.command == "statusline":
@@ -508,9 +506,7 @@ def _dispatch_ui(args: argparse.Namespace) -> dict[str, Any]:
         return stop_ui()
     if target == "status":
         return status_ui()
-    return start_ui(
-        _path(target), port=args.port, open_browser=not args.no_open
-    )
+    return start_ui(_path(target), port=args.port, open_browser=not args.no_open)
 
 
 def _error_result(command: str, message: str) -> dict[str, Any]:
