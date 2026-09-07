@@ -425,32 +425,42 @@ def test_a_placeholder_in_a_folder_that_is_not_a_brain_never_answers_for_a_field
     assert [entry["source"] for entry in context["fields"].values()] == ["missing"] * 6
 
 
-def test_doctor_can_call_context_ready_on_a_folder_that_is_not_a_brain_but_never_healthy(
-    tmp_path: Path,
+def test_doctor_on_a_folder_that_is_not_a_brain_checks_the_home_install(
+    tmp_path: Path, monkeypatch
 ) -> None:
-    """The one visible consequence, pinned.
+    """No brain here means doctor answers for ``mos install``, not for the folder.
 
-    ``checks.context_ready`` now answers for a folder with no config, and it answers true when
-    the folder really does hold all four. That is accurate rather than generous, and ``ok``
-    does not read it: an unbuilt brain is not a healthy one no matter how much writing sits
-    in the folder.
+    It reads the home runtime directories, not ``<folder>/.claude/skills``: a fresh install
+    with the nine skills wired at home is healthy and points at onboarding, and one without
+    them is not and points back at install. ``context_ready`` still reports what the folder
+    holds; ``ok`` does not read it.
     """
+    home = tmp_path / "home"
+    monkeypatch.setattr(Path, "home", lambda: home)
     root = tmp_path / "material"
     root.mkdir()
     _material_only(root)
-    (root / "business/offers").mkdir(parents=True)
-    (root / "business/offers/offer.md").write_text(
-        "# What we sell\n\n"
-        "A six week build-along for marketers who want the system installed rather than "
-        "explained, at one fixed price.\n",
-        encoding="utf-8",
-    )
 
     report = doctor_repo(root)
-
-    assert report["checks"]["context_ready"] is True
     assert report["ok"] is False
-    assert report["next_action"]["id"] == "repair-health"
+    assert report["next_action"]["id"] == "run-install"
+    assert [item["code"] for item in report["findings"]] == ["runtime-not-ready"]
+
+    from marketing_os.core.skills import RUNTIME_DIRS, apply_sync, global_manifest, plan_sync
+
+    for runtime in RUNTIME_DIRS:
+        actions, findings = plan_sync(home, runtime, manifest_path=global_manifest(home))
+        assert not findings
+        apply_sync(actions, global_manifest(home))
+
+    report = doctor_repo(root)
+    assert report["ok"] is True
+    assert report["findings"] == []
+    assert report["next_action"]["id"] == "run-onboard"
+    assert report["checks"]["structure"] is False
+    assert report["checks"]["runtime_wiring"] is True
+    assert report["repo_state"] == "absent"
+    assert report["runtimes"]["claude"]["skill_dir"].startswith(str(home.resolve()))
 
 
 def test_a_discovered_answer_downgrades_its_missing_canonical_file_to_a_warning(

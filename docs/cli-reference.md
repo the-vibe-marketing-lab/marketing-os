@@ -265,6 +265,12 @@ adapters. It reports a `checks` block (`structure`, `runtime_wiring`,
 `context_ready`) and is `ok` only when structure is sound **and** Claude Code and
 Codex skill discovery are both ready.
 
+Pointed at a folder that is not a brain (`repo_state` is `absent`), it checks the install
+instead: the bundled skills wired under `~/.claude/skills` and `~/.agents/skills` by
+`mos install`. It is `ok` when both are ready, with a `run-onboard` next action; otherwise
+it reports `runtime-not-ready` and a `run-install` next action. This is the check to run
+right after installing, before any brain exists.
+
 ### `mos open`
 
 ```text

@@ -377,6 +377,8 @@ def _reconcile_discovered(
 def doctor_repo(root: Path) -> dict[str, Any]:
     root = root.expanduser().resolve()
     status = status_repo(root)
+    if status.get("repo_state") == "absent":
+        return _doctor_install(root, status)
     runtimes = status.get("runtimes", {})
     runtime_ready = bool(runtimes) and all(item.get("ready", False) for item in runtimes.values())
     structural_errors = [item for item in status["findings"] if item.get("severity") == "error"]
@@ -406,4 +408,44 @@ def doctor_repo(root: Path) -> dict[str, Any]:
         },
         runtimes=runtimes,
         mode=status.get("mode"),
+    )
+
+
+def _doctor_install(root: Path, status: dict[str, Any]) -> dict[str, Any]:
+    """Doctor on a folder with no brain answers for the install instead.
+
+    Right after ``mos install`` there is no brain yet, and the only thing to check is the
+    home wiring: the nine bundled skills under ``~/.claude/skills`` and ``~/.agents/skills``.
+    Reading the folder's own ``.claude/skills`` here told a correctly installed operator
+    their install was broken, on the one command the setup guide sends them to.
+    """
+    runtimes = inspect_runtimes(Path.home())
+    ready = all(item["ready"] for item in runtimes.values())
+    findings = []
+    if not ready:
+        findings.append(
+            finding(
+                "runtime-not-ready", "Claude Code and Codex skill discovery are not both ready."
+            )
+        )
+    return envelope(
+        "doctor",
+        root,
+        ok=ready,
+        findings=findings,
+        action=next_action(
+            "run-onboard" if ready else "run-install",
+            "The engine is installed and no brain is here; open a new session in the brain "
+            "folder and run the onboard skill."
+            if ready
+            else "Run `mos install --runtime all --yes`, then run doctor again.",
+        ),
+        checks={
+            "structure": False,
+            "runtime_wiring": ready,
+            "context_ready": status.get("context", {}).get("ready", False),
+        },
+        runtimes=runtimes,
+        repo_state="absent",
+        mode=None,
     )
