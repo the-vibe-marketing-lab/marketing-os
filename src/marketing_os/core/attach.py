@@ -159,9 +159,7 @@ def _backup_target(root: Path, existing: str) -> Path | None:
     return backup.parent / f"config.legacy.{number}.yaml"
 
 
-def _config_actions(
-    root: Path, name: str, mode: str, agency: str | None
-) -> list[dict[str, str]]:
+def _config_actions(root: Path, name: str, mode: str, agency: str | None) -> list[dict[str, str]]:
     config = root / CONFIG_RELATIVE
     text = config_text(name, mode=mode, agency=agency)
     actions: list[dict[str, str]] = []
@@ -365,9 +363,7 @@ def attach_repo(
 
     file_actions = _config_actions(root, resolved_name, resolved_mode, agency)
     file_actions.extend(_scaffold_actions(root))
-    skill_actions, skill_findings = plan_sync(
-        root, runtime, manifest_path=project_manifest(root)
-    )
+    skill_actions, skill_findings = plan_sync(root, runtime, manifest_path=project_manifest(root))
     findings.extend(skill_findings)
     stray = _stray_entries(root)
     findings.extend(_content_findings(root, stray))

@@ -277,9 +277,13 @@ right after installing, before any brain exists.
 mos open [path] [--in claude|codex] [--prompt TEXT] [--json]
 ```
 
-`--prompt` hands the assistant its first message as one argv element, so the local app's
-"Fix in Claude Code" opens Claude Code already working on the fix. The envelope reports
-`prompted`.
+`--prompt` hands the assistant its first message, so the local app's "Fix in Claude Code"
+opens Claude Code already working on the fix. On WSL, Windows and macOS the prompt is
+written into a launcher file under `~/.marketing-os/launch` (a `sh` script, or a
+PowerShell script run with `-ExecutionPolicy Bypass -File` on Windows) and only that
+file's path reaches the terminal, because Windows Terminal splits its command line on
+`;` and `cmd.exe` rewrites `%` and newlines; on Linux the terminal takes argv and the
+prompt is one element. The envelope reports `prompted`.
 
 Opens the assistant in the brain's folder, in a new terminal window, so the operator does
 not type the lines themselves. Never a shell: a fixed argv with the executable resolved

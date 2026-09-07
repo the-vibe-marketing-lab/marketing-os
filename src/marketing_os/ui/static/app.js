@@ -1440,19 +1440,25 @@
   /* Every finding resolves to the same two things: open Claude Code with the fix already
    * typed in, or copy the prompt and paste it wherever you like. "View the prompt" shows
    * the text before either. One factory builds the pair so every row reads the same. */
-  var fixing = { busy: false };
+  var opening = { busy: false };
 
   function launchFix(button, text, onFail) {
-    if (fixing.busy) return Promise.resolve(null);
-    fixing.busy = true;
+    if (opening.busy) {
+      toast("Claude Code is still opening");
+      return Promise.resolve(null);
+    }
+    opening.busy = true;
     if (button) busy(button, true, "Opening");
     var args = baseArgs("open");
     args["in"] = "claude";
-    // Double quotes do not survive the Windows Terminal hand-off; the copied prompt keeps them.
-    args.prompt = String(text).replace(/"/g, "'");
-    return run("open", args).then(function (result) {
-      fixing.busy = false;
+    // The exact text the card shows: `mos open` keeps it off every command line.
+    args.prompt = String(text);
+    function settle() {
+      opening.busy = false;
       if (button) busy(button, false);
+    }
+    return run("open", args).then(function (result) {
+      settle();
       var envelope = result.envelope;
       if (envelope && envelope.ok) {
         var said = (envelope.next_action && envelope.next_action.reason) || "Claude Code is opening with the fix typed in.";
@@ -1466,6 +1472,12 @@
       if (onFail) onFail(words, result);
       announce(words.title);
       return result;
+    }, function (error) {
+      settle();
+      var words = { title: "Claude Code could not be opened.", fix: "Copy the prompt and paste it into Claude Code yourself." };
+      if (onFail) onFail(words, null);
+      announce(words.title);
+      return null;
     });
   }
 
@@ -5066,7 +5078,6 @@
     return spec && (spec.positionals || []).indexOf("path") !== -1 ? { path: App.path } : {};
   }
 
-  var opening = { busy: false };
 
   /* `mos open`: a terminal in the brain's folder with the assistant started. On success
    * the envelope's own sentence is the toast; on failure the plain sentence for its

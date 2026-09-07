@@ -122,9 +122,7 @@ def folder_index_text(
     plural = "s" if len(rows) != 1 else ""
     description = (
         f"Routing map for {folder}/ — {len(rows)} document{plural}"
-        + (
-            f" across {len(groups)} group{'s' if len(groups) != 1 else ''}" if groups else ""
-        )
+        + (f" across {len(groups)} group{'s' if len(groups) != 1 else ''}" if groups else "")
         + ". Each entry carries a one-line summary so a branch can be chosen without "
         "opening the files."
     )
@@ -149,9 +147,7 @@ def folder_index_text(
     return "\n".join(lines).rstrip() + "\n", len(rows), dict(groups), explode
 
 
-def root_index_text(
-    root_name: str, today: str, folder_counts: dict[str, int], total: int
-) -> str:
+def root_index_text(root_name: str, today: str, folder_counts: dict[str, int], total: int) -> str:
     description = (
         "Top of the navigation hierarchy — start here. Names every main folder, what it "
         "holds, and the questions it answers, so an agent can route in one hop."
@@ -285,7 +281,7 @@ def sync_repo(root: Path, *, apply: bool) -> dict[str, Any]:
     if writes and not apply:
         action = next_action("apply-index-sync", "Apply the reviewed index plan with `--yes`.")
     else:
-        action = next_action("run-query", "Navigate the brain with `mos query \"<question>\" .`.")
+        action = next_action("run-query", 'Navigate the brain with `mos query "<question>" .`.')
     return envelope(
         "index-sync",
         root,

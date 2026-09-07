@@ -23,9 +23,9 @@ def test_ingest_file_writes_source_with_header(tmp_path: Path) -> None:
     assert result["ok"] is True
     assert result["form"] == "file"
     assert result["source_dir"] == "knowledge/sources/2026/07/2026-07-18-note"
-    text = (
-        root / "knowledge/sources/2026/07/2026-07-18-note/source.md"
-    ).read_text(encoding="utf-8")
+    text = (root / "knowledge/sources/2026/07/2026-07-18-note/source.md").read_text(
+        encoding="utf-8"
+    )
     assert "# Source: note" in text
     assert "- Ingested: 2026-07-18" in text
     assert "Raw research body." in text
@@ -86,9 +86,9 @@ def test_ingest_url_is_stored_verbatim_without_fetch(tmp_path: Path) -> None:
     result = ingest_repo(root, url, topic=None, slug="deep-dive", date="2026-07-18", apply=True)
     assert result["form"] == "url"
     assert result["origin"] == url
-    text = (
-        root / "knowledge/sources/2026/07/2026-07-18-deep-dive/source.md"
-    ).read_text(encoding="utf-8")
+    text = (root / "knowledge/sources/2026/07/2026-07-18-deep-dive/source.md").read_text(
+        encoding="utf-8"
+    )
     assert url in text
 
 
@@ -135,9 +135,9 @@ def test_collision_refuses_and_leaves_original_intact(tmp_path: Path) -> None:
     assert result["ok"] is False
     assert result["findings"][0]["code"] == "source-exists"
     assert result["changes"] == []
-    text = (
-        root / "knowledge/sources/2026/07/2026-07-18-note/source.md"
-    ).read_text(encoding="utf-8")
+    text = (root / "knowledge/sources/2026/07/2026-07-18-note/source.md").read_text(
+        encoding="utf-8"
+    )
     assert "first" in text
     assert "second" not in text
 

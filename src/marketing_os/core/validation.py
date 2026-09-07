@@ -233,9 +233,7 @@ def validate_repo(root: Path, *, strict: bool = False) -> dict[str, Any]:
             "`mos related . --yes` proposes the links.",
         )
     else:
-        action = next_action(
-            "run-status", "Inspect context readiness and the next useful action."
-        )
+        action = next_action("run-status", "Inspect context readiness and the next useful action.")
     return envelope(
         "validate",
         root,

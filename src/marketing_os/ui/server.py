@@ -164,9 +164,7 @@ class UiServer(ThreadingHTTPServer):
 
     @property
     def allowed_origins(self) -> frozenset[str]:
-        return frozenset(
-            {f"http://127.0.0.1:{self.port}", f"http://localhost:{self.port}"}
-        )
+        return frozenset({f"http://127.0.0.1:{self.port}", f"http://localhost:{self.port}"})
 
     @property
     def allowed_hosts(self) -> frozenset[str]:
@@ -589,9 +587,7 @@ class UiHandler(BaseHTTPRequestHandler):
             # 648 kilobyte list in the response twice, so this carries the checks and the
             # counts and leaves the duplicates behind.
             "doctor": {
-                key: value
-                for key, value in _state_findings(doctor, 0).items()
-                if key != "runtimes"
+                key: value for key, value in _state_findings(doctor, 0).items() if key != "runtimes"
             },
         }
 
@@ -618,9 +614,7 @@ def create_server(root: Path, *, port: int | None = None, token: str | None = No
 def serve(server: UiServer, *, record: bool = True) -> None:
     """Run the server until stopped, owning the state file for its lifetime."""
     if record:
-        ui_state.write_state(
-            pid=os.getpid(), port=server.port, url=server.url, root=server.root
-        )
+        ui_state.write_state(pid=os.getpid(), port=server.port, url=server.url, root=server.root)
 
     def _stop(signum: int, frame: Any) -> None:
         # shutdown() blocks until serve_forever() exits, so it cannot run on this thread.

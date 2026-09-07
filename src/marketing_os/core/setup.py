@@ -132,9 +132,7 @@ def setup_repo(
         )
     elif mode == "client" and not (agency and agency.strip()):
         mode_blocked = True
-        findings.append(
-            finding("agency-required", "Client mode requires --agency <agency name>.")
-        )
+        findings.append(finding("agency-required", "Client mode requires --agency <agency name>."))
     elif mode != "client" and agency and agency.strip():
         findings.append(
             finding(

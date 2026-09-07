@@ -130,11 +130,15 @@ def test_no_terminal_is_a_finding(tmp_path: Path) -> None:
     assert [item["code"] for item in report["findings"]] == ["no-terminal"]
 
 
-def test_a_prompt_rides_along_as_one_argument_on_every_platform(tmp_path: Path) -> None:
-    """The local app's "Fix in Claude Code": the fix text is the assistant's first
-    message, passed as one argv element, never interpolated into a command string."""
+def test_a_prompt_never_touches_a_windows_command_line(tmp_path: Path) -> None:
+    """Windows Terminal splits its command line on ``;`` and cmd.exe expands ``%`` and
+    breaks on newlines, so on WSL and Windows the prompt goes into a launcher file and
+    only that file's path reaches the terminal. Linux terminals take argv, so there the
+    prompt is one element. Without a prompt, every argv is what it always was."""
     root = _brain(tmp_path)
-    text = "Fix the brain.\n- line two with 'quotes'"
+    text = "Run `mos update --plan`; then `mos doctor .`.\n- 100% of it, with 'quotes'"
+    launch_dir = tmp_path / "launch"
+
     popen = _Popen()
     report = launch_repo(
         root,
@@ -143,10 +147,31 @@ def test_a_prompt_rides_along_as_one_argument_on_every_platform(tmp_path: Path) 
         platform="wsl",
         which=_which({"claude": "/home/me/.local/bin/claude", "wt.exe": "/mnt/c/wt.exe"}),
         popen=popen,
+        launch_dir=launch_dir,
     )
+    argv = popen.calls[0]["argv"]
     assert report["ok"] is True and report["prompted"] is True
-    assert popen.calls[0]["argv"][-2:] == ["/home/me/.local/bin/claude", text]
+    assert argv[:4] == ["wt.exe", "wsl.exe", "--exec", "/bin/sh"]
+    assert text not in " ".join(argv) and ";" not in " ".join(argv)
+    script = Path(argv[4]).read_text(encoding="utf-8")
+    assert script == (
+        "#!/bin/sh\ncd " + _sh_quote(str(root.resolve())) + " && exec "
+        "'/home/me/.local/bin/claude' " + _sh_quote(text) + "\n"
+    )
     assert "typed in" in report["next_action"]["reason"]
+
+    popen = _Popen()
+    launch_repo(
+        root,
+        prompt=text,
+        platform="wsl",
+        which=_which({"claude": "/usr/bin/claude", "cmd.exe": "/mnt/c/cmd.exe"}),
+        popen=popen,
+        launch_dir=launch_dir,
+    )
+    argv = popen.calls[0]["argv"]
+    assert argv[:7] == ["cmd.exe", "/c", "start", "", "wsl.exe", "--exec", "/bin/sh"]
+    assert text not in " ".join(argv)
 
     popen = _Popen()
     launch_repo(
@@ -155,11 +180,41 @@ def test_a_prompt_rides_along_as_one_argument_on_every_platform(tmp_path: Path) 
         platform="windows",
         which=_which({"claude": "C:/claude.exe", "wt.exe": "C:/wt.exe"}),
         popen=popen,
+        launch_dir=launch_dir,
     )
-    assert popen.calls[0]["argv"] == ["wt.exe", "-d", str(root.resolve()), "C:/claude.exe", text]
+    argv = popen.calls[0]["argv"]
+    assert argv[:9] == [
+        "wt.exe",
+        "-d",
+        str(root.resolve()),
+        "powershell.exe",
+        "-NoExit",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        argv[8],
+    ]
+    assert argv[8].endswith(".ps1") and text not in " ".join(argv)
+    ps1 = Path(argv[8]).read_text(encoding="utf-8")
+    assert ps1 == (
+        "Set-Location -LiteralPath '" + str(root.resolve()) + "'\n"
+        "& 'C:/claude.exe' '" + text.replace("'", "''") + "'\n"
+    )
 
     popen = _Popen()
-    launch_dir = tmp_path / "launch"
+    launch_repo(
+        root,
+        prompt=text,
+        platform="windows",
+        which=_which({"claude": "C:/claude.exe", "cmd.exe": "C:/cmd.exe"}),
+        popen=popen,
+        launch_dir=launch_dir,
+    )
+    argv = popen.calls[0]["argv"]
+    assert argv[:5] == ["cmd.exe", "/c", "start", "", "powershell.exe"]
+    assert text not in " ".join(argv)
+
+    popen = _Popen()
     launch_repo(
         root,
         prompt=text,
@@ -168,7 +223,7 @@ def test_a_prompt_rides_along_as_one_argument_on_every_platform(tmp_path: Path) 
         popen=popen,
         launch_dir=launch_dir,
     )
-    script = next(launch_dir.glob("open-*.command")).read_text(encoding="utf-8")
+    script = Path(popen.calls[0]["argv"][3]).read_text(encoding="utf-8")
     assert script.endswith(" && exec '/usr/local/bin/claude' " + _sh_quote(text) + "\n")
 
     popen = _Popen()
@@ -181,12 +236,28 @@ def test_a_prompt_rides_along_as_one_argument_on_every_platform(tmp_path: Path) 
     )
     assert popen.calls[0]["argv"][-3:] == ["--", "/usr/bin/claude", text]
 
+    # No prompt: the plain argv, byte for byte, on the two platforms that changed shape.
+    popen = _Popen()
+    launch_repo(
+        root,
+        platform="wsl",
+        which=_which({"claude": "/usr/bin/claude", "wt.exe": "/mnt/c/wt.exe"}),
+        popen=popen,
+    )
+    assert popen.calls[0]["argv"] == [
+        "wt.exe",
+        "wsl.exe",
+        "--cd",
+        str(root.resolve()),
+        "--exec",
+        "/usr/bin/claude",
+    ]
     popen = _Popen()
     report = launch_repo(
         root,
-        platform="linux",
-        which=_which({"claude": "/usr/bin/claude", "xterm": "/usr/bin/xterm"}),
+        platform="windows",
+        which=_which({"claude": "C:/claude.exe", "wt.exe": "C:/wt.exe"}),
         popen=popen,
     )
     assert report["prompted"] is False
-    assert popen.calls[0]["argv"] == ["xterm", "-e", "/usr/bin/claude"]
+    assert popen.calls[0]["argv"] == ["wt.exe", "-d", str(root.resolve()), "C:/claude.exe"]

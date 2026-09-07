@@ -248,9 +248,7 @@ def pending_sources(root: Path) -> dict[str, Any]:
             "ingest-pending",
             start,
             ok=False,
-            findings=[
-                finding("not-a-mos-repo", "This is not a marketing-os business repository.")
-            ],
+            findings=[finding("not-a-mos-repo", "This is not a marketing-os business repository.")],
             action=next_action(
                 "run-setup", "Create a new business brain with the setup skill first."
             ),
@@ -265,13 +263,9 @@ def pending_sources(root: Path) -> dict[str, Any]:
 
     # Depth-fixed glob: YYYY/MM/<folder>/source.md — nested files/**/source.md
     # copies live one level deeper and are never miscounted as source folders.
-    folders = sorted(
-        item.parent for item in sources_dir.glob("*/*/*/source.md") if item.is_file()
-    )
+    folders = sorted(item.parent for item in sources_dir.glob("*/*/*/source.md") if item.is_file())
     pending = sorted(
-        folder.relative_to(root).as_posix()
-        for folder in folders
-        if folder.name not in tokens
+        folder.relative_to(root).as_posix() for folder in folders if folder.name not in tokens
     )
 
     action = (

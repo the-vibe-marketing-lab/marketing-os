@@ -77,9 +77,7 @@ def test_unfilled_detection_tracks_edited_files(tmp_path: Path) -> None:
     assert result["interview"]["guidance"]
 
 
-def test_onboard_reports_git_unavailable(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_onboard_reports_git_unavailable(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(onboard_mod.shutil, "which", lambda _name: None)
     target = tmp_path / "brain"
     result = onboard_repo(target, "Example Business", "all", mode="in-house", apply=True)
@@ -266,9 +264,7 @@ def test_onboard_client_missing_registry_warns(tmp_path: Path) -> None:
 def test_onboard_hq_ignored_for_non_client_mode(tmp_path: Path) -> None:
     hq = _agency_hq(tmp_path)
     target = tmp_path / "brain"
-    result = onboard_repo(
-        target, "Example Business", "all", mode="in-house", hq=hq, apply=True
-    )
+    result = onboard_repo(target, "Example Business", "all", mode="in-house", hq=hq, apply=True)
     codes = [item["code"] for item in result["findings"]]
     assert "hq-ignored" in codes
     assert result["ok"] is True

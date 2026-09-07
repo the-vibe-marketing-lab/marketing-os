@@ -500,9 +500,7 @@ def _collect(root: Path, fields: tuple[str, ...]) -> tuple[dict[str, list[_Candi
                 continue
             stem = normalise(entry.name)
             tokens = frozenset(stem.split("-"))
-            interested = [
-                field for field in fields if _name_signal(stem, tokens, alias_map[field])
-            ]
+            interested = [field for field in fields if _name_signal(stem, tokens, alias_map[field])]
             if not interested:
                 continue
             opened += 1
@@ -523,9 +521,7 @@ def _collect(root: Path, fields: tuple[str, ...]) -> tuple[dict[str, list[_Candi
                 candidate = _Candidate(
                     path=path,
                     relative=relative,
-                    score=_score(
-                        names[field], alias_map[field], stem, tokens, parent, parts, meta
-                    ),
+                    score=_score(names[field], alias_map[field], stem, tokens, parent, parts, meta),
                 )
                 seen = best[field].get(real)
                 if seen is None or _rank(candidate) < _rank(seen):

@@ -40,9 +40,7 @@ def test_source_plan_reports_command_and_runs_no_pull(
     assert any("rev-parse" in call for call in run.calls)
 
 
-def test_source_not_on_main_blocks_pull(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_source_not_on_main_blocks_pull(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(update_mod, "_detect_mode", lambda _p: ("source", tmp_path))
     run = make_run(branch="feature", status="")
     monkeypatch.setattr(update_mod.subprocess, "run", run)
@@ -55,9 +53,7 @@ def test_source_not_on_main_blocks_pull(
     assert "pull --ff-only" in result["run_command"]
 
 
-def test_source_dirty_worktree_blocks_pull(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_source_dirty_worktree_blocks_pull(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(update_mod, "_detect_mode", lambda _p: ("source", tmp_path))
     run = make_run(branch="main", status=" M core/update.py\n")
     monkeypatch.setattr(update_mod.subprocess, "run", run)
@@ -78,9 +74,7 @@ def test_source_apply_runs_pull(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     assert any("pull" in call for call in run.calls)
 
 
-def test_source_apply_pull_failure(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_source_apply_pull_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(update_mod, "_detect_mode", lambda _p: ("source", tmp_path))
     run = make_run(branch="main", status="", rc=1)
     monkeypatch.setattr(update_mod.subprocess, "run", run)

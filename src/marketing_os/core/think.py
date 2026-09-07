@@ -20,9 +20,7 @@ def think_repo(root: Path, topic: str) -> dict[str, Any]:
             "think",
             start,
             ok=False,
-            findings=[
-                finding("not-a-mos-repo", "This is not a marketing-os business repository.")
-            ],
+            findings=[finding("not-a-mos-repo", "This is not a marketing-os business repository.")],
             action=next_action(
                 "run-setup", "Create a new business brain with the setup skill first."
             ),

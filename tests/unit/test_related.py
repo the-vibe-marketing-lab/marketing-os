@@ -35,9 +35,24 @@ def _doc(root: Path, relative: str, title: str, kind: str, description: str, wor
 
 
 SUBJECTS = (
-    "onboarding", "retention", "positioning", "webinars", "referrals", "attribution",
-    "churn", "podcasts", "partnerships", "newsletters", "events", "lifecycle",
-    "advocacy", "packaging", "syndication", "localisation", "accessibility", "analytics",
+    "onboarding",
+    "retention",
+    "positioning",
+    "webinars",
+    "referrals",
+    "attribution",
+    "churn",
+    "podcasts",
+    "partnerships",
+    "newsletters",
+    "events",
+    "lifecycle",
+    "advocacy",
+    "packaging",
+    "syndication",
+    "localisation",
+    "accessibility",
+    "analytics",
 )
 
 
@@ -50,17 +65,46 @@ def _brain(root: Path) -> None:
     _write(root / ".mos" / "config.yaml", config_text("Example Business"))
     for index, subject in enumerate(SUBJECTS):
         folder = "business/operations" if index % 2 else "knowledge/wiki"
-        _doc(root, f"{folder}/{subject}.md", subject.title(), 
-             "business" if index % 2 else "knowledge",
-             f"Everything the team knows about {subject} and how it is run.", 200)
-    _doc(root, "business/strategy/pricing.md", "Pricing strategy", "business",
-         "Pricing strategy and pricing tiers for the subscription pricing model.", 200)
-    _doc(root, "knowledge/wiki/pricing-research.md", "Pricing research", "knowledge",
-         "Research into pricing tiers and subscription pricing across the market.", 200)
-    _doc(root, "business/brand/voice.md", "Voice", "business",
-         "How the brand sounds, its rhythm and its vocabulary.", 200)
-    _doc(root, "archive/old-pricing.md", "Old pricing", "business",
-         "Retired pricing tiers and subscription pricing notes.", 200)
+        _doc(
+            root,
+            f"{folder}/{subject}.md",
+            subject.title(),
+            "business" if index % 2 else "knowledge",
+            f"Everything the team knows about {subject} and how it is run.",
+            200,
+        )
+    _doc(
+        root,
+        "business/strategy/pricing.md",
+        "Pricing strategy",
+        "business",
+        "Pricing strategy and pricing tiers for the subscription pricing model.",
+        200,
+    )
+    _doc(
+        root,
+        "knowledge/wiki/pricing-research.md",
+        "Pricing research",
+        "knowledge",
+        "Research into pricing tiers and subscription pricing across the market.",
+        200,
+    )
+    _doc(
+        root,
+        "business/brand/voice.md",
+        "Voice",
+        "business",
+        "How the brand sounds, its rhythm and its vocabulary.",
+        200,
+    )
+    _doc(
+        root,
+        "archive/old-pricing.md",
+        "Old pricing",
+        "business",
+        "Retired pricing tiers and subscription pricing notes.",
+        200,
+    )
 
 
 def test_unlinked_finds_substantial_dead_ends(tmp_path: Path) -> None:
@@ -77,10 +121,15 @@ def test_unlinked_finds_substantial_dead_ends(tmp_path: Path) -> None:
 def test_short_documents_are_left_alone(tmp_path: Path) -> None:
     root = tmp_path / "brain"
     _write(root / ".mos" / "config.yaml", config_text("Example Business"))
-    _doc(root, "business/a.md", "Alpha", "business", "Pricing tiers overview.",
-         RELATED_MIN_WORDS - 30)
-    _doc(root, "business/b.md", "Beta", "business", "Pricing tiers detail.",
-         RELATED_MIN_WORDS - 30)
+    _doc(
+        root,
+        "business/a.md",
+        "Alpha",
+        "business",
+        "Pricing tiers overview.",
+        RELATED_MIN_WORDS - 30,
+    )
+    _doc(root, "business/b.md", "Beta", "business", "Pricing tiers detail.", RELATED_MIN_WORDS - 30)
     assert unlinked(build_catalog(root)) == []
 
 

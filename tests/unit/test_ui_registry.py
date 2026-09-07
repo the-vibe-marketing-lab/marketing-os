@@ -250,7 +250,14 @@ def test_known_brains_carries_the_documented_fields(home: Path, tmp_path: Path) 
     [entry] = registry.known_brains([])
 
     assert set(entry) == {
-        "path", "name", "mode", "legacy", "attachable", "is_brain", "exists", "last_opened"
+        "path",
+        "name",
+        "mode",
+        "legacy",
+        "attachable",
+        "is_brain",
+        "exists",
+        "last_opened",
     }
     assert entry["is_brain"] is True
     # Name and mode are re-read from the folder, not served from the stored record.

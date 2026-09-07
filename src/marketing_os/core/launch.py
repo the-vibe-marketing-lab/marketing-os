@@ -47,6 +47,45 @@ def _sh_quote(value: str) -> str:
     return "'" + value.replace("'", "'\\''") + "'"
 
 
+def _ps_quote(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
+def _script(launch_dir: Path, root: Path, command: list[str], kind: str) -> Path:
+    """A launcher file that changes to the brain and starts the assistant, with the
+    prompt (when there is one) quoted inside it. The prompt never reaches a Windows
+    command line this way: Windows Terminal splits its own command line on ``;`` and
+    ``cmd.exe`` expands ``%VAR%`` and breaks on newlines, and a prompt is prose.
+
+    ``kind`` is ``sh`` (a POSIX script, also the macOS ``.command`` file) or ``ps1`` (a
+    PowerShell script for native Windows, run with ``-ExecutionPolicy Bypass -File``).
+    The file name carries a digest of the folder and the command, so two prompts for
+    the same brain do not overwrite each other mid-launch.
+    """
+    launch_dir.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256("\0".join([str(root), *command]).encode("utf-8")).hexdigest()[:12]
+    if kind == "ps1":
+        script = launch_dir / f"open-{digest}.ps1"
+        body = (
+            "Set-Location -LiteralPath " + _ps_quote(str(root)) + "\n"
+            "& " + " ".join(_ps_quote(part) for part in command) + "\n"
+        )
+        script.write_text(body, encoding="utf-8")
+        return script
+    suffix = ".command" if sys.platform == "darwin" else ".sh"
+    script = launch_dir / f"open-{digest}{suffix}"
+    script.write_text(
+        "#!/bin/sh\ncd "
+        + _sh_quote(str(root))
+        + " && exec "
+        + " ".join(_sh_quote(part) for part in command)
+        + "\n",
+        encoding="utf-8",
+    )
+    script.chmod(0o755)
+    return script
+
+
 def _plan(
     platform: str,
     root: Path,
@@ -57,36 +96,46 @@ def _plan(
 ) -> tuple[list[str], Path | None, str] | None:
     """The argv, working directory and terminal name for one platform, or None.
 
-    ``prompt`` rides along as one more argv element after the executable: both Claude
-    Code and Codex take a positional prompt and open on it. It is never interpolated.
+    Without a prompt the argv is what it always was. With one, the assistant is started
+    from a launcher file (see ``_script``) on WSL, Windows and macOS, and given the
+    prompt as one argv element on Linux, where the terminal takes argv, not a string.
     """
     command = [executable] + ([prompt] if prompt else [])
     if platform == "wsl":
-        handoff = ["wsl.exe", "--cd", str(root), "--exec", *command]
+        if prompt:
+            handoff = [
+                "wsl.exe",
+                "--exec",
+                "/bin/sh",
+                str(_script(launch_dir, root, command, "sh")),
+            ]
+        else:
+            handoff = ["wsl.exe", "--cd", str(root), "--exec", executable]
         if which("wt.exe"):
             return (["wt.exe", *handoff], None, "Windows Terminal")
         if which("cmd.exe"):
             return (["cmd.exe", "/c", "start", "", *handoff], Path("/mnt/c"), "a console window")
         return None
     if platform == "windows":
+        if prompt:
+            script = _script(launch_dir, root, command, "ps1")
+            start = [
+                "powershell.exe",
+                "-NoExit",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(script),
+            ]
+        else:
+            start = [executable]
         if which("wt.exe"):
-            return (["wt.exe", "-d", str(root), *command], root, "Windows Terminal")
+            return (["wt.exe", "-d", str(root), *start], root, "Windows Terminal")
         if which("cmd.exe"):
-            return (["cmd.exe", "/c", "start", "", *command], root, "a console window")
+            return (["cmd.exe", "/c", "start", "", *start], root, "a console window")
         return None
     if platform == "darwin":
-        launch_dir.mkdir(parents=True, exist_ok=True)
-        digest = hashlib.sha256(str(root).encode("utf-8")).hexdigest()[:12]
-        script = launch_dir / f"open-{digest}.command"
-        script.write_text(
-            "#!/bin/sh\ncd "
-            + _sh_quote(str(root))
-            + " && exec "
-            + " ".join(_sh_quote(part) for part in command)
-            + "\n",
-            encoding="utf-8",
-        )
-        script.chmod(0o755)
+        script = _script(launch_dir, root, command, "sh")
         return (["open", "-a", "Terminal", str(script)], root, "Terminal")
     for name, argv in (
         ("gnome-terminal", ["gnome-terminal", "--working-directory", str(root), "--", *command]),

@@ -1477,12 +1477,6 @@ details[open] > summary .disc {
   padding-bottom: 14px;
 }
 
-.todo__pointer {
-  color: var(--ink-3);
-  font-size: 14px;
-  white-space: nowrap;
-}
-
 /* A readout inside a row or a panel sits under the panel's title: row-size title, one
    label, the elapsed time behind the disclosure. */
 .todo__readouts .result__title,

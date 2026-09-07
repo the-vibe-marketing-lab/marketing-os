@@ -26,10 +26,23 @@ def which_of(*names: str):
     return lambda name: f"/bin/{name}" if name in present else None
 
 
-def machine(platform: str = "linux", *, wsl: bool = False, display: bool = True,
-            tkinter: bool = True, interop: bool = True, binaries: tuple[str, ...] = ()) -> Host:
-    return Host(platform=platform, wsl=wsl, display=display, which=which_of(*binaries),
-                tkinter=tkinter, interop=interop)
+def machine(
+    platform: str = "linux",
+    *,
+    wsl: bool = False,
+    display: bool = True,
+    tkinter: bool = True,
+    interop: bool = True,
+    binaries: tuple[str, ...] = (),
+) -> Host:
+    return Host(
+        platform=platform,
+        wsl=wsl,
+        display=display,
+        which=which_of(*binaries),
+        tkinter=tkinter,
+        interop=interop,
+    )
 
 
 class Script:
@@ -122,13 +135,14 @@ def test_no_backend_means_unavailable_and_nothing_runs() -> None:
 
 def test_wsl_runs_the_winforms_dialog_and_converts_both_ways(tmp_path: Path) -> None:
     run = Script(
-        wslpath=lambda argv: (0, WIN_DESKTOP + "\n", "") if argv[1] == "-w"
-        else (0, "/mnt/c/Users/you/Desktop/Brain Co\n", ""),
+        wslpath=lambda argv: (
+            (0, WIN_DESKTOP + "\n", "")
+            if argv[1] == "-w"
+            else (0, "/mnt/c/Users/you/Desktop/Brain Co\n", "")
+        ),
         **{"powershell.exe": (0, "\ufeffC:\\Users\\you\\Desktop\\Brain Co\r\n", "")},
     )
-    answer = pick_folder(
-        tmp_path, run=run, machine=machine(wsl=True, binaries=("powershell.exe",))
-    )
+    answer = pick_folder(tmp_path, run=run, machine=machine(wsl=True, binaries=("powershell.exe",)))
     assert answer["path"] == "/mnt/c/Users/you/Desktop/Brain Co"
     assert answer["backend"] == "wsl" and answer["cancelled"] is False
     assert answer["available"] is True and answer["error"] is None
@@ -137,7 +151,12 @@ def test_wsl_runs_the_winforms_dialog_and_converts_both_ways(tmp_path: Path) -> 
     assert to_windows == ["wslpath", "-w", str(tmp_path)]
     assert back == ["wslpath", "-u", "C:\\Users\\you\\Desktop\\Brain Co"]
     assert dialog[:6] == [
-        "powershell.exe", "-NoProfile", "-STA", "-ExecutionPolicy", "Bypass", "-EncodedCommand",
+        "powershell.exe",
+        "-NoProfile",
+        "-STA",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-EncodedCommand",
     ]
     script = decoded_powershell(dialog)
     assert "Add-Type -AssemblyName System.Windows.Forms" in script
@@ -151,9 +170,7 @@ def test_wsl_runs_the_winforms_dialog_and_converts_both_ways(tmp_path: Path) -> 
 
 def test_wsl_reports_a_closed_window_as_cancelled(tmp_path: Path) -> None:
     run = Script(wslpath=(0, WIN_DESKTOP, ""), **{"powershell.exe": (0, "", "")})
-    answer = pick_folder(
-        tmp_path, run=run, machine=machine(wsl=True, binaries=("powershell.exe",))
-    )
+    answer = pick_folder(tmp_path, run=run, machine=machine(wsl=True, binaries=("powershell.exe",)))
     assert answer["cancelled"] is True and answer["path"] is None
     assert answer["available"] is True and answer["error"] is None
     assert [call[0] for call in run.calls] == ["wslpath", "powershell.exe"]
@@ -181,9 +198,7 @@ def test_a_failed_dialog_reports_its_last_line(tmp_path: Path) -> None:
         wslpath=(0, WIN_DESKTOP, ""),
         **{"powershell.exe": (1, "", "Add-Type : Cannot add type.\nAt line:2 char:1")},
     )
-    answer = pick_folder(
-        tmp_path, run=run, machine=machine(wsl=True, binaries=("powershell.exe",))
-    )
+    answer = pick_folder(tmp_path, run=run, machine=machine(wsl=True, binaries=("powershell.exe",)))
     assert answer["cancelled"] is False and answer["path"] is None
     assert answer["error"] == "The folder window failed: At line:2 char:1"
 
@@ -210,9 +225,7 @@ def test_the_default_timeout_is_two_minutes() -> None:
 
 def test_a_crashing_backend_never_raises(tmp_path: Path) -> None:
     run = Script(wslpath=(0, WIN_DESKTOP, ""))  # powershell.exe is not scripted -> OSError
-    answer = pick_folder(
-        tmp_path, run=run, machine=machine(wsl=True, binaries=("powershell.exe",))
-    )
+    answer = pick_folder(tmp_path, run=run, machine=machine(wsl=True, binaries=("powershell.exe",)))
     assert answer["available"] is False
     assert answer["error"].startswith("FileNotFoundError")
 
@@ -243,9 +256,7 @@ def test_wslpath_really_round_trips_a_desktop_path() -> None:
 
 def test_native_windows_uses_powershell_without_wslpath() -> None:
     run = Script(powershell=(0, "C:\\Brains\\Acme", ""))
-    answer = pick_folder(
-        "C:\\Brains", run=run, machine=machine("win32", binaries=("powershell",))
-    )
+    answer = pick_folder("C:\\Brains", run=run, machine=machine("win32", binaries=("powershell",)))
     assert answer["path"] == "C:\\Brains\\Acme" and answer["backend"] == "windows"
     assert [call[0] for call in run.calls] == ["powershell"]
 
@@ -253,9 +264,7 @@ def test_native_windows_uses_powershell_without_wslpath() -> None:
 def test_a_second_click_while_the_window_is_open_does_not_stack_another(tmp_path: Path) -> None:
     run = Script(**{"powershell.exe": (0, "", "")})
     with picker._BUSY:
-        answer = pick_folder(
-            None, run=run, machine=machine(wsl=True, binaries=("powershell.exe",))
-        )
+        answer = pick_folder(None, run=run, machine=machine(wsl=True, binaries=("powershell.exe",)))
     assert answer["path"] is None and answer["cancelled"] is False
     assert answer["busy"] is True and answer["available"] is True
     assert answer["error"] == "A folder window is already open. Finish with that one."
@@ -287,7 +296,7 @@ def test_mac_reports_a_closed_window_as_cancelled() -> None:
 
 def test_mac_quotes_a_path_with_a_double_quote_in_it() -> None:
     run = Script(osascript=(0, "/x/\n", ""))
-    pick_folder('/tmp', run=run, machine=machine("darwin", binaries=("osascript",)))
+    pick_folder("/tmp", run=run, machine=machine("darwin", binaries=("osascript",)))
     assert picker.applescript('/Users/a "b"') == (
         f'POSIX path of (choose folder with prompt "{picker.PROMPT}" '
         'default location POSIX file "/Users/a \\"b\\"")'
