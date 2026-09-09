@@ -7,6 +7,10 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ### Added
 
+- **The brain's folder path sits in the overview header.** The meta line shows where the
+  current brain lives on this machine, whole when it fits and trimmed from the left when it
+  does not, and one click copies it. Asked for on 2026-09-10 because the operator kept
+  looking it up; every other path stays behind the technical disclosure.
 - **Every finding on the dashboard leads to the same two things.** "Fix in Claude Code"
   opens Claude Code in the brain's folder with the fix already typed in, through
   `mos open --prompt`; "Copy the prompt" gives the same text to paste anywhere, and "View
