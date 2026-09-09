@@ -4254,8 +4254,22 @@
       health.className = "ov-head__health" + (healthy ? "" : " ov-head__health--needs");
     }
 
+    // Pinned 2026-09-10: the folder path is the one path that sits in the open, because
+    // the operator kept looking it up. Drawn whole when it fits, trimmed from the left
+    // when it does not, the full path in the title, and one click copies it.
+    var repo = status.repo || App.path;
     fill($("dash-meta"), [
-      el("span", { class: "meta__item", text: "Folder: " + folderName(status.repo) }),
+      el("button", {
+        class: "meta__item meta__path",
+        type: "button",
+        title: repo,
+        text: shortPath(repo, 80),
+        on: {
+          click: function () {
+            copy(repo, "Folder path copied");
+          },
+        },
+      }),
       el("span", {
         class: "meta__item",
         text: plural((status.installed_skills || []).length, "shared skill"),

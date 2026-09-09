@@ -340,6 +340,15 @@ def _js_section(start: str, end: str) -> str:
     return JS[begin : JS.index(end, begin)]
 
 
+def test_the_overview_header_shows_the_folder_path_and_copies_it() -> None:
+    """Pinned 2026-09-10: the one path in the open. The operator kept looking it up."""
+    section = _js_section("function renderDashboard()", "panels.open = null;")
+    assert 'class: "meta__item meta__path"' in section
+    assert "shortPath(repo, 80)" in section and "title: repo" in section
+    assert 'copy(repo, "Folder path copied")' in section
+    assert ".meta__path {" in CSS
+
+
 def test_the_desktop_is_named_as_a_place_in_words() -> None:
     """The default folder sits on the desktop, and the page says so, not its path."""
     assert "on your desktop" in JS

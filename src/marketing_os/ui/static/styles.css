@@ -1088,6 +1088,25 @@ details[open] > summary .disc {
   color: var(--ink-3);
 }
 
+/* The brain's folder path, in the header meta: reads as the line around it, copies on
+   click. Underlined so the click is discoverable without a second control. */
+.meta__path {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--control-line);
+  text-underline-offset: 4px;
+}
+
+.meta__path:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink);
+}
+
 .page-head__end {
   margin-left: auto;
 }
@@ -3782,6 +3801,18 @@ details.raw > summary:hover {
 }
 
 @media (max-width: 640px) {
+  /* The folder path takes its own line, so the separator that would have led the next
+     line is dropped with it. */
+  .meta__path {
+    flex-basis: 100%;
+    text-align: left;
+  }
+
+  .meta__path + .meta__item::before {
+    content: none;
+    margin: 0;
+  }
+
   body {
     font-size: 17px;
   }

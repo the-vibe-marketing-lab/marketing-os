@@ -70,6 +70,9 @@ hosted "AI marketing platform" cannot make.
   directly: no inline script, no markup sinks, no filesystem path in default-visible copy,
   audited contrast pairs, no copy that denies a capability the app ships, one plain sentence
   per checker code. Any rebrand must keep those passing.
+- Confirmed 2026-09-10: the current brain's folder path is the one path shown in the open,
+  in the overview header meta, whole when it fits and copied on click. The operator kept
+  looking it up. Every other path stays behind the technical disclosure.
 - Python 3.10+, ruff at line-length 100, full pytest suite green, six-cell CI matrix
   including Windows.
 - Terminology: brain, mode (in-house, agency, client), context fields ("Your brand", "How
