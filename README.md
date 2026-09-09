@@ -19,7 +19,7 @@ Install marketing-os for me, then stop. Follow these steps exactly; do not add s
 
 1. Install the CLI: run `pipx install marketing-os`. If pipx is not installed, run `uv tool install marketing-os` instead. Use one of those two, nothing else. Both put `mos` in `~/.local/bin`; if your shell cannot find `mos` afterwards, call it by that path.
 2. Wire the skills: run `mos install --runtime all --yes --no-ui`. It copies the bundled skills into `~/.claude/skills` and `~/.agents/skills` and records what it wrote under `~/.marketing-os`. `--no-ui` keeps it from opening the local app in a browser.
-3. Verify: `mos --version` must print `mos 0.3.0`, and `ls ~/.claude/skills | grep '^mos-'` must list exactly nine entries: mos-bet, mos-end, mos-help, mos-migrate, mos-onboard, mos-start, mos-status, mos-think, mos-update. If either check fails, show me the output and stop.
+3. Verify: `mos --version` must print `mos 0.4.0`, and `ls ~/.claude/skills | grep '^mos-'` must list exactly nine entries: mos-bet, mos-end, mos-help, mos-migrate, mos-onboard, mos-start, mos-status, mos-think, mos-update. If either check fails, show me the output and stop.
 4. Stop here. Do not run `mos onboard`, do not ask about my business, and do not create any folder. Tell me to open a new agent session in the folder where I want my marketing brain to live and type `/mos-onboard` (in Codex, `$mos-onboard`). Say why a new session is needed: skills are discovered when a session starts, so this session cannot see the one it just installed.
 ```
 
@@ -56,7 +56,7 @@ it records the marker and leaves the app to `mos ui`. Either way the `ui-opened`
 `~/.marketing-os` is written before the attempt, so the open is tried once and never
 retried, and `--no-ui` skips it.
 
-`mos --version` prints `mos 0.3.0`. That is the version in `pyproject.toml` and the one on
+`mos --version` prints `mos 0.4.0`. That is the version in `pyproject.toml` and the one on
 PyPI; a tag that disagrees with it fails the release build rather than publishing the wrong
 number. What each release contains is in [CHANGELOG.md](CHANGELOG.md).
 

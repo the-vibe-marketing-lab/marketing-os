@@ -36,9 +36,9 @@ Check it is available:
 mos --version
 ```
 
-You should see `mos 0.3.0`. `mos ui`, `mos attach` and `mos assist` are the newest three
-commands; if `mos ui --help` answers `invalid choice: 'ui'` you are on an older install, and
-section 3 will not work until you upgrade (`pipx upgrade marketing-os`, or pull the checkout).
+You should see `mos 0.4.0`. `mos open` and `mos rename` are the newest two commands; if
+`mos open --help` answers `invalid choice: 'open'` you are on an older install, and section 3
+will not work until you upgrade (`pipx upgrade marketing-os`, or pull the checkout).
 
 ## 2. Install the bootstrap skills globally
 
