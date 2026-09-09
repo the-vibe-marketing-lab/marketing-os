@@ -1149,7 +1149,7 @@ def test_one_press_switches_the_whole_app_to_that_brain(browser: dict) -> None:
     assert switched["before"] == "Test Gym"
     assert switched["title"] == "Second Co"
     assert switched["topbar"] == "Second Co"
-    assert "Folder: second" in switched["meta"], "the dashboard is about the new root"
+    assert "/home/you/Desktop/second" in switched["meta"], "the dashboard is about the new root"
     assert switched["stored"] == "/home/you/Desktop/second"
     assert switched["ops"] == [{"op": "remember", "path": "/home/you/Desktop/second"}]
     assert switched["current"] == ["Second Co"]
