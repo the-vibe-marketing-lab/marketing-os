@@ -5,6 +5,8 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-10 — Ember
+
 ### Added
 
 - **Every finding on the dashboard leads to the same two things.** "Fix in Claude Code"
