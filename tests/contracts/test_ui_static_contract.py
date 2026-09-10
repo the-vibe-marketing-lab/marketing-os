@@ -931,7 +931,7 @@ def test_every_plain_sentence_opens_into_fuller_words() -> None:
     table = JS.split("var FINDING_COPY = {", 1)[1].split("\n  };", 1)[0]
     entries = re.split(r'^    "[a-z-]+": \{$', table, flags=re.M)[1:]
     assert len(entries) == len(finding_copy_codes())
-    for code, entry in zip(re.findall(r'^    "([a-z-]+)": \{$', table, re.M), entries):
+    for code, entry in zip(re.findall(r'^    "([a-z-]+)": \{$', table, re.M), entries, strict=True):
         assert "more: [" in entry, f"{code}: no fuller words"
         assert entry.count('",\n') >= 4, f"{code}: fewer than two paragraphs"
     assert '"What this means"' in JS and ".todo__detail" in CSS
