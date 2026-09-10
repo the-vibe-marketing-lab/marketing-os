@@ -314,7 +314,9 @@ def test_known_brains_survives_a_broken_places_seam(home: Path, tmp_path: Path) 
     assert _paths(registry.known_brains([{"path": str(tmp_path / "nowhere")}])) == [str(brain)]
 
 
-def test_known_brains_orders_existing_then_recent_then_name(home: Path, tmp_path: Path) -> None:
+def test_known_brains_orders_existing_then_by_name_never_by_recency(
+    home: Path, tmp_path: Path
+) -> None:
     for name in ("Bravo", "alpha", "Charlie", "Delta", "Echo"):
         _brain(tmp_path / name.lower(), name)
     _seed(
@@ -343,9 +345,9 @@ def test_known_brains_orders_existing_then_recent_then_name(home: Path, tmp_path
 
     names = [brain["name"] for brain in registry.known_brains([])]
 
-    # Most recently opened first, never-opened by name, and the missing one last even
-    # though it was opened most recently of all.
-    assert names == ["Delta", "Echo", "alpha", "Bravo", "Charlie", "Gone"]
+    # By name regardless of when each was opened, so pressing one never moves it, and the
+    # missing one last even though it was opened most recently of all.
+    assert names == ["alpha", "Bravo", "Charlie", "Delta", "Echo", "Gone"]
 
 
 # --- durability ------------------------------------------------------------------------

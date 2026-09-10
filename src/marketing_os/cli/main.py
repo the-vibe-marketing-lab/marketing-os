@@ -12,6 +12,7 @@ from marketing_os.core.assist import ask_turn, runtime_status
 from marketing_os.core.attach import attach_repo
 from marketing_os.core.catalog import build_repo as index_build_repo
 from marketing_os.core.context import STDIN_SENTINEL, set_context, show_context
+from marketing_os.core.fix import FIXABLE, fix_repo
 from marketing_os.core.index import status_repo as index_status_repo
 from marketing_os.core.index import sync_repo as index_sync_repo
 from marketing_os.core.ingest import ingest_repo, pending_sources
@@ -22,12 +23,7 @@ from marketing_os.core.query import query_repo
 from marketing_os.core.related import related_repo
 from marketing_os.core.rename import rename_repo
 from marketing_os.core.results import envelope, finding, next_action
-from marketing_os.core.skills import (
-    apply_sync,
-    global_manifest,
-    plan_sync,
-    project_manifest,
-)
+from marketing_os.core.skills import sync_result
 from marketing_os.core.status import doctor_repo, status_repo
 from marketing_os.core.statusline import statusline_repo
 from marketing_os.core.think import think_repo
@@ -191,6 +187,19 @@ def build_parser(
     _add_mutation(related)
     _add_output(related)
 
+    fix = commands.add_parser(
+        "fix", help="Apply the deterministic fix for a finding the check reported."
+    )
+    fix.add_argument(
+        "code", nargs="?", default=None, help="The finding code, as status or validate reports it."
+    )
+    fix.add_argument("path", nargs="?", default=".")
+    fix.add_argument(
+        "--all", action="store_true", dest="all_codes", help="Run every deterministic fix."
+    )
+    _add_mutation(fix)
+    _add_output(fix)
+
     query = commands.add_parser("query", help="Plan deterministic retrieval for a question.")
     query.add_argument("question", help="The question to answer from the brain.")
     query.add_argument("path", nargs="?", default=".")
@@ -342,39 +351,17 @@ def build_parser(
     return parser
 
 
-def _sync_result(root: Path, runtime: str, *, apply: bool, global_install: bool) -> dict[str, Any]:
-    if global_install:
-        manifest = global_manifest(root)
-        target = root
-        command = "install"
-    else:
-        manifest = project_manifest(root)
-        target = root
-        command = "skills-sync"
-    actions, findings = plan_sync(target, runtime, manifest_path=manifest)
-    if apply and not findings:
-        apply_sync(actions, manifest)
-    changes = [
-        f"{item['action']} {Path(item['destination']).relative_to(target).as_posix()}"
-        for item in actions
-    ]
-    if findings:
-        action = next_action("resolve-skill-conflict", "Review the conflicting skill directories.")
-    elif actions and not apply:
-        action = next_action("apply-skill-sync", "Apply the reviewed skill synchronization plan.")
-    else:
-        action = next_action("run-start", "The shared skills are ready.")
-    return envelope(
-        command,
-        root,
-        ok=not findings,
-        changes=changes,
-        findings=findings,
-        action=action,
-        applied=apply and not findings,
-        planned=not apply,
-        runtime=runtime,
-    )
+def _dispatch_fix(args: argparse.Namespace) -> dict[str, Any]:
+    code, where = args.code, args.path
+    # argparse fills `code` first, so with --all a lone positional is the path; and a
+    # folder given where the code goes is a mistake to name, not a code to look up.
+    if args.all_codes and code is not None and where == ".":
+        code, where = None, code
+    if code is None and not args.all_codes:
+        raise ValueError("name a finding code, or use --all")
+    if code is not None and code not in FIXABLE and Path(code).expanduser().is_dir():
+        raise ValueError("name a finding code before the folder, or use --all")
+    return fix_repo(_path(where), code, apply=_mutation_mode(args), all_codes=bool(args.all_codes))
 
 
 def _dispatch_ingest(args: argparse.Namespace) -> dict[str, Any]:
@@ -403,7 +390,7 @@ def _dispatch_ingest(args: argparse.Namespace) -> dict[str, Any]:
 def dispatch(args: argparse.Namespace) -> dict[str, Any]:
     if args.command == "install":
         applied = _mutation_mode(args)
-        result = _sync_result(Path.home(), args.runtime, apply=applied, global_install=True)
+        result = sync_result(Path.home(), args.runtime, apply=applied, global_install=True)
         if applied and result["ok"] and not getattr(args, "no_ui", False):
             result["ui"] = _open_on_first_install()
         return result
@@ -414,7 +401,7 @@ def dispatch(args: argparse.Namespace) -> dict[str, Any]:
     if args.command == "doctor":
         return doctor_repo(_path(args.path))
     if args.command == "skills" and args.skills_command == "sync":
-        return _sync_result(
+        return sync_result(
             _path(args.path), args.runtime, apply=_mutation_mode(args), global_install=False
         )
     if args.command == "ingest":
@@ -432,6 +419,8 @@ def dispatch(args: argparse.Namespace) -> dict[str, Any]:
         return rename_repo(_path(args.path), args.name, apply=_mutation_mode(args))
     if args.command == "related":
         return related_repo(_path(args.path), apply=_mutation_mode(args), limit=args.limit)
+    if args.command == "fix":
+        return _dispatch_fix(args)
     if args.command == "query":
         return query_repo(
             _path(args.path), args.question, limit=args.limit, literal=bool(args.grep)

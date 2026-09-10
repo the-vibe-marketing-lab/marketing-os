@@ -51,6 +51,8 @@ PLANNED_ALLOWLIST = {
     # The rename and open commands landed with the overview header controls.
     "rename",
     "open",
+    # Preview-and-apply on a to-do row the CLI can fix on its own.
+    "fix",
 }
 
 #: A full path, spelled the way the platform running these tests spells one. The probe asks
@@ -867,6 +869,15 @@ def browser() -> dict:
                     }
                 ],
                 "command_specs": describe_commands(),
+                "fixable": [
+                    "missing-file",
+                    "missing-directory",
+                    "missing-client-registry",
+                    "no-catalog",
+                    "stale-catalog",
+                    "unlinked-document",
+                    "runtime-not-ready",
+                ],
                 "status": status,
                 "doctor": doctor,
             },
@@ -1149,7 +1160,7 @@ def test_one_press_switches_the_whole_app_to_that_brain(browser: dict) -> None:
     assert switched["before"] == "Test Gym"
     assert switched["title"] == "Second Co"
     assert switched["topbar"] == "Second Co"
-    assert "Folder: second" in switched["meta"], "the dashboard is about the new root"
+    assert "/home/you/Desktop/second" in switched["meta"], "the dashboard is about the new root"
     assert switched["stored"] == "/home/you/Desktop/second"
     assert switched["ops"] == [{"op": "remember", "path": "/home/you/Desktop/second"}]
     assert switched["current"] == ["Second Co"]
@@ -1427,6 +1438,14 @@ def test_app_state_says_whether_a_folder_window_can_open(
     with _serving(tree) as server:
         _, state = _get(server, "/api/state")
     assert state["picker"] is answer
+
+
+def test_app_state_names_the_findings_the_cli_can_fix_on_its_own(tree: Path) -> None:
+    """The page offers "Preview the fix" only on the rows the server says it may."""
+    with _serving(tree / "brain") as server:
+        _, state = _get(server, "/api/state")
+    assert "missing-file" in state["fixable"]
+    assert state["fixable"] == sorted(state["fixable"])
 
 
 def test_app_state_carries_the_places_and_only_the_first_places_brains(
@@ -1756,6 +1775,92 @@ def test_a_mutating_command_takes_the_server_lock(tree: Path) -> None:
         server.lock.release()
         worker.join(timeout=60)
     assert done and done[0][0] == 200
+
+
+# --- the folder tree, over HTTP -----------------------------------------------------------
+
+
+@pytest.fixture
+def brain_tree(tmp_path: Path) -> Path:
+    root = tmp_path / "brain"
+    setup_repo(root, "Tree Co", "all", mode="in-house", apply=True)
+    for rel in ("business/offers/ai-retainer/offer.md", "notes/todo.md", ".env", "deep/a/b/c.md"):
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_text("theirs", encoding="utf-8")
+    return root
+
+
+def test_tree_lists_two_levels_and_marks_the_operators_own(brain_tree: Path) -> None:
+    with _serving(brain_tree) as server:
+        status, body = _get(server, "/api/tree?path=" + urllib.parse.quote(str(brain_tree)))
+    assert status == 200 and body["root"] == str(brain_tree)
+    paths = [e["path"] for e in body["entries"]]
+    by_path = {e["path"]: e for e in body["entries"]}
+    assert by_path["business/offers"]["origin"] == "marketing-os", "the template's own folder"
+    assert by_path["notes"] == {"path": "notes", "kind": "dir", "origin": "yours", "children": 1}
+    assert by_path["notes/todo.md"] == {"path": "notes/todo.md", "kind": "file", "origin": "yours"}
+    assert by_path[".env"]["origin"] == "yours"
+    # The depth cap: level 2 is listed with a count, level 3 is not there.
+    assert by_path["deep/a"]["kind"] == "dir" and by_path["deep/a"]["children"] == 1
+    assert "deep/a/b" not in by_path
+    # ``.git`` is never part of the picture; the machinery is one closed row each.
+    assert ".git" not in by_path and not any(p.startswith(".git/") for p in paths)
+    claude = by_path[".claude"]
+    assert claude["kind"] == "dir" and claude["origin"] == "marketing-os" and claude["children"] > 0
+    assert not any(p.startswith(".claude/") for p in paths)
+    # Folders first at the top level, then names casefolded.
+    top = [e for e in body["entries"] if "/" not in e["path"]]
+    kinds = [e["kind"] for e in top]
+    assert kinds == sorted(kinds, key=lambda k: k != "dir")
+    names = [e["path"].casefold() for e in top if e["kind"] == "dir"]
+    assert names == sorted(names)
+
+
+def test_tree_origin_follows_the_template_at_any_depth(brain_tree: Path) -> None:
+    """Past the two levels the page shows, the rule is the same all the way down."""
+    from marketing_os.ui.tree import describe_tree
+
+    by_path = {e["path"]: e for e in describe_tree(brain_tree, depth=4)["entries"]}
+    assert by_path["business/brand/brand.md"]["origin"] == "marketing-os"
+    assert by_path["knowledge/wiki/_index.md"]["origin"] == "marketing-os"
+    assert by_path["business/offers/ai-retainer"]["origin"] == "yours"
+    assert by_path["business/offers/ai-retainer/offer.md"]["origin"] == "yours"
+
+
+def test_tree_counts_a_mode_overlay_as_marketing_os(tmp_path: Path) -> None:
+    """Agency mode lays down business/clients; that is MarketingOS's, the clients are theirs."""
+    from marketing_os.ui.tree import describe_tree
+
+    root = tmp_path / "agency"
+    setup_repo(root, "Agency Co", "all", mode="agency", apply=True)
+    (root / "business" / "clients" / "acme").mkdir(parents=True)
+    (root / "business" / "clients" / "acme" / "notes.md").write_text("theirs", encoding="utf-8")
+    by_path = {e["path"]: e for e in describe_tree(root, depth=4)["entries"]}
+    assert by_path["business/clients"]["origin"] == "marketing-os"
+    assert by_path["business/clients/clients.md"]["origin"] == "marketing-os"
+    assert by_path["business/clients/acme"]["origin"] == "yours"
+    assert by_path["business/clients/acme/notes.md"]["origin"] == "yours"
+
+
+def test_tree_refuses_a_missing_folder_like_state_does(brain_tree: Path) -> None:
+    with _serving(brain_tree) as server:
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{server.port}/api/tree?path=/definitely/missing"
+        )
+        request.add_header(TOKEN_HEADER, BROWSE_TOKEN)
+        with pytest.raises(urllib.error.HTTPError) as caught:
+            _OPENER.open(request, timeout=30)
+    assert caught.value.code == 400
+    body = json.loads(caught.value.read().decode("utf-8"))
+    assert body["envelope"]["findings"][0]["code"] == "bad-path"
+
+
+def test_tree_still_needs_the_token(brain_tree: Path) -> None:
+    with _serving(brain_tree) as server:
+        request = urllib.request.Request(f"http://127.0.0.1:{server.port}/api/tree")
+        with pytest.raises(urllib.error.HTTPError) as caught:
+            _OPENER.open(request, timeout=30)
+    assert caught.value.code == 403
 
 
 # --- the page against the fixes above ----------------------------------------------------

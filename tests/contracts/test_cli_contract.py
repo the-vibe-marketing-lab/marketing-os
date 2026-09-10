@@ -122,6 +122,7 @@ def test_help_lists_all_commands(capsys) -> None:
         "update",
         "statusline",
         "context",
+        "fix",
     ):
         assert command in output
 

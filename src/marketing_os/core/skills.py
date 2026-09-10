@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from marketing_os.core.parallel import pmap
-from marketing_os.core.results import finding
+from marketing_os.core.results import envelope, finding, next_action
 from marketing_os.core.schema import skills_root
 
 RUNTIME_DIRS = {"claude": Path(".claude/skills"), "codex": Path(".agents/skills")}
@@ -159,6 +159,44 @@ def apply_sync(actions: list[dict[str, str]], manifest_path: Path) -> None:
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+
+def sync_result(root: Path, runtime: str, *, apply: bool, global_install: bool) -> dict[str, Any]:
+    """Plan or apply a skill sync and report it as an envelope.
+
+    Shared by ``mos install``, ``mos skills sync`` and ``mos fix runtime-not-ready``, so
+    the three can never drift apart on what a sync reports.
+    """
+    if global_install:
+        manifest = global_manifest(root)
+        command = "install"
+    else:
+        manifest = project_manifest(root)
+        command = "skills-sync"
+    actions, findings = plan_sync(root, runtime, manifest_path=manifest)
+    if apply and not findings:
+        apply_sync(actions, manifest)
+    changes = [
+        f"{item['action']} {Path(item['destination']).relative_to(root).as_posix()}"
+        for item in actions
+    ]
+    if findings:
+        action = next_action("resolve-skill-conflict", "Review the conflicting skill directories.")
+    elif actions and not apply:
+        action = next_action("apply-skill-sync", "Apply the reviewed skill synchronization plan.")
+    else:
+        action = next_action("run-start", "The shared skills are ready.")
+    return envelope(
+        command,
+        root,
+        ok=not findings,
+        changes=changes,
+        findings=findings,
+        action=action,
+        applied=apply and not findings,
+        planned=not apply,
+        runtime=runtime,
     )
 
 

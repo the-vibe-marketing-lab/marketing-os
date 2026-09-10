@@ -21,6 +21,7 @@ from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse, urlsplit
 
 from marketing_os.core import status as core_status
+from marketing_os.core.fix import FIXABLE
 from marketing_os.core.parallel import gather
 from marketing_os.core.results import envelope, finding, next_action
 from marketing_os.core.schema import find_root, read_config
@@ -36,6 +37,7 @@ from marketing_os.ui.places import (
     suggested_places,
     windows_to_wsl,
 )
+from marketing_os.ui.tree import describe_tree
 
 HOST = "127.0.0.1"
 DEFAULT_PORT = 4321
@@ -299,7 +301,7 @@ class UiHandler(BaseHTTPRequestHandler):
         if route.startswith("/static/"):
             self._static(route[len("/static/") :])
             return
-        if route == "/api/state":
+        if route in ("/api/state", "/api/tree"):
             if not self._token_ok():
                 self._refuse(
                     HTTPStatus.FORBIDDEN,
@@ -309,7 +311,8 @@ class UiHandler(BaseHTTPRequestHandler):
                 return
             root = self._state_root(urlparse(self.path).query)
             if root is not None:
-                self._json(HTTPStatus.OK, self._app_state(root))
+                payload = self._app_state(root) if route == "/api/state" else describe_tree(root)
+                self._json(HTTPStatus.OK, payload)
             return
         self._refuse(HTTPStatus.NOT_FOUND, "unknown-route", f"No route for {route!r}.")
 
@@ -580,6 +583,9 @@ class UiHandler(BaseHTTPRequestHandler):
             "url": self.server.url,
             "commands": list(allowlist()),
             "command_specs": describe(),
+            # The finding codes the CLI can put right on its own, so the page can offer
+            # the preview-and-apply pair on those rows and the prompt on the rest.
+            "fixable": sorted(FIXABLE),
             "status": _state_findings(status, STATE_FINDING_LIMIT),
             # The page reads two booleans out of this — ``checks.structure`` and
             # ``checks.runtime_wiring`` — and doctor's own ``findings`` and ``runtimes``

@@ -121,6 +121,9 @@ The engine lives under `src/marketing_os/`:
 - `core/related.py` — `mos related`; term-frequency scoring over titles and descriptions with
   a cross-folder weighting and a confidence floor, writing `## Related` blocks without
   disturbing line endings.
+- `core/fix.py` — `mos fix`; the one table from a finding code to the existing core fixer
+  that puts it right, and the `FIXABLE` set the app reads to decide which rows get
+  preview-and-apply.
 - `core/graphlint.py` — the frontmatter-contract sensors, surfaced through `mos validate`
   rather than a command of their own, because the repository already has one place for
   structural truth.

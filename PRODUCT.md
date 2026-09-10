@@ -66,10 +66,16 @@ hosted "AI marketing platform" cannot make.
 - Localhost only, session token on every API call, explicit command allowlist, no shell.
 - Mutation gating: every writing command is previewed with `--plan` and applied with `--yes`
   after an explicit confirm. The UI must keep that visible.
+- Confirmed 2026-09-10: a finding the CLI can fix deterministically (`mos fix`) shows
+  "Preview the fix" then "Apply" on its row, with the plain change list between them.
+  Judgement fixes keep the Claude Code pair.
 - Tested by static contract tests that read `app.js`, `index.html` and `styles.css`
   directly: no inline script, no markup sinks, no filesystem path in default-visible copy,
   audited contrast pairs, no copy that denies a capability the app ships, one plain sentence
   per checker code. Any rebrand must keep those passing.
+- Confirmed 2026-09-10: the current brain's folder path is the one path shown in the open,
+  in the overview header meta, whole when it fits and copied on click. The operator kept
+  looking it up. Every other path stays behind the technical disclosure.
 - Python 3.10+, ruff at line-length 100, full pytest suite green, six-cell CI matrix
   including Windows.
 - Terminology: brain, mode (in-house, agency, client), context fields ("Your brand", "How

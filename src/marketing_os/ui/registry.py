@@ -197,10 +197,14 @@ def _scan_first_place(places: Places | None) -> list[dict[str, Any]]:
 
 
 def _ordered(brains: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Existing first, then most recently opened, then by name. Each pass is stable."""
+    """Existing first, then by name. Each pass is stable.
+
+    Never by recency: opening a brain must not move it, or the list reshuffles under the
+    hand that just pressed it (pinned 2026-09-10). ``last_opened`` still decides which
+    entry the cap drops.
+    """
     by_name = sorted(brains, key=lambda brain: str(brain["name"]).casefold())
-    by_recency = sorted(by_name, key=lambda brain: brain["last_opened"] or "", reverse=True)
-    return sorted(by_recency, key=lambda brain: not brain["exists"])
+    return sorted(by_name, key=lambda brain: not brain["exists"])
 
 
 def known_brains(places: Places | None = None) -> list[dict[str, Any]]:

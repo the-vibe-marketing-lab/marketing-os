@@ -1088,6 +1088,25 @@ details[open] > summary .disc {
   color: var(--ink-3);
 }
 
+/* The brain's folder path, in the header meta: reads as the line around it, copies on
+   click. Underlined so the click is discoverable without a second control. */
+.meta__path {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--control-line);
+  text-underline-offset: 4px;
+}
+
+.meta__path:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink);
+}
+
 .page-head__end {
   margin-left: auto;
 }
@@ -1475,6 +1494,45 @@ details[open] > summary .disc {
 
 .todo__readouts {
   padding-bottom: 14px;
+}
+
+/* The row opened into the fuller words: what was seen, why it matters, how to fix it by
+   hand, then where. Indented to the text, never to the icon. */
+.todo__detail {
+  padding: 0 0 16px 28px;
+  animation: reveal var(--base) var(--ease);
+}
+
+.todo__detail > * + * {
+  margin-top: 12px;
+}
+
+/* Row-size prose: the explanation belongs to the row above it, not to the page. */
+.todo__detail .ledger__prose p {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.todo__example {
+  max-width: 62ch;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.todo__where-title {
+  color: var(--ink-3);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 /* A readout inside a row or a panel sits under the panel's title: row-size title, one
@@ -2625,6 +2683,17 @@ details.raw .result__elapsed {
 .tree__count {
   color: var(--ink-3);
   font-size: 13px;
+}
+
+/* The operator's own additions, named in a word so the split reads without colour. */
+.tree__tag {
+  margin-left: 2px;
+  font-size: 11px;
+}
+
+/* Inside a quick action the row's body already pads. */
+.qa-tech .tree {
+  padding: 0;
 }
 
 .tree details > summary {
@@ -3782,6 +3851,18 @@ details.raw > summary:hover {
 }
 
 @media (max-width: 640px) {
+  /* The folder path takes its own line, so the separator that would have led the next
+     line is dropped with it. */
+  .meta__path {
+    flex-basis: 100%;
+    text-align: left;
+  }
+
+  .meta__path + .meta__item::before {
+    content: none;
+    margin: 0;
+  }
+
   body {
     font-size: 17px;
   }

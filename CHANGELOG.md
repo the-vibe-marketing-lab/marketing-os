@@ -9,6 +9,23 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ### Added
 
+- **`mos fix`, and "Preview the fix" on the row.** One front door for every fix the check
+  can make on its own: missing files and folders, the client list, the catalogue, unlinked
+  documents, and the assistants' skill copies. `mos fix <code> --plan` shows the change list,
+  `--yes` applies it, `--all` does every one. On the dashboard those findings now show
+  "Preview the fix" then "Apply" with the plain change list between; judgement fixes keep the
+  Claude Code pair.
+- **The brain's folder path sits in the overview header.** The meta line shows where the
+  current brain lives on this machine, whole when it fits and trimmed from the left when it
+  does not, and one click copies it. Asked for on 2026-09-10 because the operator kept
+  looking it up; every other path stays behind the technical disclosure.
+- **Every finding opens into what it means.** A "What this means" button on each to-do row
+  opens it into what the check actually saw, why it matters, and how to put it right by
+  hand, with the files listed underneath, so the prompt is one way to fix it and not the
+  only one.
+- **See what's in the folder.** A quick action opens in place to the brain's folder two
+  levels deep. Rows MarketingOS set up are plain; anything the operator or their assistant
+  added is marked "yours", so the two read apart at a glance.
 - **Every finding on the dashboard leads to the same two things.** "Fix in Claude Code"
   opens Claude Code in the brain's folder with the fix already typed in, through
   `mos open --prompt`; "Copy the prompt" gives the same text to paste anywhere, and "View
@@ -43,6 +60,9 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ### Changed
 
+- **The brain list holds its order.** Brains that exist come first, then by name; opening
+  one no longer moves it to the top, and the pressed row reads as current at once rather
+  than after the check behind it finishes.
 - **The command runner reads like the Skills page.** Search, a chip per group, and one
   card per command with its title, what it does, the exact `mos` line and whether it
   writes; opening a card brings the run form, the result and the copyable command line

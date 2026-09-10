@@ -946,10 +946,16 @@
    * refresh. A folder from an older layout goes to the attach screen instead, and the
    * brain that was open stays open behind it. */
   function switchBrain(path, name) {
+    // The pressed row reads as current at once; the check behind it can take a second
+    // on a slow disk. A refusal puts the previous brain back.
+    var previous = App.path;
+    App.path = path;
+    renderSidebar();
     return request("/api/state?path=" + encodeURIComponent(path)).then(
       function (res) {
         var data = res.ok && res.data && res.data.schema ? res.data : null;
         if (data && data.attachable) {
+          App.path = previous;
           attachBrain(path, name);
           return null;
         }
@@ -961,6 +967,7 @@
           var label = (known && known.name) || folderName(path) || "that brain";
           toast("Could not open " + label + ": the folder is missing or not allowed.");
           announce("Could not open " + label + ". The folder is missing or not allowed.");
+          App.path = previous;
           refreshBrains();
           return null;
         }
@@ -1141,46 +1148,106 @@
       one: "Claude Code is not installed on this computer, or is not on the PATH.",
       many: "Claude Code is not installed on this computer, or is not on the PATH.",
       fix: "Install it, or use the lines below once it is there.",
+      more: [
+        "The app looked for the claude command on this computer and could not find it, so there " +
+        "is nothing for the Open button to start. Nothing is wrong with the brain.",
+        "Install Claude Code, or if it is already installed, open a terminal and type claude to " +
+        "see whether it answers. If it does not, the folder it lives in is not on your PATH. " +
+        "Until then, copy the prompt and paste it into Claude Code wherever you normally run " +
+        "it.",
+      ],
     },
     "no-terminal": {
       one: "No terminal program was found to open.",
       many: "No terminal program was found to open.",
       fix: "Open one yourself and use the lines below.",
+      more: [
+        "To open Claude Code for you the app needs a terminal program it knows how to start, " +
+        "and it found none.",
+        "Open any terminal yourself, go to the brain's folder, type claude, and paste the " +
+        "prompt. The exact lines are under Quick actions.",
+      ],
     },
     "launch-failed": {
       one: "The terminal could not be opened.",
       many: "The terminal could not be opened.",
       fix: "Open one yourself and use the lines below.",
+      more: [
+        "The app asked the operating system to open a terminal and the request failed. That is " +
+        "a hiccup on this computer, not a problem in the brain.",
+        "Try once more. If it fails again, open a terminal yourself, go to the brain's folder, " +
+        "type claude, and paste the prompt.",
+      ],
     },
     "missing-name": {
       one: "The business has no name yet.",
       many: "The business has no name yet.",
       fix: "Type the name real customers use.",
+      more: [
+        "Every brain belongs to a named business. The name goes into the brain's settings and " +
+        "the top of its index, and assistants use it whenever they write about you.",
+        "Use the name real customers use, not the legal entity. You can rename it from the " +
+        "pencil next to the title whenever you like.",
+      ],
     },
     "no-catalog": {
       one: "The catalogue has not been built yet.",
       many: "The catalogue has not been built yet.",
       fix: "Searching still works; it reads every document instead. Rebuilding the navigation makes it faster.",
+      more: [
+        "The catalogue is a small map an assistant reads first to find its way around the " +
+        "brain, instead of opening every document. It has not been built yet, so an assistant " +
+        "working here is slower and may miss a document entirely.",
+        "Building it writes only the navigation files and touches none of your answers. Run the " +
+        "index build command from the Skills page, or ask your assistant to.",
+      ],
     },
     "stale-catalog": {
       one: "The catalogue is behind the documents on disk.",
       many: "The catalogue is behind the documents on disk.",
       fix: "Rebuilding the navigation brings it back in step. Nothing is written until you confirm.",
+      more: [
+        "Documents have been added or changed since the catalogue was last built, so its map of " +
+        "the brain is behind, and an assistant could miss your newest work.",
+        "Rebuilding it writes only the navigation files and touches none of your answers. Run " +
+        "the index build command from the Skills page, or ask your assistant to.",
+      ],
     },
     "missing-file": {
       one: "A required file is missing.",
       many: "{n} required files are missing.",
       fix: "Setting the brain up again adds only what is missing and leaves every answer as it is.",
+      more: [
+        "The check compared this brain against the files every brain starts with and found one " +
+        "missing. Those files are the entry points an assistant reads first, so a missing one " +
+        "leaves it guessing about the rest.",
+        "Setting the brain up again from here adds only what is absent and changes nothing " +
+        "else. To do it yourself, create the file named under Where and give it the same " +
+        "summary header the other documents have; an empty body is fine to start.",
+      ],
     },
     "missing-directory": {
       one: "A required folder is missing.",
       many: "{n} required folders are missing.",
       fix: "Setting the brain up again adds only what is missing and leaves every answer as it is.",
+      more: [
+        "The check compared this brain against the folders every brain starts with and found " +
+        "one missing. Assistants look in those folders for specific kinds of work, so a missing " +
+        "one means that kind has nowhere to go.",
+        "Setting the brain up again from here adds only what is absent and changes nothing " +
+        "else. To do it yourself, create the folder named under Where; an empty folder is fine.",
+      ],
     },
     "file-discovered": {
       one: "A required answer lives in a file of your own naming.",
       many: "{n} required answers live in files of your own naming.",
       fix: "It counts as answered. The interview writes to the expected place whenever you change it.",
+      more: [
+        "One of the six answers is not in the file the brain expects, but the check found it in " +
+        "a file you named yourself. It counts as answered and nothing is lost.",
+        "The next time you change that answer from the interview it is written to the expected " +
+        "place. Or move it yourself and keep its summary header as it is.",
+      ],
     },
     "missing-frontmatter": {
       one: "A document has no summary header yet.",
@@ -1189,6 +1256,26 @@
         "The header is a short block at the top saying what the document is and when it was " +
         "written; assistants read it before the body. Saving an answer from the interview adds " +
         "one, or ask your assistant to add the rest.",
+      more: [
+        "Every document in the brain opens with a short summary header: a title, what kind of " +
+        "document it is, one sentence on what it holds, the date, and a status. Assistants read " +
+        "that header to decide whether the document is worth opening at all, so one without a " +
+        "header is invisible to them even though it sits on disk.",
+        "Saving an answer from the interview adds the header for you. To add one yourself, put " +
+        "a block like the one below at the very top of the file, above the first line, and " +
+        "change the words to fit. The full rules are in CONTRACT.md at the root of the brain.",
+      ],
+      example: [
+        "---",
+        "title: What this document is called",
+        "type: business",
+        "description: One sentence saying what this holds and when to read it.",
+        "date: 2026-09-10",
+        "status: active",
+        "related:",
+        "  - BRAIN.md",
+        "---",
+      ].join("\n"),
     },
     "unlinked-document": {
       one: "A document links to nothing else.",
@@ -1196,96 +1283,215 @@
       fix:
         "Links are how an assistant moves between related documents. The related tool " +
         "proposes them and writes nothing until you apply.",
+      more: [
+        "This document has a header but names no connection to any other document: nothing it " +
+        "was built from, nothing it belongs with, nothing that produced it. Assistants move " +
+        "through the brain by following those connections, so an unlinked document is a dead " +
+        "end they rarely reach.",
+        "The related tool proposes links and writes nothing until you apply them. To do it " +
+        "yourself, add a related line to the document's header naming one or two documents it " +
+        "belongs with, or a sources line naming what it was built from.",
+      ],
     },
     "output-without-sources": {
       one: "A deliverable does not say what it was built from.",
       many: "{n} deliverables do not say what they were built from.",
       fix: "Add the sources it drew on to its summary header.",
+      more: [
+        "A deliverable, such as a piece of content or a report, has to say what it was built " +
+        "from, so anyone can trace a claim back to where it came from. This one has no sources " +
+        "line in its header.",
+        "Add a sources line to the header naming the documents or references it drew on. One is " +
+        "enough to start.",
+      ],
     },
     "missing-connective-key": {
       one: "A document is not connected to anything.",
       many: "{n} documents are not connected to anything.",
       fix: "Its summary header needs a sources, related, or produced-by line.",
+      more: [
+        "The header has the five basic fields but none of the three that connect a document to " +
+        "the rest of the brain: sources, for what it was built from; related, for what it " +
+        "belongs with; or produced_by, for the skill that made it. Without one the document " +
+        "cannot be reached by following links.",
+        "Add at least one of those lines to the header. For most documents, related is the " +
+        "natural one.",
+      ],
     },
     "unknown-top-level": {
       one: "A file or folder sits at the top level where the brain does not expect one.",
       many: "{n} files or folders sit at the top level where the brain does not expect them.",
       fix: "The migrate tool works out where each one belongs and moves it when you say so.",
+      more: [
+        "The top level of a brain holds a fixed set of folders so an assistant always knows " +
+        "where to look. This item sits at the top level without a home there.",
+        "The migrate tool works out where it belongs and moves it only when you say so. To do " +
+        "it yourself, move it into the folder it belongs in, or into archive if it is no longer " +
+        "needed.",
+      ],
     },
     "invalid-dated-artifact": {
       one: "A folder in the log is not named by date.",
       many: "{n} folders in the log are not named by date.",
       fix: "Log folders are named year-month-day-topic so they sort by when they happened.",
+      more: [
+        "Folders in the log are named by the day they happened, as year, month and day followed " +
+        "by a short topic, so they sort in the order things happened. This one does not follow " +
+        "that pattern.",
+        "Rename the folder to that pattern, for example the date first and the topic after a " +
+        "dash.",
+      ],
     },
     "invalid-year": {
       one: "A folder in the log is not named for a year.",
       many: "{n} folders in the log are not named for a year.",
       fix: "Log years are four digits.",
+      more: [
+        "Year folders in the log are named with the four-digit year and nothing else, so they " +
+        "sort in order. This one is named differently.",
+        "Rename it to the four-digit year.",
+      ],
     },
     "invalid-quarter": {
       one: "A folder in the log is not named for a quarter.",
       many: "{n} folders in the log are not named for a quarter.",
       fix: "Quarters are Q1 to Q4.",
+      more: [
+        "Quarter folders in the log are named Q1 to Q4. This one is named differently.",
+        "Rename it to the quarter it covers.",
+      ],
     },
     "invalid-month": {
       one: "A folder in the log is not named for a month.",
       many: "{n} folders in the log are not named for a month.",
       fix: "Months are two digits, 01 to 12.",
+      more: [
+        "Month folders in the log are named with two digits, 01 to 12, so they sort in order. " +
+        "This one is named differently.",
+        "Rename it to the two-digit month.",
+      ],
     },
     "invalid-report-month": {
       one: "A report folder is not named for a month.",
       many: "{n} report folders are not named for a month.",
       fix: "Report folders are named year-month.",
+      more: [
+        "Report folders are named by year and month so reports line up in time order. This one " +
+        "is named differently.",
+        "Rename it to the year and month it covers.",
+      ],
     },
     "missing-or-invalid-config": {
       one: "The brain's settings file is missing or unreadable.",
       many: "The brain's settings file is missing or unreadable.",
       fix: "Setting the brain up again writes a fresh one and leaves every answer as it is.",
+      more: [
+        "The brain's settings file records the business name and the mode. It is missing or " +
+        "cannot be read, so the app cannot tell what this brain is or who it belongs to.",
+        "Setting the brain up again from here writes a fresh settings file and leaves every " +
+        "document alone.",
+      ],
     },
     "unsupported-schema": {
       one: "This brain was made by a version the app does not recognise.",
       many: "This brain was made by a version the app does not recognise.",
       fix: "Update marketing-os, then check again.",
+      more: [
+        "This brain's settings say it was made by a newer version of MarketingOS than the one " +
+        "installed here, so this version does not know its layout well enough to check it " +
+        "safely.",
+        "Update MarketingOS, then check again. Nothing in the brain needs to change.",
+      ],
     },
     "missing-client-registry": {
       one: "An agency brain needs a client list, and this one has none.",
       many: "An agency brain needs a client list, and this one has none.",
       fix: "Setting the brain up again adds it.",
+      more: [
+        "An agency brain keeps a list of its clients, and each client has a brain of its own " +
+        "that points back to the agency. This brain is set up as an agency but has no client " +
+        "list yet.",
+        "Setting the brain up again from here adds an empty list. Or create it yourself in the " +
+        "clients folder inside business and add one line per client.",
+      ],
     },
     "set-mode-agency": {
       one: "This brain holds a client list but is not set up as an agency.",
       many: "This brain holds a client list but is not set up as an agency.",
       fix: "Change its mode to agency in the settings file, or remove the client list.",
+      more: [
+        "This brain holds a client list, which only an agency brain keeps, but its settings say " +
+        "it is a single business. The two disagree, so the app is not sure how to treat it.",
+        "If you run an agency, change the mode to agency in the brain's settings. If not, " +
+        "remove the client list.",
+      ],
     },
     "unexpected-clients-folder": {
       one: "There is a clients folder, but only an agency brain keeps one.",
       many: "There is a clients folder, but only an agency brain keeps one.",
       fix: "Move it out, or set the brain up as an agency.",
+      more: [
+        "There is a clients folder here, but this brain is set up as a single business, and " +
+        "only an agency brain keeps clients.",
+        "If you run an agency, set the brain up as one. If not, move the folder out of the " +
+        "brain or into archive.",
+      ],
     },
     "invalid-type": {
       one: "A document's summary header names a kind of document the brain does not use.",
       many: "{n} documents' summary headers name a kind of document the brain does not use.",
       fix: "The kinds the brain uses are listed in the contract at the root of the brain.",
+      more: [
+        "Each summary header says what kind of document it is, and the brain uses a fixed list: " +
+        "business, knowledge, source, decision, content, campaign, report, output or reference. " +
+        "This header uses a word outside that list, so the document cannot be filed.",
+        "Open the file and change the type line to the one that fits. The list and what each " +
+        "means are in CONTRACT.md at the root of the brain.",
+      ],
     },
     "invalid-status": {
       one: "A document's summary header names a status the brain does not use.",
       many: "{n} documents' summary headers name a status the brain does not use.",
       fix: "The statuses the brain uses are listed in the contract at the root of the brain.",
+      more: [
+        "Each summary header carries a status from a fixed list: draft, active, archived or " +
+        "superseded. This header uses a word outside that list.",
+        "Open the file and change the status line to the one that fits.",
+      ],
     },
     "skill-conflict": {
       one: "Something that is not a shared skill sits where a skill belongs.",
       many: "{n} things that are not shared skills sit where skills belong.",
       fix: "Move it, then sync the skills again.",
+      more: [
+        "Each assistant keeps its own copy of the shared skills in a skills folder inside the " +
+        "brain. Something that is not a shared skill is sitting in one of those folders under a " +
+        "shared skill's name, so the sync cannot put the real skill there.",
+        "Move or rename it, then sync the skills again from Quick actions.",
+      ],
     },
     "runtime-not-ready": {
       one: "Claude Code and Codex cannot both see the skills.",
       many: "Claude Code and Codex cannot both see the skills.",
       fix: "Sync the skills to give each assistant its own copy.",
+      more: [
+        "Claude Code and Codex each read their own copy of the skills from a folder inside the " +
+        "brain, and at least one copy is missing or behind this version. That assistant will " +
+        "not know the MarketingOS commands.",
+        "Syncing writes the current skills into each assistant's folder and touches nothing " +
+        "else. Run it from Quick actions.",
+      ],
     },
     "not-marketing-os": {
       one: "This folder is not a brain yet.",
       many: "This folder is not a brain yet.",
       fix: "Set one up here, or point at the right folder.",
+      more: [
+        "This folder has none of the files a brain starts with, so there is nothing here for " +
+        "the app to check.",
+        "Set up a brain in this folder, attach it if it already holds a brain in an older " +
+        "layout, or pick the folder you meant.",
+      ],
     },
   };
 
@@ -1543,7 +1749,7 @@
     var n = group.items.length;
     if (!copy) return { title: group.message, fix: "" };
     var title = n === 1 ? copy.one : copy.many.replace("{n}", String(n));
-    return { title: title, fix: copy.fix };
+    return { title: title, fix: copy.fix, more: copy.more || [], example: copy.example || "" };
   }
 
   function findingRow(group, opts) {
@@ -1760,7 +1966,9 @@
             (envelope.planned ? " would be touched." : " touched."),
         })
       );
-      add(body, tech([changesList(changes)], "Show every one"));
+      // A row's preview is the list itself: that is what the operator is approving.
+      if (opts.openChanges) add(body, changesList(changes));
+      else add(body, tech([changesList(changes)], "Show every one"));
     } else if (opts.emptyChanges) {
       add(body, subhead("Changes"));
       add(body, emptyState("Nothing to change", opts.emptyChanges));
@@ -4254,8 +4462,22 @@
       health.className = "ov-head__health" + (healthy ? "" : " ov-head__health--needs");
     }
 
+    // Pinned 2026-09-10: the folder path is the one path that sits in the open, because
+    // the operator kept looking it up. Drawn whole when it fits, trimmed from the left
+    // when it does not, the full path in the title, and one click copies it.
+    var repo = status.repo || App.path;
     fill($("dash-meta"), [
-      el("span", { class: "meta__item", text: "Folder: " + folderName(status.repo) }),
+      el("button", {
+        class: "meta__item meta__path",
+        type: "button",
+        title: repo,
+        text: shortPath(repo, 80),
+        on: {
+          click: function () {
+            copy(repo, "Folder path copied");
+          },
+        },
+      }),
       el("span", {
         class: "meta__item",
         text: plural((status.installed_skills || []).length, "shared skill"),
@@ -4500,7 +4722,72 @@
       return fixPromptText(status, group.items);
     });
     if (slots && slots.after) add(slots.after, [fix.fail, fix.host]);
+    var fixable = ((App.state && App.state.fixable) || []).indexOf(group.code) !== -1;
+    if (fixable) fix.row.insertBefore(previewFixButton(group.code, container), fix.row.firstChild);
     return fix.row;
+  }
+
+  /* A finding the CLI can put right on its own: the plain change list on the row, then
+   * Apply. The list of such codes comes from the server, never from here. Judgement
+   * fixes keep the Claude Code pair. */
+  function previewFixButton(code, host) {
+    var button = el("button", { class: "btn btn--primary btn--sm", type: "button", text: "Preview the fix" });
+    var closeBtn = el("button", { class: "btn btn--secondary btn--sm", type: "button", text: "Close" });
+    closeBtn.addEventListener("click", function () {
+      fill(host, []);
+      button.focus();
+    });
+    function stopped(applied) {
+      fill(host, [
+        el("div", { class: "readout" }, [
+          el("div", { class: "card" }, [resultCard(applied, { title: "What stopped it" })]),
+          el("div", { class: "btn-row" }, [closeBtn]),
+        ]),
+      ]);
+      land(host, resultSummary(applied, "The fix"));
+    }
+    button.addEventListener("click", function () {
+      if (blocked(button)) return;
+      busy(button, true, "Checking");
+      run("fix", { code: code, path: App.path, plan: true }).then(function (result) {
+        busy(button, false);
+        fill(button, ["Preview the fix"]);
+        var envelope = result.envelope;
+        var actions = [];
+        if (envelope && envelope.ok && changesOf(envelope).length) {
+          var go = el("button", { class: "btn btn--primary btn--sm", type: "button", text: "Apply" });
+          go.addEventListener("click", function () {
+            if (blocked(go)) return;
+            busy(go, true, "Applying");
+            run("fix", { code: code, path: App.path, yes: true }).then(function (applied) {
+              if (!applied.envelope || !applied.envelope.ok) {
+                stopped(applied);
+                return;
+              }
+              toast("Fixed");
+              announce("Fixed. Checking the brain again.");
+              refresh(true);
+            });
+          });
+          actions.push(go);
+        }
+        actions.push(closeBtn);
+        fill(host, [
+          el("div", { class: "readout" }, [
+            el("div", { class: "card" }, [
+              resultCard(result, {
+                title: "What would change",
+                emptyChanges: "Nothing needs to change.",
+                openChanges: true,
+              }),
+            ]),
+            el("div", { class: "btn-row" }, actions),
+          ]),
+        ]);
+        land(host, resultSummary(result, "The fix"));
+      });
+    });
+    return button;
   }
 
   function todoRow(status, group) {
@@ -4510,6 +4797,8 @@
     var readouts = el("div", { class: "todo__readouts" });
     var after = el("div", { class: "todo__after" });
     var action = todoAction(status, group, readouts, { after: after });
+    var detail = todoDetail(group, words);
+    if (detail) action.appendChild(detail.button);
     return el("li", { class: "todo" }, [
       el("div", { class: "todo__row" }, [
         icon(look.name, "row__icon " + look.cls),
@@ -4525,9 +4814,60 @@
         ]),
         el("div", { class: "todo__action" }, [action]),
       ]),
+      detail ? detail.body : null,
       after,
       readouts,
     ]);
+  }
+
+  /* The row opened into what the check actually saw, why it matters, and how to put it
+   * right by hand, so nobody has to paste a prompt they do not understand. The fuller
+   * words come from the same table as the sentence; the files come from the checker. */
+  function todoDetail(group, words) {
+    if (!words.more.length) return null;
+    var id = "todo-detail-" + group.code + "-" + Math.random().toString(36).slice(2, 7);
+    var paths = group.items
+      .map(function (item) {
+        return item.path;
+      })
+      .filter(Boolean);
+    var body = el("div", { class: "todo__detail", id: id, hidden: true }, [
+      el(
+        "div",
+        { class: "ledger__prose" },
+        words.more.map(function (paragraph) {
+          return el("p", { text: paragraph });
+        })
+      ),
+      words.example ? el("pre", { class: "todo__example" }, [el("code", { text: words.example })]) : null,
+      paths.length
+        ? el("div", { class: "todo__where" }, [
+            el("p", { class: "todo__where-title", text: paths.length === 1 ? "Where" : "Where, " + plural(paths.length, "place") }),
+            el(
+              "ul",
+              { class: "row__paths", role: "list" },
+              paths.map(function (path) {
+                return el("li", { class: "row__path", text: path });
+              })
+            ),
+          ])
+        : null,
+    ]);
+    var button = el("button", {
+      class: "btn btn--ghost btn--sm",
+      type: "button",
+      text: "What this means",
+      "aria-expanded": "false",
+      "aria-controls": id,
+      on: {
+        click: function () {
+          var open = button.getAttribute("aria-expanded") !== "true";
+          button.setAttribute("aria-expanded", open ? "true" : "false");
+          show(body, open);
+        },
+      },
+    });
+    return { button: button, body: body };
   }
 
   function todoPanel(status) {
@@ -5127,6 +5467,8 @@
 
     // Sync: opens in place to one line and two ways.
     var sync = syncBlock(status);
+    // The folder: opens in place to two levels, read fresh each time.
+    var tree = treeBlock(status);
 
     return panel("quick", "Quick actions", null, [
       el("div", { class: "qas" }, [
@@ -5135,6 +5477,7 @@
           openInterview(complete ? null : missing[0] || null);
         }),
         sync,
+        tree,
         quickRow("terminal", "See every command", function () {
           showRunner(true);
           setView("commands");
@@ -5232,6 +5575,105 @@
     return details;
   }
 
+  /* ---- the folder, two levels deep ------------------------------------------- */
+
+  /* One row. A folder the server listed but did not open is machinery at the top and
+   * the depth cap below; either way it says how many things it holds. */
+  function treeRow(entry, opened) {
+    var isDir = entry.kind === "dir";
+    var name = entry.path.slice(entry.path.lastIndexOf("/") + 1);
+    var cls = "tree__row";
+    var count = null;
+    if (isDir) {
+      cls += " tree__row--dir";
+      if (!opened && entry.children > 0) {
+        var top = entry.path.indexOf("/") === -1;
+        if (top) cls += " tree__row--faint";
+        count = el("span", {
+          class: "tree__count",
+          text: top ? plural(entry.children, "item") : entry.children + " inside",
+        });
+      }
+    } else if (/\.md$/.test(name)) cls += " tree__row--doc";
+    else if (name === ".gitkeep") cls += " tree__row--faint";
+    return el("span", { class: cls }, [
+      icon(isDir ? "folder" : "file"),
+      el("span", { class: "tree__name", text: name + (isDir ? "/" : "") }),
+      count,
+      entry.origin === "yours" ? el("span", { class: "pill tree__tag", text: "yours" }) : null,
+    ]);
+  }
+
+  /* The server's flat list, in its own order, nested one level by path prefix. */
+  function renderFolder(entries) {
+    var top = [];
+    var inside = {};
+    entries.forEach(function (entry) {
+      var slash = entry.path.indexOf("/");
+      if (slash === -1) top.push(entry);
+      else (inside[entry.path.slice(0, slash)] = inside[entry.path.slice(0, slash)] || []).push(entry);
+    });
+    return el("div", { class: "tree" }, [
+      el(
+        "ul",
+        { role: "list" },
+        top.map(function (entry) {
+          var kids = inside[entry.path] || [];
+          return el("li", {}, [
+            treeRow(entry, kids.length > 0),
+            kids.length
+              ? el(
+                  "ul",
+                  { role: "list" },
+                  kids.map(function (kid) {
+                    return el("li", {}, [treeRow(kid, false)]);
+                  })
+                )
+              : null,
+          ]);
+        })
+      ),
+    ]);
+  }
+
+  function treeBlock(status) {
+    var host = el("div");
+    return el(
+      "details",
+      {
+        class: "tech qa-tech",
+        id: "qa-tree",
+        on: {
+          // Read on every open, so a file added a moment ago is already in the list.
+          toggle: function (event) {
+            if (!event.target.open) return;
+            fill(host, [note("info", "info", ["Reading the folder\u2026"])]);
+            request("/api/tree?path=" + encodeURIComponent(status.repo || App.path)).then(function (res) {
+              var ok = res.ok && res.data && res.data.entries;
+              fill(host, [ok ? renderFolder(res.data.entries) : note("warn", "alert", ["Could not read the folder."])]);
+            });
+          },
+        },
+      },
+      [
+        el("summary", { class: "tech__sum qa" }, [
+          icon("folder", "qa__icon"),
+          el("span", { class: "qa__label", text: "See what's in the folder" }),
+          icon("down", "disc qa__go"),
+        ]),
+        el("div", { class: "tech__body" }, [
+          el("p", {
+            class: "panel__line",
+            text:
+              "Plain rows are what MarketingOS set up. Anything marked yours is what you or " +
+              "your assistant added.",
+          }),
+          host,
+        ]),
+      ]
+    );
+  }
+
   /* ---- assistants ------------------------------------------------------------ */
 
   function assistantsPanel(status) {
@@ -5304,6 +5746,10 @@
     var navFix = fixActions(function () {
       return navPromptText(App.status || {});
     }, { label: "Rebuild in Claude Code" });
+    // The catalogue is one of the fixes the CLI makes on its own, so the card gets the
+    // same "Preview the fix" as a to-do row would. Inserted once; rebuild runs often.
+    var navPreview = el("div");
+    var navPreviewed = false;
     entry.node = built.node;
     entry.head = built.head;
     entry.card = {
@@ -5321,11 +5767,18 @@
       rebuild: function () {
         var envelope = entry.envelope;
         var findings = envelope ? findingsOf(envelope) : [];
+        var groups = groupFindings(findings);
+        var fixable = (App.state && App.state.fixable) || [];
+        if (groups.length && !navPreviewed && fixable.indexOf(groups[0].code) !== -1) {
+          navPreviewed = true;
+          navFix.row.insertBefore(previewFixButton(groups[0].code, navPreview), navFix.row.firstChild);
+        }
         // The rows carry the sentence once findings exist; the line stands in until then.
         fill(body, [
           findings.length ? null : line,
           findings.length ? findingRows(findings, { pathsBehind: true }) : null,
           findings.length ? navFix.row : null,
+          findings.length ? navPreview : null,
           findings.length ? navFix.fail : null,
           findings.length ? navFix.host : null,
         ]);

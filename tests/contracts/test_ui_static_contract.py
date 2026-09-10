@@ -265,6 +265,7 @@ NOT_COPY = {
     "/api/run",
     "/api/state",
     "/api/state?path=",
+    "/api/tree?path=",
     "/api/browse",
     "/api/pick-folder",
     "/api/brains",
@@ -338,6 +339,21 @@ def test_no_filesystem_path_is_written_into_the_apps_copy() -> None:
 def _js_section(start: str, end: str) -> str:
     begin = JS.index(start)
     return JS[begin : JS.index(end, begin)]
+
+
+def test_the_folder_tree_quick_action_names_the_operators_additions() -> None:
+    """Pinned 2026-09-10: the folder two levels deep, the operator's rows tagged in a word."""
+    assert "See what's in the folder" in JS
+    assert ".tree__tag" in CSS
+
+
+def test_the_overview_header_shows_the_folder_path_and_copies_it() -> None:
+    """Pinned 2026-09-10: the one path in the open. The operator kept looking it up."""
+    section = _js_section("function renderDashboard()", "panels.open = null;")
+    assert 'class: "meta__item meta__path"' in section
+    assert "shortPath(repo, 80)" in section and "title: repo" in section
+    assert 'copy(repo, "Folder path copied")' in section
+    assert ".meta__path {" in CSS
 
 
 def test_the_desktop_is_named_as_a_place_in_words() -> None:
@@ -909,6 +925,18 @@ def test_the_plain_sentences_carry_a_count_where_more_than_one_can_happen() -> N
             assert "{n}" in many, f"{code}: the many sentence has no count"
 
 
+def test_every_plain_sentence_opens_into_fuller_words() -> None:
+    """Pinned 2026-09-10: a row opens into what was seen, why it matters and how to fix it
+    by hand, so nobody pastes a prompt blind. Every code carries at least two paragraphs."""
+    table = JS.split("var FINDING_COPY = {", 1)[1].split("\n  };", 1)[0]
+    entries = re.split(r'^    "[a-z-]+": \{$', table, flags=re.M)[1:]
+    assert len(entries) == len(finding_copy_codes())
+    for code, entry in zip(re.findall(r'^    "([a-z-]+)": \{$', table, re.M), entries, strict=True):
+        assert "more: [" in entry, f"{code}: no fuller words"
+        assert entry.count('",\n') >= 4, f"{code}: fewer than two paragraphs"
+    assert '"What this means"' in JS and ".todo__detail" in CSS
+
+
 def test_the_reader_is_never_told_about_a_schema() -> None:
     """The brain has folders and files where it expects them; it has no schema."""
     # A bare kebab-case literal is a code the envelope carries, never a sentence shown.
@@ -923,12 +951,17 @@ def test_the_reader_is_never_told_about_a_schema() -> None:
 def test_every_finding_leads_to_the_same_two_things() -> None:
     """The dashboard's one job is to get the operator to fix it: open Claude Code with the
     fix typed in, or copy the prompt. No row points at a button elsewhere, and no row
-    previews a command the operator would have to understand first."""
+    previews a command the operator would have to understand first. Decided 2026-09-10:
+    a finding the CLI can fix on its own shows "Preview the fix" then "Apply" on the row,
+    with the plain change list between them; which codes those are comes from the server's
+    `fixable` list, never from a list kept here."""
     assert "Fix in Claude Code" in JS and "Copy the prompt" in JS
     assert 'args["in"] = "claude"' in JS and "args.prompt = " in JS, "open carries the fix"
+    assert "Preview the fix" in JS and "App.state.fixable" in JS
+    assert 'run("fix", { code: code, path: App.path, plan: true })' in JS
+    assert 'run("fix", { code: code, path: App.path, yes: true })' in JS
     for gone in (
         "Use the button above.",
-        "Preview the fix",
         "Preview the missing pieces",
         "Preview the links",
     ):
