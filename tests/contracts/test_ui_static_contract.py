@@ -925,6 +925,18 @@ def test_the_plain_sentences_carry_a_count_where_more_than_one_can_happen() -> N
             assert "{n}" in many, f"{code}: the many sentence has no count"
 
 
+def test_every_plain_sentence_opens_into_fuller_words() -> None:
+    """Pinned 2026-09-10: a row opens into what was seen, why it matters and how to fix it
+    by hand, so nobody pastes a prompt blind. Every code carries at least two paragraphs."""
+    table = JS.split("var FINDING_COPY = {", 1)[1].split("\n  };", 1)[0]
+    entries = re.split(r'^    "[a-z-]+": \{$', table, flags=re.M)[1:]
+    assert len(entries) == len(finding_copy_codes())
+    for code, entry in zip(re.findall(r'^    "([a-z-]+)": \{$', table, re.M), entries):
+        assert "more: [" in entry, f"{code}: no fuller words"
+        assert entry.count('",\n') >= 4, f"{code}: fewer than two paragraphs"
+    assert '"What this means"' in JS and ".todo__detail" in CSS
+
+
 def test_the_reader_is_never_told_about_a_schema() -> None:
     """The brain has folders and files where it expects them; it has no schema."""
     # A bare kebab-case literal is a code the envelope carries, never a sentence shown.

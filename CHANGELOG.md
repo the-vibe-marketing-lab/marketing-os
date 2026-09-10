@@ -11,6 +11,10 @@ All notable changes to marketing-os are recorded here. Versions follow
   current brain lives on this machine, whole when it fits and trimmed from the left when it
   does not, and one click copies it. Asked for on 2026-09-10 because the operator kept
   looking it up; every other path stays behind the technical disclosure.
+- **Every finding opens into what it means.** A "What this means" button on each to-do row
+  opens it into what the check actually saw, why it matters, and how to put it right by
+  hand, with the files listed underneath, so the prompt is one way to fix it and not the
+  only one.
 - **See what's in the folder.** A quick action opens in place to the brain's folder two
   levels deep. Rows MarketingOS set up are plain; anything the operator or their assistant
   added is marked "yours", so the two read apart at a glance.
