@@ -22,9 +22,9 @@ mos [--version] <command> [arguments] [options]
 
 Most commands take the repository `path` as their last positional, defaulting to
 the current folder. The exceptions are worth knowing before you type: `query` takes
-`"<question>" [path]`, `think` takes `<topic> [path]`, `ingest` takes
-`[source] [path]`, `ui` takes a single `target`, and `install`, `update` and
-`assist status` take no positional at all.
+`"<question>" [path]`, `think` takes `<topic> [path]`, `fix` takes `[code] [path]`,
+`ingest` takes `[source] [path]`, `ui` takes a single `target`, and `install`, `update`
+and `assist status` take no positional at all.
 
 Four commands are groups and need their subcommand: `skills sync`,
 `index build|sync|status`, `context show|set`, and `assist status|ask`. `mos skills`
@@ -36,7 +36,7 @@ See [json-output-contract.md](json-output-contract.md) for the envelope shape an
 ## Mutation gating
 
 The mutating commands — `install`, `onboard`, `attach`, `migrate`, `skills sync`,
-`index sync`, `related`, `context set`, `update` — require **exactly one** of:
+`index sync`, `related`, `fix`, `context set`, `update` — require **exactly one** of:
 
 - `--plan` — preview the changes without writing anything.
 - `--yes` — apply the reviewed changes.
@@ -428,6 +428,30 @@ it. Existing line endings are preserved.
 
 `--limit N` caps how many documents the plan touches, not how many links each one
 gets — that is fixed at four. Omit it and the plan covers every eligible document.
+
+### `mos fix`
+
+```text
+mos fix <code> [path] (--plan | --yes) [--json]
+mos fix --all [path] (--plan | --yes) [--json]
+```
+
+Runs the deterministic fix for a finding `status` or `validate` reported, named by its
+code. It is one front door over commands that already exist, so the dashboard and the
+terminal share one map from finding to fix:
+
+| Code | What runs |
+|------|-----------|
+| `missing-file`, `missing-directory`, `missing-client-registry` | The scaffold, which only ever creates what is missing. Name and mode come from `.mos/config.yaml`; without a name it stops with `needs-name`. |
+| `no-catalog`, `stale-catalog` | `mos index build`. The build has no plan of its own, so `--plan` reports the one line `rebuild the catalogue`. |
+| `unlinked-document` | `mos related`, with no limit. |
+| `runtime-not-ready` | `mos skills sync` for both runtimes. |
+
+Any other code returns `no-deterministic-fix` with a `copy-prompt` next action: those
+findings are judgement calls for the assistant, not for a script. `--all` runs every
+fixer once, in the order above, prefixes each change with its code, and lists the codes
+that reported a change under `ran`. `--plan` and `--yes` mean what they mean everywhere
+else; the envelope is `mos.fix.v1`.
 
 ### `mos query`
 

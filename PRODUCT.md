@@ -66,6 +66,9 @@ hosted "AI marketing platform" cannot make.
 - Localhost only, session token on every API call, explicit command allowlist, no shell.
 - Mutation gating: every writing command is previewed with `--plan` and applied with `--yes`
   after an explicit confirm. The UI must keep that visible.
+- Confirmed 2026-09-10: a finding the CLI can fix deterministically (`mos fix`) shows
+  "Preview the fix" then "Apply" on its row, with the plain change list between them.
+  Judgement fixes keep the Claude Code pair.
 - Tested by static contract tests that read `app.js`, `index.html` and `styles.css`
   directly: no inline script, no markup sinks, no filesystem path in default-visible copy,
   audited contrast pairs, no copy that denies a capability the app ships, one plain sentence

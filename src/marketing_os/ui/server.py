@@ -21,6 +21,7 @@ from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse, urlsplit
 
 from marketing_os.core import status as core_status
+from marketing_os.core.fix import FIXABLE
 from marketing_os.core.parallel import gather
 from marketing_os.core.results import envelope, finding, next_action
 from marketing_os.core.schema import find_root, read_config
@@ -582,6 +583,9 @@ class UiHandler(BaseHTTPRequestHandler):
             "url": self.server.url,
             "commands": list(allowlist()),
             "command_specs": describe(),
+            # The finding codes the CLI can put right on its own, so the page can offer
+            # the preview-and-apply pair on those rows and the prompt on the rest.
+            "fixable": sorted(FIXABLE),
             "status": _state_findings(status, STATE_FINDING_LIMIT),
             # The page reads two booleans out of this — ``checks.structure`` and
             # ``checks.runtime_wiring`` — and doctor's own ``findings`` and ``runtimes``

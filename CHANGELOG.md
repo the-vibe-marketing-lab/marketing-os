@@ -7,6 +7,12 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ### Added
 
+- **`mos fix`, and "Preview the fix" on the row.** One front door for every fix the check
+  can make on its own: missing files and folders, the client list, the catalogue, unlinked
+  documents, and the assistants' skill copies. `mos fix <code> --plan` shows the change list,
+  `--yes` applies it, `--all` does every one. On the dashboard those findings now show
+  "Preview the fix" then "Apply" with the plain change list between; judgement fixes keep the
+  Claude Code pair.
 - **The brain's folder path sits in the overview header.** The meta line shows where the
   current brain lives on this machine, whole when it fits and trimmed from the left when it
   does not, and one click copies it. Asked for on 2026-09-10 because the operator kept

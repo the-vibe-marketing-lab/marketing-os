@@ -51,6 +51,8 @@ PLANNED_ALLOWLIST = {
     # The rename and open commands landed with the overview header controls.
     "rename",
     "open",
+    # Preview-and-apply on a to-do row the CLI can fix on its own.
+    "fix",
 }
 
 #: A full path, spelled the way the platform running these tests spells one. The probe asks
@@ -867,6 +869,15 @@ def browser() -> dict:
                     }
                 ],
                 "command_specs": describe_commands(),
+                "fixable": [
+                    "missing-file",
+                    "missing-directory",
+                    "missing-client-registry",
+                    "no-catalog",
+                    "stale-catalog",
+                    "unlinked-document",
+                    "runtime-not-ready",
+                ],
                 "status": status,
                 "doctor": doctor,
             },
@@ -1427,6 +1438,14 @@ def test_app_state_says_whether_a_folder_window_can_open(
     with _serving(tree) as server:
         _, state = _get(server, "/api/state")
     assert state["picker"] is answer
+
+
+def test_app_state_names_the_findings_the_cli_can_fix_on_its_own(tree: Path) -> None:
+    """The page offers "Preview the fix" only on the rows the server says it may."""
+    with _serving(tree / "brain") as server:
+        _, state = _get(server, "/api/state")
+    assert "missing-file" in state["fixable"]
+    assert state["fixable"] == sorted(state["fixable"])
 
 
 def test_app_state_carries_the_places_and_only_the_first_places_brains(

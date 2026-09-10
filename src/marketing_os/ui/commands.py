@@ -87,6 +87,7 @@ COMMANDS: dict[str, CommandSpec] = {
     "related": CommandSpec(
         ("related",), positionals=("path",), options=("limit",), flags=_MUTATION
     ),
+    "fix": CommandSpec(("fix",), positionals=("code", "path"), flags=(*_MUTATION, "all")),
     "query": CommandSpec(
         ("query",),
         positionals=("question", "path"),

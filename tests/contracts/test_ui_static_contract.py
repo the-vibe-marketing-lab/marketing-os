@@ -951,12 +951,17 @@ def test_the_reader_is_never_told_about_a_schema() -> None:
 def test_every_finding_leads_to_the_same_two_things() -> None:
     """The dashboard's one job is to get the operator to fix it: open Claude Code with the
     fix typed in, or copy the prompt. No row points at a button elsewhere, and no row
-    previews a command the operator would have to understand first."""
+    previews a command the operator would have to understand first. Decided 2026-09-10:
+    a finding the CLI can fix on its own shows "Preview the fix" then "Apply" on the row,
+    with the plain change list between them; which codes those are comes from the server's
+    `fixable` list, never from a list kept here."""
     assert "Fix in Claude Code" in JS and "Copy the prompt" in JS
     assert 'args["in"] = "claude"' in JS and "args.prompt = " in JS, "open carries the fix"
+    assert "Preview the fix" in JS and "App.state.fixable" in JS
+    assert 'run("fix", { code: code, path: App.path, plan: true })' in JS
+    assert 'run("fix", { code: code, path: App.path, yes: true })' in JS
     for gone in (
         "Use the button above.",
-        "Preview the fix",
         "Preview the missing pieces",
         "Preview the links",
     ):

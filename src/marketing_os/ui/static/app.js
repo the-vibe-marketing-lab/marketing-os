@@ -1966,7 +1966,9 @@
             (envelope.planned ? " would be touched." : " touched."),
         })
       );
-      add(body, tech([changesList(changes)], "Show every one"));
+      // A row's preview is the list itself: that is what the operator is approving.
+      if (opts.openChanges) add(body, changesList(changes));
+      else add(body, tech([changesList(changes)], "Show every one"));
     } else if (opts.emptyChanges) {
       add(body, subhead("Changes"));
       add(body, emptyState("Nothing to change", opts.emptyChanges));
@@ -4720,7 +4722,72 @@
       return fixPromptText(status, group.items);
     });
     if (slots && slots.after) add(slots.after, [fix.fail, fix.host]);
+    var fixable = ((App.state && App.state.fixable) || []).indexOf(group.code) !== -1;
+    if (fixable) fix.row.insertBefore(previewFixButton(group.code, container), fix.row.firstChild);
     return fix.row;
+  }
+
+  /* A finding the CLI can put right on its own: the plain change list on the row, then
+   * Apply. The list of such codes comes from the server, never from here. Judgement
+   * fixes keep the Claude Code pair. */
+  function previewFixButton(code, host) {
+    var button = el("button", { class: "btn btn--primary btn--sm", type: "button", text: "Preview the fix" });
+    var closeBtn = el("button", { class: "btn btn--secondary btn--sm", type: "button", text: "Close" });
+    closeBtn.addEventListener("click", function () {
+      fill(host, []);
+      button.focus();
+    });
+    function stopped(applied) {
+      fill(host, [
+        el("div", { class: "readout" }, [
+          el("div", { class: "card" }, [resultCard(applied, { title: "What stopped it" })]),
+          el("div", { class: "btn-row" }, [closeBtn]),
+        ]),
+      ]);
+      land(host, resultSummary(applied, "The fix"));
+    }
+    button.addEventListener("click", function () {
+      if (blocked(button)) return;
+      busy(button, true, "Checking");
+      run("fix", { code: code, path: App.path, plan: true }).then(function (result) {
+        busy(button, false);
+        fill(button, ["Preview the fix"]);
+        var envelope = result.envelope;
+        var actions = [];
+        if (envelope && envelope.ok && changesOf(envelope).length) {
+          var go = el("button", { class: "btn btn--primary btn--sm", type: "button", text: "Apply" });
+          go.addEventListener("click", function () {
+            if (blocked(go)) return;
+            busy(go, true, "Applying");
+            run("fix", { code: code, path: App.path, yes: true }).then(function (applied) {
+              if (!applied.envelope || !applied.envelope.ok) {
+                stopped(applied);
+                return;
+              }
+              toast("Fixed");
+              announce("Fixed. Checking the brain again.");
+              refresh(true);
+            });
+          });
+          actions.push(go);
+        }
+        actions.push(closeBtn);
+        fill(host, [
+          el("div", { class: "readout" }, [
+            el("div", { class: "card" }, [
+              resultCard(result, {
+                title: "What would change",
+                emptyChanges: "Nothing needs to change.",
+                openChanges: true,
+              }),
+            ]),
+            el("div", { class: "btn-row" }, actions),
+          ]),
+        ]);
+        land(host, resultSummary(result, "The fix"));
+      });
+    });
+    return button;
   }
 
   function todoRow(status, group) {
@@ -5679,6 +5746,10 @@
     var navFix = fixActions(function () {
       return navPromptText(App.status || {});
     }, { label: "Rebuild in Claude Code" });
+    // The catalogue is one of the fixes the CLI makes on its own, so the card gets the
+    // same "Preview the fix" as a to-do row would. Inserted once; rebuild runs often.
+    var navPreview = el("div");
+    var navPreviewed = false;
     entry.node = built.node;
     entry.head = built.head;
     entry.card = {
@@ -5696,11 +5767,18 @@
       rebuild: function () {
         var envelope = entry.envelope;
         var findings = envelope ? findingsOf(envelope) : [];
+        var groups = groupFindings(findings);
+        var fixable = (App.state && App.state.fixable) || [];
+        if (groups.length && !navPreviewed && fixable.indexOf(groups[0].code) !== -1) {
+          navPreviewed = true;
+          navFix.row.insertBefore(previewFixButton(groups[0].code, navPreview), navFix.row.firstChild);
+        }
         // The rows carry the sentence once findings exist; the line stands in until then.
         fill(body, [
           findings.length ? null : line,
           findings.length ? findingRows(findings, { pathsBehind: true }) : null,
           findings.length ? navFix.row : null,
+          findings.length ? navPreview : null,
           findings.length ? navFix.fail : null,
           findings.length ? navFix.host : null,
         ]);
