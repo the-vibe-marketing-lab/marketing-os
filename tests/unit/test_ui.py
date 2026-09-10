@@ -1808,6 +1808,21 @@ def test_tree_origin_follows_the_template_at_any_depth(brain_tree: Path) -> None
     assert by_path["business/offers/ai-retainer/offer.md"]["origin"] == "yours"
 
 
+def test_tree_counts_a_mode_overlay_as_marketing_os(tmp_path: Path) -> None:
+    """Agency mode lays down business/clients; that is MarketingOS's, the clients are theirs."""
+    from marketing_os.ui.tree import describe_tree
+
+    root = tmp_path / "agency"
+    setup_repo(root, "Agency Co", "all", mode="agency", apply=True)
+    (root / "business" / "clients" / "acme").mkdir(parents=True)
+    (root / "business" / "clients" / "acme" / "notes.md").write_text("theirs", encoding="utf-8")
+    by_path = {e["path"]: e for e in describe_tree(root, depth=4)["entries"]}
+    assert by_path["business/clients"]["origin"] == "marketing-os"
+    assert by_path["business/clients/clients.md"]["origin"] == "marketing-os"
+    assert by_path["business/clients/acme"]["origin"] == "yours"
+    assert by_path["business/clients/acme/notes.md"]["origin"] == "yours"
+
+
 def test_tree_refuses_a_missing_folder_like_state_does(brain_tree: Path) -> None:
     with _serving(brain_tree) as server:
         request = urllib.request.Request(

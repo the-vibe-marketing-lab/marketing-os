@@ -2,9 +2,9 @@
 
 The overview's quick action shows the operator what MarketingOS set up against what they
 or their assistant added. An entry is MarketingOS's when the same relative path exists in
-the scaffold template, when it sits under one of the assistant machinery folders or is a
-git setup file at the root, or when it is a navigation file ``mos index sync`` writes.
-Everything else is theirs. The walk stops at two levels, never enters ``.git``, lists the
+the scaffold template or a mode overlay (agency mode adds ``business/clients``), when it
+sits under one of the assistant machinery folders or is a git setup file at the root, or
+when it is a navigation file ``mos index sync`` writes. Everything else is theirs. The walk stops at two levels, never enters ``.git``, lists the
 machinery folders without opening them, and never follows a symlink.
 """
 
@@ -13,7 +13,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from marketing_os.core.schema import template_root
+from marketing_os.core.schema import overlay_root, template_root
 
 TREE_SCHEMA = "mos.tree.v1"
 # Assistant machinery: each listed as one folder with a count, never opened.
@@ -29,7 +29,14 @@ def _origin(rel: str) -> str:
     name = rel.rsplit("/", 1)[-1]
     if first in MACHINERY or first in SETUP_FILES or name in GENERATED:
         return "marketing-os"
-    return "marketing-os" if (template_root() / rel).exists() else "yours"
+    return "marketing-os" if any((base / rel).exists() for base in _scaffold_roots()) else "yours"
+
+
+def _scaffold_roots() -> list[Path]:
+    """The template plus every mode overlay: what ``mos onboard`` can lay down."""
+    overlays = overlay_root()
+    modes = sorted(p for p in overlays.iterdir() if p.is_dir()) if overlays.is_dir() else []
+    return [template_root(), *modes]
 
 
 def _count(path: str) -> int:
