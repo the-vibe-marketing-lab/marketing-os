@@ -4,8 +4,9 @@ The overview's quick action shows the operator what MarketingOS set up against w
 or their assistant added. An entry is MarketingOS's when the same relative path exists in
 the scaffold template or a mode overlay (agency mode adds ``business/clients``), when it
 sits under one of the assistant machinery folders or is a git setup file at the root, or
-when it is a navigation file ``mos index sync`` writes. Everything else is theirs. The walk stops at two levels, never enters ``.git``, lists the
-machinery folders without opening them, and never follows a symlink.
+when it is a navigation file ``mos index sync`` writes. Everything else is theirs. The
+walk stops at two levels, never enters ``.git``, lists the machinery folders without
+opening them, and never follows a symlink.
 """
 
 from __future__ import annotations
