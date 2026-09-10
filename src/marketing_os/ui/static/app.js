@@ -946,10 +946,16 @@
    * refresh. A folder from an older layout goes to the attach screen instead, and the
    * brain that was open stays open behind it. */
   function switchBrain(path, name) {
+    // The pressed row reads as current at once; the check behind it can take a second
+    // on a slow disk. A refusal puts the previous brain back.
+    var previous = App.path;
+    App.path = path;
+    renderSidebar();
     return request("/api/state?path=" + encodeURIComponent(path)).then(
       function (res) {
         var data = res.ok && res.data && res.data.schema ? res.data : null;
         if (data && data.attachable) {
+          App.path = previous;
           attachBrain(path, name);
           return null;
         }
@@ -961,6 +967,7 @@
           var label = (known && known.name) || folderName(path) || "that brain";
           toast("Could not open " + label + ": the folder is missing or not allowed.");
           announce("Could not open " + label + ". The folder is missing or not allowed.");
+          App.path = previous;
           refreshBrains();
           return null;
         }

@@ -45,6 +45,9 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ### Changed
 
+- **The brain list holds its order.** Brains that exist come first, then by name; opening
+  one no longer moves it to the top, and the pressed row reads as current at once rather
+  than after the check behind it finishes.
 - **The command runner reads like the Skills page.** Search, a chip per group, and one
   card per command with its title, what it does, the exact `mos` line and whether it
   writes; opening a card brings the run form, the result and the copyable command line
