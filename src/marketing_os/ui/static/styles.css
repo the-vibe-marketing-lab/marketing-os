@@ -2646,6 +2646,17 @@ details.raw .result__elapsed {
   font-size: 13px;
 }
 
+/* The operator's own additions, named in a word so the split reads without colour. */
+.tree__tag {
+  margin-left: 2px;
+  font-size: 11px;
+}
+
+/* Inside a quick action the row's body already pads. */
+.qa-tech .tree {
+  padding: 0;
+}
+
 .tree details > summary {
   min-height: 24px;
   padding: 2px 0;

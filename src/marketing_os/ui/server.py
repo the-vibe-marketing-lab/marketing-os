@@ -36,6 +36,7 @@ from marketing_os.ui.places import (
     suggested_places,
     windows_to_wsl,
 )
+from marketing_os.ui.tree import describe_tree
 
 HOST = "127.0.0.1"
 DEFAULT_PORT = 4321
@@ -299,7 +300,7 @@ class UiHandler(BaseHTTPRequestHandler):
         if route.startswith("/static/"):
             self._static(route[len("/static/") :])
             return
-        if route == "/api/state":
+        if route in ("/api/state", "/api/tree"):
             if not self._token_ok():
                 self._refuse(
                     HTTPStatus.FORBIDDEN,
@@ -309,7 +310,8 @@ class UiHandler(BaseHTTPRequestHandler):
                 return
             root = self._state_root(urlparse(self.path).query)
             if root is not None:
-                self._json(HTTPStatus.OK, self._app_state(root))
+                payload = self._app_state(root) if route == "/api/state" else describe_tree(root)
+                self._json(HTTPStatus.OK, payload)
             return
         self._refuse(HTTPStatus.NOT_FOUND, "unknown-route", f"No route for {route!r}.")
 

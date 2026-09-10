@@ -5148,6 +5148,8 @@
 
     // Sync: opens in place to one line and two ways.
     var sync = syncBlock(status);
+    // The folder: opens in place to two levels, read fresh each time.
+    var tree = treeBlock(status);
 
     return panel("quick", "Quick actions", null, [
       el("div", { class: "qas" }, [
@@ -5156,6 +5158,7 @@
           openInterview(complete ? null : missing[0] || null);
         }),
         sync,
+        tree,
         quickRow("terminal", "See every command", function () {
           showRunner(true);
           setView("commands");
@@ -5251,6 +5254,105 @@
       ]),
     ]);
     return details;
+  }
+
+  /* ---- the folder, two levels deep ------------------------------------------- */
+
+  /* One row. A folder the server listed but did not open is machinery at the top and
+   * the depth cap below; either way it says how many things it holds. */
+  function treeRow(entry, opened) {
+    var isDir = entry.kind === "dir";
+    var name = entry.path.slice(entry.path.lastIndexOf("/") + 1);
+    var cls = "tree__row";
+    var count = null;
+    if (isDir) {
+      cls += " tree__row--dir";
+      if (!opened && entry.children > 0) {
+        var top = entry.path.indexOf("/") === -1;
+        if (top) cls += " tree__row--faint";
+        count = el("span", {
+          class: "tree__count",
+          text: top ? plural(entry.children, "item") : entry.children + " inside",
+        });
+      }
+    } else if (/\.md$/.test(name)) cls += " tree__row--doc";
+    else if (name === ".gitkeep") cls += " tree__row--faint";
+    return el("span", { class: cls }, [
+      icon(isDir ? "folder" : "file"),
+      el("span", { class: "tree__name", text: name + (isDir ? "/" : "") }),
+      count,
+      entry.origin === "yours" ? el("span", { class: "pill tree__tag", text: "yours" }) : null,
+    ]);
+  }
+
+  /* The server's flat list, in its own order, nested one level by path prefix. */
+  function renderFolder(entries) {
+    var top = [];
+    var inside = {};
+    entries.forEach(function (entry) {
+      var slash = entry.path.indexOf("/");
+      if (slash === -1) top.push(entry);
+      else (inside[entry.path.slice(0, slash)] = inside[entry.path.slice(0, slash)] || []).push(entry);
+    });
+    return el("div", { class: "tree" }, [
+      el(
+        "ul",
+        { role: "list" },
+        top.map(function (entry) {
+          var kids = inside[entry.path] || [];
+          return el("li", {}, [
+            treeRow(entry, kids.length > 0),
+            kids.length
+              ? el(
+                  "ul",
+                  { role: "list" },
+                  kids.map(function (kid) {
+                    return el("li", {}, [treeRow(kid, false)]);
+                  })
+                )
+              : null,
+          ]);
+        })
+      ),
+    ]);
+  }
+
+  function treeBlock(status) {
+    var host = el("div");
+    return el(
+      "details",
+      {
+        class: "tech qa-tech",
+        id: "qa-tree",
+        on: {
+          // Read on every open, so a file added a moment ago is already in the list.
+          toggle: function (event) {
+            if (!event.target.open) return;
+            fill(host, [note("info", "info", ["Reading the folder\u2026"])]);
+            request("/api/tree?path=" + encodeURIComponent(status.repo || App.path)).then(function (res) {
+              var ok = res.ok && res.data && res.data.entries;
+              fill(host, [ok ? renderFolder(res.data.entries) : note("warn", "alert", ["Could not read the folder."])]);
+            });
+          },
+        },
+      },
+      [
+        el("summary", { class: "tech__sum qa" }, [
+          icon("folder", "qa__icon"),
+          el("span", { class: "qa__label", text: "See what's in the folder" }),
+          icon("down", "disc qa__go"),
+        ]),
+        el("div", { class: "tech__body" }, [
+          el("p", {
+            class: "panel__line",
+            text:
+              "Plain rows are what MarketingOS set up. Anything marked yours is what you or " +
+              "your assistant added.",
+          }),
+          host,
+        ]),
+      ]
+    );
   }
 
   /* ---- assistants ------------------------------------------------------------ */

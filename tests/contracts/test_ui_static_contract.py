@@ -265,6 +265,7 @@ NOT_COPY = {
     "/api/run",
     "/api/state",
     "/api/state?path=",
+    "/api/tree?path=",
     "/api/browse",
     "/api/pick-folder",
     "/api/brains",
@@ -338,6 +339,12 @@ def test_no_filesystem_path_is_written_into_the_apps_copy() -> None:
 def _js_section(start: str, end: str) -> str:
     begin = JS.index(start)
     return JS[begin : JS.index(end, begin)]
+
+
+def test_the_folder_tree_quick_action_names_the_operators_additions() -> None:
+    """Pinned 2026-09-10: the folder two levels deep, the operator's rows tagged in a word."""
+    assert "See what's in the folder" in JS
+    assert ".tree__tag" in CSS
 
 
 def test_the_overview_header_shows_the_folder_path_and_copies_it() -> None:

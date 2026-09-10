@@ -1758,6 +1758,77 @@ def test_a_mutating_command_takes_the_server_lock(tree: Path) -> None:
     assert done and done[0][0] == 200
 
 
+# --- the folder tree, over HTTP -----------------------------------------------------------
+
+
+@pytest.fixture
+def brain_tree(tmp_path: Path) -> Path:
+    root = tmp_path / "brain"
+    setup_repo(root, "Tree Co", "all", mode="in-house", apply=True)
+    for rel in ("business/offers/ai-retainer/offer.md", "notes/todo.md", ".env", "deep/a/b/c.md"):
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_text("theirs", encoding="utf-8")
+    return root
+
+
+def test_tree_lists_two_levels_and_marks_the_operators_own(brain_tree: Path) -> None:
+    with _serving(brain_tree) as server:
+        status, body = _get(server, "/api/tree?path=" + urllib.parse.quote(str(brain_tree)))
+    assert status == 200 and body["root"] == str(brain_tree)
+    paths = [e["path"] for e in body["entries"]]
+    by_path = {e["path"]: e for e in body["entries"]}
+    assert by_path["business/offers"]["origin"] == "marketing-os", "the template's own folder"
+    assert by_path["notes"] == {"path": "notes", "kind": "dir", "origin": "yours", "children": 1}
+    assert by_path["notes/todo.md"] == {"path": "notes/todo.md", "kind": "file", "origin": "yours"}
+    assert by_path[".env"]["origin"] == "yours"
+    # The depth cap: level 2 is listed with a count, level 3 is not there.
+    assert by_path["deep/a"]["kind"] == "dir" and by_path["deep/a"]["children"] == 1
+    assert "deep/a/b" not in by_path
+    # ``.git`` is never part of the picture; the machinery is one closed row each.
+    assert ".git" not in by_path and not any(p.startswith(".git/") for p in paths)
+    claude = by_path[".claude"]
+    assert claude["kind"] == "dir" and claude["origin"] == "marketing-os" and claude["children"] > 0
+    assert not any(p.startswith(".claude/") for p in paths)
+    # Folders first at the top level, then names casefolded.
+    top = [e for e in body["entries"] if "/" not in e["path"]]
+    kinds = [e["kind"] for e in top]
+    assert kinds == sorted(kinds, key=lambda k: k != "dir")
+    names = [e["path"].casefold() for e in top if e["kind"] == "dir"]
+    assert names == sorted(names)
+
+
+def test_tree_origin_follows_the_template_at_any_depth(brain_tree: Path) -> None:
+    """Past the two levels the page shows, the rule is the same all the way down."""
+    from marketing_os.ui.tree import describe_tree
+
+    by_path = {e["path"]: e for e in describe_tree(brain_tree, depth=4)["entries"]}
+    assert by_path["business/brand/brand.md"]["origin"] == "marketing-os"
+    assert by_path["knowledge/wiki/_index.md"]["origin"] == "marketing-os"
+    assert by_path["business/offers/ai-retainer"]["origin"] == "yours"
+    assert by_path["business/offers/ai-retainer/offer.md"]["origin"] == "yours"
+
+
+def test_tree_refuses_a_missing_folder_like_state_does(brain_tree: Path) -> None:
+    with _serving(brain_tree) as server:
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{server.port}/api/tree?path=/definitely/missing"
+        )
+        request.add_header(TOKEN_HEADER, BROWSE_TOKEN)
+        with pytest.raises(urllib.error.HTTPError) as caught:
+            _OPENER.open(request, timeout=30)
+    assert caught.value.code == 400
+    body = json.loads(caught.value.read().decode("utf-8"))
+    assert body["envelope"]["findings"][0]["code"] == "bad-path"
+
+
+def test_tree_still_needs_the_token(brain_tree: Path) -> None:
+    with _serving(brain_tree) as server:
+        request = urllib.request.Request(f"http://127.0.0.1:{server.port}/api/tree")
+        with pytest.raises(urllib.error.HTTPError) as caught:
+            _OPENER.open(request, timeout=30)
+    assert caught.value.code == 403
+
+
 # --- the page against the fixes above ----------------------------------------------------
 
 
