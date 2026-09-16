@@ -12,7 +12,11 @@ from marketing_os.core.statusline import (
 )
 
 
-def test_statusline_inactive_outside_repo(tmp_path: Path) -> None:
+def test_statusline_inactive_outside_repo(tmp_path: Path, monkeypatch) -> None:
+    # Windows keeps temp under the home folder; move home aside so the path stays full.
+    home = tmp_path.parent / f"{tmp_path.name}-home"
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
     result = statusline_repo(tmp_path)
     assert result["ok"] is True
     assert result["active"] is False

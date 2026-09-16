@@ -304,7 +304,13 @@ def test_update_missing_mutation_flag_is_rejected() -> None:
     assert exc.value.code == 2
 
 
-def test_statusline_outside_repo_reports_inactive_and_zero(tmp_path: Path, capsys) -> None:
+def test_statusline_outside_repo_reports_inactive_and_zero(
+    tmp_path: Path, capsys, monkeypatch
+) -> None:
+    # Windows keeps temp under the home folder; move home aside so the path stays full.
+    home = tmp_path.parent / f"{tmp_path.name}-home"
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
     code = main(["statusline", str(tmp_path)])
     output = capsys.readouterr().out
     assert code == 0
