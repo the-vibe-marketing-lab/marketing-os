@@ -155,8 +155,13 @@ The engine lives under `src/marketing_os/`:
   the move safely is the CLI's.
 - `core/update.py` — `mos update`; detects the install mode (source checkout, pipx, unknown)
   and plans or runs the matching self-update command under guards.
-- `core/statusline.py` — `mos statusline`; renders the one-line ambient badge and the skill
-  install counts.
+- `core/statusline.py` — `mos statusline`; renders the ambient badge (active or inactive,
+  brain type, skill install counts), its colour, and the divider.
+- `core/statusline_install.py` — `mos statusline --install/--uninstall/--chain`; layers the
+  badge on top of the person's existing Claude Code status bar in `~/.claude/settings.json`,
+  records the previous one under `~/.marketing-os/statusline.json`, and runs it on `--chain`.
+  Running that recorded command line through a shell is deliberate: it is the person's own
+  status bar command, which Claude Code itself runs through a shell.
 - `core/assist.py` — `mos assist status` and `mos assist ask`; the one seam that may invoke an
   agent runtime. `status` probes each candidate by actually running it, so a binary that is on
   PATH but cannot answer is reported unavailable. `ask` runs one stateless interview turn: the

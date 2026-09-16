@@ -5,6 +5,23 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ## [Unreleased]
 
+### Added
+
+- **The badge can sit on top of your Claude Code status bar.** `mos statusline --install`
+  (`--plan` first, then `--yes`) backs up `~/.claude/settings.json`, records the status bar
+  you already have, and puts the MarketingOS badge above it; `--uninstall` puts yours back.
+  New `--color`, `--divider`, `--claude` (read Claude Code's status line JSON on stdin) and
+  `--chain` (run the recorded status bar underneath) flags do the rendering.
+
+### Changed
+
+- **`mos statusline` says whether you are in a brain, and which kind.** The badge now reads
+  `MARKETINGOS │ ● ACTIVE │ AGENCY BRAIN · Acme Co │ skills 9/9`, or `IN-HOUSE BRAIN`, or
+  plain `BRAIN` when the mode is missing or invalid. **Contract change:** outside a brain it
+  no longer prints nothing; it prints `MARKETINGOS │ ○ INACTIVE │ CWD: <folder>`, with the
+  home folder shortened to `~`. A shell prompt that relied on the empty output should check
+  `active` in `--json` instead. The envelope gains a `cwd` fact and keeps the rest.
+
 ## [0.4.0] - 2026-09-10 — Ember
 
 ### Added

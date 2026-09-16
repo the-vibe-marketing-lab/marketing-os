@@ -16,7 +16,8 @@ mos [--version] <command> [arguments] [options]
 - `--version` prints `mos <version>` and exits.
 - Every command accepts `--json` to emit the machine envelope only.
 - Exit code is `0` when the result is `ok`, otherwise `1`. Two exceptions:
-  `mos statusline` always exits `0`, and a usage error argparse rejects — a bad
+  the `mos statusline` badge always exits `0` (its `--install` and `--uninstall` forms
+  follow the normal rule), and a usage error argparse rejects — a bad
   flag, a missing required option, a subcommand group with no subcommand — exits
   `2` before any handler runs.
 
@@ -52,7 +53,8 @@ gated like everything else.
 
 The rest take no mutation flag: `status`, `validate`, `doctor`, `index build`,
 `index status`, `query`, `think`, `context show`, `assist status`, `assist ask`,
-`statusline`, `ui`, and `ingest --pending`. Two of those still write, and it is
+`statusline` (except `--install`/`--uninstall`, which take `--plan` or `--yes`), `ui`,
+and `ingest --pending`. Two of those still write, and it is
 worth being precise about where. `index build` writes the catalogue to
 `.mos/local/`, which is machine-local and gitignored; `ui` writes its own state
 under `~/.marketing-os`. Neither touches a document in the brain, which is what the
@@ -65,9 +67,10 @@ Without `--json`, `mos` prints a human summary: a state line (`OK` or
 action's reason. With `--json`, it prints only the sorted, indented envelope.
 Failures are still reported through the envelope, never as a stack trace.
 
-`mos statusline` is the one command that does not follow this. Without `--json` it
-prints its badge line alone — no state line, no findings, no next action — and
-prints nothing at all when that line is empty.
+`mos statusline` is the one command that does not follow this. Without `--json` its
+badge form prints the badge (and the divider, when asked) alone — no state line, no
+findings, no next action. Its `--install` and `--uninstall` forms print the normal
+human summary.
 
 ## Commands
 
@@ -694,28 +697,69 @@ so `--plan` tells you precisely what `--yes` will do.
 ### `mos statusline`
 
 ```text
-mos statusline [path] [--json]
+mos statusline [path] [--color] [--divider] [--claude] [--chain] [--json]
+mos statusline --install (--plan | --yes) [--json]
+mos statusline --uninstall (--plan | --yes) [--json]
 ```
 
-Prints one line for an ambient status bar, and writes nothing:
+Prints a badge for an ambient status bar, and writes nothing. Inside a brain it says the
+brain is active, what kind it is, and how many skills are installed:
 
 ```text
-mos | Acme Co | in-house | skills 9/9
+MARKETINGOS │ ● ACTIVE │ AGENCY BRAIN · Acme Co │ skills 9/9
 ```
 
-The skill count is this brain's project-local Claude Code copies measured against the
-bundled manifest, so it drops the moment one goes missing or stale. The mode segment is
-omitted when the config carries no mode or an invalid one, because a status bar is the wrong
-place to argue about it. The two are not identical in the envelope: an invalid value is
-carried verbatim as the `mode` fact so a caller can see what is wrong, while a missing one
-reports `mode: null` — there is no value to read.
+Outside one it says so, and names the folder you are in, with your home folder shortened
+to `~`:
 
-Two exceptions to the rules at the top of this file, both so a shell prompt can call
-this on every redraw without ever breaking:
+```text
+MARKETINGOS │ ○ INACTIVE │ CWD: ~/Desktop/notes
+```
 
-- Without `--json` it prints the badge line and nothing else, and prints nothing at
-  all outside a brain, where the envelope carries `active: false` and an empty `line`.
+The brain type reads `AGENCY BRAIN` or `IN-HOUSE BRAIN`, and plain `BRAIN` when the config
+carries no mode or an invalid one, because a status bar is the wrong place to argue about
+it. The envelope keeps the two apart: an invalid value is carried verbatim as the `mode`
+fact so a caller can see what is wrong, while a missing one reports `mode: null`. The skill
+count is this brain's project-local Claude Code copies measured against the bundled
+manifest, so it drops the moment one goes missing or stale. The envelope carries `active`,
+`line` (the plain badge), and `cwd` (the folder the badge was worked out from).
+
+- `--color` paints the badge with ANSI colour: Ember for the name and brain type, green for
+  active, slate for inactive, and dim separators. Without it the output is plain text.
+- `--divider` adds a second line: a horizontal rule as wide as `COLUMNS`, at most 72 and at
+  least 10 characters.
+- `--claude` reads Claude Code's status line JSON on stdin and uses its
+  `workspace.current_dir` (then `cwd`, then the `path` argument) as the folder. Empty or
+  unreadable input falls back to the `path` argument, and an interactive terminal is never
+  read, so it cannot hang.
+- `--chain` runs the status bar that `--install` recorded, with the same stdin, and prints
+  its output under the badge. A chained command that fails or runs past 10 seconds prints
+  nothing; the badge still shows.
+
+Two exceptions to the rules at the top of this file, both so a status bar can call the
+badge on every redraw without ever breaking:
+
+- Without `--json` it prints the badge and nothing else.
 - It always exits `0`, whatever the envelope says.
+
+#### Putting the badge in Claude Code
+
+`--install` layers the badge on top of the status bar you already have in Claude Code
+rather than replacing it. `--plan` shows what will change; `--yes` does it:
+
+1. backs up `~/.claude/settings.json` to `settings.json.mos-backup-<time>`,
+2. records your current `statusLine` setting in `~/.marketing-os/statusline.json`,
+3. sets `statusLine.command` to `<full path to mos> statusline --claude --color --divider --chain`,
+   keeping your `padding`.
+
+Only the user-scope settings file is touched. A brain's project settings would override
+the status bar of everyone who opens that brain. Installing twice changes nothing, so the
+badge never chains to itself.
+
+`--uninstall --yes` backs the settings up again, puts the recorded status bar back (or
+removes `statusLine` when there was none), and deletes the record. If the status bar was
+changed after the install, it is left alone and the result carries a
+`statusline-changed` warning.
 
 ### `mos ui`
 
@@ -828,8 +872,9 @@ mos ui .
 mos ui status --json
 mos ui stop
 
-# One line for a shell prompt, and updating the engine itself
+# One line for a shell prompt, the badge in Claude Code, and updating the engine itself
 mos statusline .
+mos statusline --install --plan
 mos update --plan
 mos update --yes
 

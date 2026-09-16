@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -25,7 +26,12 @@ from marketing_os.core.rename import rename_repo
 from marketing_os.core.results import envelope, finding, next_action
 from marketing_os.core.skills import sync_result
 from marketing_os.core.status import doctor_repo, status_repo
-from marketing_os.core.statusline import statusline_repo
+from marketing_os.core.statusline import render_badge, render_divider, statusline_repo
+from marketing_os.core.statusline_install import (
+    install_statusline,
+    run_chained,
+    uninstall_statusline,
+)
 from marketing_os.core.think import think_repo
 from marketing_os.core.update import update_engine
 from marketing_os.core.validation import validate_repo
@@ -331,6 +337,30 @@ def build_parser(
 
     statusline = commands.add_parser("statusline", help="Print a one-line ambient status badge.")
     statusline.add_argument("path", nargs="?", default=".")
+    statusline.add_argument("--color", action="store_true", help="Colour the badge (ANSI).")
+    statusline.add_argument(
+        "--divider", action="store_true", help="Print a horizontal rule under the badge."
+    )
+    statusline.add_argument(
+        "--claude",
+        action="store_true",
+        help="Read Claude Code's status line JSON on stdin and use its folder.",
+    )
+    statusline.add_argument(
+        "--chain",
+        action="store_true",
+        help="Also run the status bar that --install recorded, underneath the badge.",
+    )
+    wiring = statusline.add_mutually_exclusive_group()
+    wiring.add_argument(
+        "--install",
+        action="store_true",
+        help="Put the badge on top of Claude Code's status bar (~/.claude/settings.json).",
+    )
+    wiring.add_argument(
+        "--uninstall", action="store_true", help="Restore the status bar --install replaced."
+    )
+    _add_mutation(statusline, required=False)
     _add_output(statusline)
 
     ui = commands.add_parser("ui", help="Open the local app in a browser, or stop and inspect it.")
@@ -471,10 +501,21 @@ def dispatch(args: argparse.Namespace) -> dict[str, Any]:
     if args.command == "update":
         return update_engine(apply=_mutation_mode(args))
     if args.command == "statusline":
-        return statusline_repo(_path(args.path))
+        return _dispatch_statusline(args)
     if args.command == "ui":
         return _dispatch_ui(args)
     raise ValueError("unsupported command")
+
+
+def _dispatch_statusline(args: argparse.Namespace) -> dict[str, Any]:
+    wiring = getattr(args, "install", False) or getattr(args, "uninstall", False)
+    if not wiring:
+        if getattr(args, "plan", False) or getattr(args, "yes", False):
+            raise ValueError("--plan and --yes only apply with --install or --uninstall")
+        return statusline_repo(_path(args.path))
+    if args.install:
+        return install_statusline(apply=_mutation_mode(args))
+    return uninstall_statusline(apply=_mutation_mode(args))
 
 
 def _open_on_first_install() -> dict[str, Any]:
@@ -576,20 +617,96 @@ def _resolve_stdin_text(args: argparse.Namespace) -> None:
     args.text = sys.stdin.read()
 
 
+def _claude_folder(payload: bytes) -> str:
+    """The folder Claude Code reports in its status line JSON, or "" when it has none."""
+    try:
+        data = json.loads(payload.decode("utf-8", errors="replace") or "null")
+    except ValueError:
+        return ""
+    if not isinstance(data, dict):
+        return ""
+    workspace = data.get("workspace")
+    folder = workspace.get("current_dir") if isinstance(workspace, dict) else None
+    folder = folder or data.get("cwd")
+    return folder if isinstance(folder, str) else ""
+
+
+def _resolve_statusline_stdin(args: argparse.Namespace) -> bytes:
+    """Read Claude Code's status line JSON, in the terminal only.
+
+    Like ``_resolve_stdin_text`` this is never reached from ``run_argv``, and an
+    interactive terminal is never read, so the command cannot hang waiting for input.
+    """
+    if getattr(args, "command", "") != "statusline":
+        return b""
+    if not (args.claude or args.chain):
+        return b""
+    try:
+        if sys.stdin is None or sys.stdin.isatty():
+            return b""
+        stream = getattr(sys.stdin, "buffer", None)
+        payload = stream.read() if stream is not None else sys.stdin.read().encode("utf-8")
+    except (OSError, ValueError):
+        return b""
+    if args.claude:
+        folder = _claude_folder(payload)
+        if folder:
+            args.path = folder
+    return payload
+
+
+def _write_badge(args: argparse.Namespace, result: dict[str, Any], payload: bytes) -> None:
+    try:
+        _emit_badge(args, result, payload)
+    except BrokenPipeError:
+        # The status bar stopped reading early. Quietly drop the rest, and point stdout at
+        # the null device so the interpreter's final flush does not raise again.
+        _silence_stdout()
+
+
+def _silence_stdout() -> None:
+    try:
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())
+    except (OSError, ValueError, AttributeError):
+        pass
+
+
+def _emit_badge(args: argparse.Namespace, result: dict[str, Any], payload: bytes) -> None:
+    if "active" in result:
+        sys.stdout.write(render_badge(result, color=args.color) + "\n")
+        if args.divider:
+            sys.stdout.write(render_divider(color=args.color) + "\n")
+    sys.stdout.flush()
+    if not args.chain:
+        return
+    chained = run_chained(payload)
+    stream = getattr(sys.stdout, "buffer", None)
+    if stream is not None:
+        stream.write(chained)
+        stream.flush()
+    elif chained:
+        sys.stdout.write(chained.decode("utf-8", errors="replace"))
+
+
+def _statusline_wiring(args: argparse.Namespace) -> bool:
+    return args.command == "statusline" and bool(args.install or args.uninstall)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     _resolve_stdin_text(args)
+    payload = _resolve_statusline_stdin(args)
     result = _dispatch_result(args)
+    badge = args.command == "statusline" and not _statusline_wiring(args)
     if getattr(args, "json_out", False):
         sys.stdout.write(json.dumps(result, indent=2, sort_keys=True) + "\n")
-    elif args.command == "statusline":
-        line = result.get("line", "")
-        if line:
-            sys.stdout.write(line + "\n")
+    elif badge:
+        _write_badge(args, result, payload)
     else:
         sys.stdout.write(_render_human(result) + "\n")
-    if args.command == "statusline":
+    if badge:
         return 0
     return 0 if result["ok"] else 1
 
