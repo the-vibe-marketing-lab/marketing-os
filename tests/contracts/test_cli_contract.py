@@ -304,11 +304,17 @@ def test_update_missing_mutation_flag_is_rejected() -> None:
     assert exc.value.code == 2
 
 
-def test_statusline_outside_repo_is_silent_and_zero(tmp_path: Path, capsys) -> None:
+def test_statusline_outside_repo_reports_inactive_and_zero(
+    tmp_path: Path, capsys, monkeypatch
+) -> None:
+    # Windows keeps temp under the home folder; move home aside so the path stays full.
+    home = tmp_path.parent / f"{tmp_path.name}-home"
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
     code = main(["statusline", str(tmp_path)])
     output = capsys.readouterr().out
     assert code == 0
-    assert output == ""
+    assert output == f"MARKETINGOS │ ○ INACTIVE │ CWD: {tmp_path.resolve()}\n"
 
 
 def test_statusline_active_prints_line(tmp_path: Path, capsys) -> None:
@@ -316,8 +322,10 @@ def test_statusline_active_prints_line(tmp_path: Path, capsys) -> None:
     code = main(["statusline", str(target)])
     output = capsys.readouterr().out
     assert code == 0
-    assert output.startswith("mos")
+    assert output.startswith("MARKETINGOS │ ● ACTIVE │ IN-HOUSE BRAIN · Example Business │ ")
     assert output.endswith("\n")
+    assert output.count("\n") == 1
+    assert "\x1b" not in output
 
 
 def test_statusline_json_envelope(tmp_path: Path, capsys) -> None:
@@ -327,6 +335,28 @@ def test_statusline_json_envelope(tmp_path: Path, capsys) -> None:
     assert code == 0
     assert payload["schema"] == "mos.statusline.v1"
     assert payload["active"] is True
+    assert payload["cwd"] == str(target.resolve())
+    assert payload["line"].startswith("MARKETINGOS │ ● ACTIVE │ ")
+    assert "\x1b" not in payload["line"]
+
+
+def test_statusline_color_and_divider_flags(tmp_path: Path, capsys, monkeypatch) -> None:
+    monkeypatch.setenv("COLUMNS", "120")
+    code = main(["statusline", str(tmp_path), "--color", "--divider"])
+    lines = capsys.readouterr().out.splitlines()
+    assert code == 0
+    assert len(lines) == 2
+    assert lines[0].startswith("\x1b[38;2;201;100;66mMARKETINGOS\x1b[0m")
+    assert lines[1] == "\x1b[38;2;71;85;105m" + "─" * 72 + "\x1b[0m"
+
+
+def test_statusline_run_argv_never_reads_stdin(tmp_path: Path, monkeypatch) -> None:
+    def _boom(*args, **kwargs):
+        raise AssertionError("run_argv must not read stdin")
+
+    monkeypatch.setattr(cli_main, "_resolve_statusline_stdin", _boom)
+    payload = run_argv(["statusline", str(tmp_path), "--claude"])
+    assert payload["active"] is False
 
 
 def _seed_corpus(root: Path, count: int) -> None:

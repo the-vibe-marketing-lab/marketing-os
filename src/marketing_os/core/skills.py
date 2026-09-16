@@ -41,9 +41,9 @@ def source_hash(name: str) -> str:
     """The digest of one packaged skill, computed once per process.
 
     ``inspect_runtimes`` asks what every skill ought to hash to once per runtime, and
-    ``mos doctor`` used to ask the whole question twice, so the same nine read-only
-    directories inside the installed distribution were being hashed thirty-six times for
-    one dashboard. They are the same nine directories every time.
+    ``mos doctor`` used to ask the whole question twice, so the same read-only
+    directories inside the installed distribution were being hashed four times each for
+    one dashboard. They are the same directories every time.
     """
     return tree_hash(skills_root() / name)
 

@@ -32,8 +32,8 @@ def main() -> int:
             for name in archive.namelist()
             if "/assets/skills/" in name and name.endswith("/SKILL.md")
         )
-        if len(skill_files) != 9:
-            raise RuntimeError("The wheel must contain exactly nine skills.")
+        if len(skill_files) != 10:
+            raise RuntimeError("The wheel must contain exactly ten skills.")
         if not any(
             name.endswith("/assets/business-template/.gitignore") for name in archive.namelist()
         ):
@@ -148,6 +148,7 @@ def main() -> int:
                 "mos-update",
                 "mos-onboard",
                 "mos-migrate",
+                "mos-statusline",
             ):
                 if not (brain / runtime_dir / "skills" / skill / "SKILL.md").is_file():
                     raise RuntimeError(f"Missing generated skill: {runtime_dir}/{skill}")

@@ -429,7 +429,7 @@ def test_doctor_on_a_folder_that_is_not_a_brain_checks_the_home_install(
     """No brain here means doctor answers for ``mos install``, not for the folder.
 
     It reads the home runtime directories, not ``<folder>/.claude/skills``: a fresh install
-    with the nine skills wired at home is healthy and points at onboarding, and one without
+    with the ten skills wired at home is healthy and points at onboarding, and one without
     them is not and points back at install. ``context_ready`` still reports what the folder
     holds; ``ok`` does not read it.
     """

@@ -42,16 +42,16 @@ will not work until you upgrade (`pipx upgrade marketing-os`, or pull the checko
 
 ## 2. Install the bootstrap skills globally
 
-`mos install` copies the nine bundled skills — `mos-onboard`, `mos-start`, `mos-status`,
-`mos-help`, `mos-think`, `mos-bet`, `mos-end`, `mos-update`, and `mos-migrate` — into your
-home directory so every runtime can find them. It targets `~/.claude/skills` for Claude Code
+`mos install` copies the ten bundled skills — `mos-onboard`, `mos-start`, `mos-status`,
+`mos-help`, `mos-think`, `mos-bet`, `mos-end`, `mos-update`, `mos-migrate`, and
+`mos-statusline` — into your home directory so every runtime can find them. It targets `~/.claude/skills` for Claude Code
 and `~/.agents/skills` for Codex, and records what it installed in
 `~/.marketing-os/runtime-manifest.json`. Section 9 says what each skill is for.
 
 (`mos --help` still lists install as "Install the three bootstrap skills globally". That
 count is stale, and it is the parent listing that carries it — `mos install --help` has no
 description line at all. The packaged `manifest.json` is what the command actually reads,
-and it lists nine.)
+and it lists ten.)
 
 Like every mutating command, `install` requires exactly one of `--plan` or `--yes`.
 Preview first:
@@ -397,9 +397,9 @@ Excalidraw's default `Excalidraw/` folder at the vault root, is off-schema and `
 will say so). `*.excalidraw.md` files are exempt from the frontmatter contract, so
 `mos validate --strict` never flags a drawing.
 
-## 9. The nine bundled skills
+## 9. The ten bundled skills
 
-All nine install to both runtimes. Invoke one as `/name` in Claude Code, `$name` in Codex.
+All ten install to both runtimes. Invoke one as `/name` in Claude Code, `$name` in Codex.
 
 | Skill | What it does |
 | --- | --- |
@@ -412,9 +412,10 @@ All nine install to both runtimes. Invoke one as `/name` in Claude Code, `$name`
 | `mos-end` | Close a session: record the current focus, log what changed, and propose a safe commit. |
 | `mos-update` | Update the engine, refresh the bundled skills, and verify runtime wiring. |
 | `mos-migrate` | Route a messy folder into the canonical structure. The skill produces the plan; `mos migrate` applies it. |
+| `mos-statusline` | Turn the MarketingOS badge on or off in Claude Code's status bar, and customise its label, colour, segments and position. |
 
-Five of the nine are named for a CLI command they wrap: `mos-status`, `mos-think`,
-`mos-update`, `mos-onboard`, and `mos-migrate`. The other four narrate the CLI without
+Six of the ten are named for a CLI command they wrap: `mos-status`, `mos-think`,
+`mos-update`, `mos-onboard`, `mos-migrate`, and `mos-statusline`. The other four narrate the CLI without
 sharing a name with one — `mos-bet` and `mos-end` say so themselves, because a bet is a dated
-decision artifact rather than a command and git is already the checkpoint mechanism. All nine
+decision artifact rather than a command and git is already the checkpoint mechanism. All ten
 run `mos` commands; `mos-bet` and `mos-end` both lean on `mos status` and `mos validate`.

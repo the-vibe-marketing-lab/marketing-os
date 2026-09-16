@@ -17,6 +17,7 @@ def test_package_has_canonical_skill_catalog() -> None:
         "mos-update",
         "mos-onboard",
         "mos-migrate",
+        "mos-statusline",
     )
     assert not Path(".claude/skills").exists()
     assert not Path(".agents/skills").exists()

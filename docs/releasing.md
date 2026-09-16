@@ -25,7 +25,7 @@ Three jobs, in order, on a push of a tag matching `v*`:
 
 `scripts/smoke_wheel.py` is the gate that matters. It installs the built wheel into a throwaway
 virtual environment and scaffolds a real brain from it, then asserts what a `pip install` alone
-would never catch: the nine bundled skills, the business template's dotfiles, the three Obsidian
+would never catch: the ten bundled skills, the business template's dotfiles, the three Obsidian
 plugins, the mode overlays, the local app's static assets, and that no `{{TODAY}}` placeholder
 survived rendering. A wheel that installs cleanly and then cannot scaffold a brain is worse than
 no release, and this is what stands between the two.

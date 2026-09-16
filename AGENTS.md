@@ -13,7 +13,7 @@ This is the marketing-os engine repository, not a business repository.
 - Treat `src/marketing_os/assets/skills/` as the only skill source, and register every new
   skill in `assets/skills/manifest.json`. `bundled_skills()` reads that manifest rather than
   listing the directory, so an unregistered skill is never installed, counted, or reported —
-  the install path stays silent about it, and only the wheel smoke's nine-skill count notices.
+  the install path stays silent about it, and only the wheel smoke's ten-skill count notices.
 - Never add tracked runtime copies under `.claude/skills/` or `.agents/skills/`.
 - Do not copy files from predecessor implementations; implement from this repository's contracts.
 - Run `ruff check .`, `pytest`, `python scripts/check_clean_language.py`, `python -m build`,

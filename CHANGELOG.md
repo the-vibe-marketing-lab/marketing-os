@@ -5,6 +5,35 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ## [Unreleased]
 
+### Added
+
+- **The badge can sit on top of your Claude Code status bar.** `mos statusline --install`
+  (`--plan` first, then `--yes`) backs up `~/.claude/settings.json`, records the status bar
+  you already have, and puts the MarketingOS badge above it; `--uninstall` puts yours back.
+  New `--color`, `--divider`, `--claude` (read Claude Code's status line JSON on stdin) and
+  `--chain` (run the recorded status bar underneath) flags do the rendering.
+- **The badge is yours to change.** `mos statusline --set KEY=VALUE --plan`, then `--yes`,
+  saves the look under `~/.marketing-os/statusline.json`: `label`, `accent` colour,
+  `color` and `divider` on or off, `show_name`, `show_skills`, `show_cwd`, and `position`
+  (`top` or `bottom` of the existing bar). `--options` shows what is in effect,
+  `--preview` draws the badge with pending changes and writes nothing, `--reset` goes back
+  to the defaults, and `--no-color`/`--no-divider` force either off for a manual run. Every
+  pair is validated before anything is written. The installed command is now
+  `mos statusline --claude --chain` (the look comes from the file); an earlier install's
+  spelling is still recognised and updated in place by `--install`.
+- **`/mos-statusline`, the tenth bundled skill.** Checks whether the badge is installed,
+  switches it on or off through the `--plan`/`--yes` pair, and walks a member through
+  customising it with a preview first. Claude Code only; Codex has no status bar.
+
+### Changed
+
+- **`mos statusline` says whether you are in a brain, and which kind.** The badge now reads
+  `MARKETINGOS │ ● ACTIVE │ AGENCY BRAIN · Acme Co │ SKILLS 9/9`, or `IN-HOUSE BRAIN`, or
+  plain `BRAIN` when the mode is missing or invalid. **Contract change:** outside a brain it
+  no longer prints nothing; it prints `MARKETINGOS │ ○ INACTIVE │ CWD: <folder>`, with the
+  home folder shortened to `~`. A shell prompt that relied on the empty output should check
+  `active` in `--json` instead. The envelope gains a `cwd` fact and keeps the rest.
+
 ## [0.4.0] - 2026-09-10 — Ember
 
 ### Added

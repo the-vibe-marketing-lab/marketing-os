@@ -10,7 +10,7 @@
       "description": "An AI second brain to scale your marketing \u2014 files you own, driven by a deterministic CLI.",
       "url": "https://github.com/the-vibe-marketing-lab/marketing-os",
       "branch": "main",
-      "count": 9
+      "count": 10
     },
     {
       "repo": "marketing-os-skills",
@@ -136,6 +136,16 @@
       "url": "https://github.com/the-vibe-marketing-lab/marketing-os/tree/main/src/marketing_os/assets/skills/mos-status",
       "summary": "Give a deterministic marketing-os briefing of what is healthy, what context is missing, and the single next action.",
       "description": "Give a deterministic marketing-os briefing of what is healthy, what context is missing, and the single next action.",
+      "bundled": true
+    },
+    {
+      "name": "mos-statusline",
+      "command": "/mos-statusline",
+      "repo": "marketing-os",
+      "path": "src/marketing_os/assets/skills/mos-statusline",
+      "url": "https://github.com/the-vibe-marketing-lab/marketing-os/tree/main/src/marketing_os/assets/skills/mos-statusline",
+      "summary": "Turn the MarketingOS status bar badge on or off in Claude Code, and customise it.",
+      "description": "Turn the MarketingOS status bar badge on or off in Claude Code, and customise it. The badge shows which brain you are in (active or inactive, agency or in-house, the business name, the skills count) on top of the status bar you already have. Use when someone says \"/mos-statusline\", statusline, status bar, status line, show which brain I'm in, the active/inactive badge, turn the badge on or off, activate or deactivate the status bar, change the status line colour, label or position, or hide the skills count. Claude Code only.",
       "bundled": true
     },
     {

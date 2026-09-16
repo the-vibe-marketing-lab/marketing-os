@@ -415,7 +415,7 @@ def _doctor_install(root: Path, status: dict[str, Any]) -> dict[str, Any]:
     """Doctor on a folder with no brain answers for the install instead.
 
     Right after ``mos install`` there is no brain yet, and the only thing to check is the
-    home wiring: the nine bundled skills under ``~/.claude/skills`` and ``~/.agents/skills``.
+    home wiring: the ten bundled skills under ``~/.claude/skills`` and ``~/.agents/skills``.
     Reading the folder's own ``.claude/skills`` here told a correctly installed operator
     their install was broken, on the one command the setup guide sends them to.
     """
