@@ -68,11 +68,11 @@ def test_install_layers_on_top_and_records_previous(home: Path) -> None:
     assert settings["model"] == "opus"
     assert settings["statusLine"] == {
         "type": "command",
-        "command": "/opt/mos/bin/mos statusline --claude --color --divider --chain",
+        "command": "/opt/mos/bin/mos statusline --claude --chain",
         "padding": 2,
     }
     record = json.loads(wiring.record_path().read_text(encoding="utf-8"))
-    assert record == {"schema": "mos.statusline-record.v1", "previous": PREVIOUS}
+    assert record == {"schema": "mos.statusline-record.v2", "previous": PREVIOUS}
     assert len(_backups(home)) == 1
     assert json.loads(_backups(home)[0].read_text(encoding="utf-8"))["statusLine"] == PREVIOUS
     assert wiring.chained_command() == "bash ~/old-bar.sh"
@@ -172,7 +172,7 @@ def test_cli_claude_reads_the_workspace_folder(home: Path, tmp_path: Path, capsy
     root = tmp_path / "brain"
     setup_repo(root, "Acme Co", "all", mode="agency", apply=True)
     _stdin(monkeypatch, json.dumps({"workspace": {"current_dir": str(root / "business")}}).encode())
-    code = main(["statusline", "--claude", str(tmp_path)])
+    code = main(["statusline", "--claude", "--no-color", str(tmp_path)])
     output = capsys.readouterr().out
     assert code == 0
     assert output.startswith("MARKETINGOS │ ● ACTIVE │ AGENCY BRAIN · Acme Co │ SKILLS ")
@@ -180,7 +180,7 @@ def test_cli_claude_reads_the_workspace_folder(home: Path, tmp_path: Path, capsy
 
 def test_cli_claude_falls_back_to_cwd_field(home: Path, tmp_path: Path, capsys, monkeypatch):
     _stdin(monkeypatch, json.dumps({"cwd": str(tmp_path)}).encode())
-    code = main(["statusline", "--claude", str(home)])
+    code = main(["statusline", "--claude", "--no-color", "--no-divider", str(home)])
     assert code == 0
     assert capsys.readouterr().out.endswith(f"CWD: {tmp_path.resolve()}\n")
 
@@ -188,7 +188,7 @@ def test_cli_claude_falls_back_to_cwd_field(home: Path, tmp_path: Path, capsys, 
 @pytest.mark.parametrize("payload", [b"", b"not json", b"[1, 2]", b'{"workspace": 5}'])
 def test_cli_claude_survives_bad_stdin(home: Path, tmp_path, capsys, monkeypatch, payload):
     _stdin(monkeypatch, payload)
-    code = main(["statusline", "--claude", str(tmp_path)])
+    code = main(["statusline", "--claude", "--no-color", str(tmp_path)])
     assert code == 0
     assert capsys.readouterr().out.startswith("MARKETINGOS │ ○ INACTIVE │ CWD: ")
 
@@ -214,7 +214,7 @@ def test_cli_divider_and_chain(home: Path, tmp_path: Path, capsys, monkeypatch) 
     wiring.install_statusline(apply=True)
     monkeypatch.setenv("COLUMNS", "30")
     _stdin(monkeypatch, json.dumps({"cwd": str(tmp_path)}).encode())
-    code = main(["statusline", "--claude", "--divider", "--chain"])
+    code = main(["statusline", "--claude", "--no-color", "--divider", "--chain"])
     lines = capsys.readouterr().out.splitlines()
     assert code == 0
     assert lines[0].startswith("MARKETINGOS │ ○ INACTIVE")
@@ -276,3 +276,87 @@ def test_cli_badge_survives_a_closed_pipe(home: Path, tmp_path: Path, monkeypatc
 
     monkeypatch.setattr(sys, "stdout", ClosedPipe())
     assert main(["statusline", str(tmp_path), "--divider"]) == 0
+
+
+LEGACY = {
+    "type": "command",
+    "command": "/opt/mos/bin/mos statusline --claude --color --divider --chain",
+    "padding": 2,
+}
+
+
+def _write_v1_record(previous: dict | None) -> None:
+    wiring.record_path().parent.mkdir(parents=True, exist_ok=True)
+    wiring.record_path().write_text(
+        json.dumps({"schema": "mos.statusline-record.v1", "previous": previous}),
+        encoding="utf-8",
+    )
+
+
+def test_is_badge_command_knows_both_spellings() -> None:
+    assert wiring.is_badge_command(LEGACY)
+    assert wiring.is_badge_command(
+        {"type": "command", "command": "mos statusline --claude --chain"}
+    )
+    assert wiring.is_legacy_badge_command(LEGACY)
+    assert not wiring.is_legacy_badge_command({"command": "mos statusline --claude --chain"})
+    assert not wiring.is_badge_command(PREVIOUS)
+    assert not wiring.is_badge_command("mos statusline --claude --chain")
+
+
+def test_install_over_an_earlier_install_updates_the_command_only(home: Path) -> None:
+    _write_settings(home, {"statusLine": LEGACY})
+    _write_v1_record(PREVIOUS)
+    plan = wiring.install_statusline(apply=False)
+    assert plan["applied"] is False
+    assert plan["installed"] is True
+    assert any("update statusLine.command" in change for change in plan["changes"])
+    assert _read_settings(home)["statusLine"] == LEGACY
+
+    result = wiring.install_statusline(apply=True)
+    assert result["applied"] is True
+    assert result["previous"] == PREVIOUS
+    assert _read_settings(home)["statusLine"] == {
+        "type": "command",
+        "command": "/opt/mos/bin/mos statusline --claude --chain",
+        "padding": 2,
+    }
+    # The v1 record is read as it is and left alone: the old bar is still what --chain runs.
+    record = json.loads(wiring.record_path().read_text(encoding="utf-8"))
+    assert record == {"schema": "mos.statusline-record.v1", "previous": PREVIOUS}
+    assert wiring.chained_command() == "bash ~/old-bar.sh"
+    assert len(_backups(home)) == 1
+
+
+def test_uninstall_restores_over_an_earlier_install(home: Path) -> None:
+    _write_settings(home, {"statusLine": LEGACY})
+    _write_v1_record(PREVIOUS)
+    result = wiring.uninstall_statusline(apply=True)
+    assert result["applied"] is True
+    assert _read_settings(home)["statusLine"] == PREVIOUS
+    assert not wiring.record_path().exists()
+
+
+def test_uninstall_keeps_saved_options(home: Path) -> None:
+    _write_settings(home, {"statusLine": PREVIOUS})
+    wiring.install_statusline(apply=True)
+    wiring.rewrite_record_options({"label": "MOS"})
+    plan = wiring.uninstall_statusline(apply=False)
+    assert any("options kept" in change for change in plan["changes"])
+    wiring.uninstall_statusline(apply=True)
+    assert _read_settings(home)["statusLine"] == PREVIOUS
+    record = json.loads(wiring.record_path().read_text(encoding="utf-8"))
+    assert record == {"schema": "mos.statusline-record.v2", "options": {"label": "MOS"}}
+    # Options alone are not an install: a second uninstall is a no-op.
+    again = wiring.uninstall_statusline(apply=True)
+    assert again["changes"] == []
+    assert again["installed"] is False
+
+
+def test_install_keeps_options_saved_before_it(home: Path) -> None:
+    wiring.rewrite_record_options({"accent": "#22c55e"})
+    _write_settings(home, {"statusLine": PREVIOUS})
+    wiring.install_statusline(apply=True)
+    record = json.loads(wiring.record_path().read_text(encoding="utf-8"))
+    assert record["previous"] == PREVIOUS
+    assert record["options"] == {"accent": "#22c55e"}

@@ -5,6 +5,11 @@ already runs rather than replacing it. The previous ``statusLine`` setting is re
 under ``~/.marketing-os/statusline.json`` and ``--chain`` runs it after the badge, so a
 member's own status line keeps working underneath. ``--uninstall`` puts it back.
 
+The same record file carries the badge's ``options`` (label, colour, what is shown), so
+the installed command needs no flags for them and a member can change the look without
+touching ``settings.json`` again. Uninstalling forgets the recorded status bar and keeps the
+options; ``--reset`` is what drops those.
+
 Only the user-scope ``~/.claude/settings.json`` is touched: a brain's project settings
 would override a member's own status bar for everyone who opens that brain.
 """
@@ -23,8 +28,10 @@ from typing import Any
 
 from marketing_os.core.results import envelope, finding, next_action
 
-RECORD_SCHEMA = "mos.statusline-record.v1"
-BADGE_ARGS = "statusline --claude --color --divider --chain"
+RECORD_SCHEMA = "mos.statusline-record.v2"
+BADGE_ARGS = "statusline --claude --chain"
+#: The spelling an earlier ``--install`` wrote, before the options file carried the look.
+LEGACY_BADGE_ARGS = "statusline --claude --color --divider --chain"
 CHAIN_TIMEOUT_SECONDS = 10
 
 
@@ -67,8 +74,14 @@ def running_executable() -> str:
 
 
 def is_badge_command(value: Any) -> bool:
+    """Whether a ``statusLine`` setting is ours, in this or an earlier install's spelling."""
     command = value.get("command", "") if isinstance(value, dict) else ""
-    return isinstance(command, str) and BADGE_ARGS in command
+    return isinstance(command, str) and (BADGE_ARGS in command or LEGACY_BADGE_ARGS in command)
+
+
+def is_legacy_badge_command(value: Any) -> bool:
+    command = value.get("command", "") if isinstance(value, dict) else ""
+    return isinstance(command, str) and LEGACY_BADGE_ARGS in command
 
 
 def _read_json(path: Path) -> tuple[dict[str, Any] | None, str]:
@@ -86,6 +99,42 @@ def _read_json(path: Path) -> tuple[dict[str, Any] | None, str]:
 def _write_json(path: Path, data: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
+def read_record() -> dict[str, Any]:
+    """The record file as a dict; an unreadable or absent file reads as empty."""
+    record, _ = _read_json(record_path())
+    return record or {}
+
+
+_UNSET: Any = object()
+
+
+def write_record(*, previous: Any = _UNSET, options: dict[str, Any] | None = None) -> None:
+    """Write the record, or remove the file when nothing is left to record.
+
+    ``previous`` is kept even when it is ``None``: that records an install over no status
+    bar at all, which is different from never having installed.
+    """
+    record: dict[str, Any] = {}
+    if previous is not _UNSET:
+        record["previous"] = previous
+    if options:
+        record["options"] = options
+    if not record:
+        if record_path().exists():
+            record_path().unlink()
+        return
+    _write_json(record_path(), {"schema": RECORD_SCHEMA, **record})
+
+
+def rewrite_record_options(options: dict[str, Any] | None) -> None:
+    """Replace the saved options and leave the recorded status bar, if any, as it is."""
+    record = read_record()
+    if "previous" in record:
+        write_record(previous=record["previous"], options=options)
+    else:
+        write_record(options=options)
 
 
 def _backup(path: Path) -> Path:
@@ -133,11 +182,33 @@ def _unreadable(operation: str, message: str) -> dict[str, Any]:
     )
 
 
+def _upgrade_statusline(settings: dict[str, Any], current: dict[str, Any], *, apply: bool):
+    """Rewrite an earlier install's command to the current spelling; the record stays."""
+    command = badge_command()
+    new_line = {**current, "command": command}
+    changes = [f"back up {settings_path()}", f"update statusLine.command to: {command}"]
+    if apply:
+        _backup(settings_path())
+        settings["statusLine"] = new_line
+        _write_json(settings_path(), settings)
+    return _result(
+        True,
+        "install",
+        changes,
+        apply,
+        installed=True,
+        status_command=command,
+        previous=read_record().get("previous"),
+    )
+
+
 def install_statusline(*, apply: bool) -> dict[str, Any]:
     settings, error = _read_json(settings_path())
     if settings is None:
         return _unreadable("install", error)
     current = settings.get("statusLine")
+    if is_legacy_badge_command(current):
+        return _upgrade_statusline(settings, current, apply=apply)
     if is_badge_command(current):
         return _result(
             True, "install", [], apply, installed=True, status_command=current["command"]
@@ -155,7 +226,7 @@ def install_statusline(*, apply: bool) -> dict[str, Any]:
     if apply:
         if settings_path().exists():
             _backup(settings_path())
-        _write_json(record_path(), {"schema": RECORD_SCHEMA, "previous": current})
+        write_record(previous=current, options=read_record().get("options"))
         settings["statusLine"] = new_line
         _write_json(settings_path(), settings)
     return _result(
@@ -167,15 +238,15 @@ def uninstall_statusline(*, apply: bool) -> dict[str, Any]:
     settings, error = _read_json(settings_path())
     if settings is None:
         return _unreadable("uninstall", error)
-    record, _ = _read_json(record_path())
-    has_record = bool(record) and record_path().exists()
+    record = read_record()
+    has_previous = "previous" in record
     ours = is_badge_command(settings.get("statusLine"))
-    if not ours and not has_record:
+    if not ours and not has_previous:
         return _result(True, "uninstall", [], apply, installed=False)
 
     changes: list[str] = []
     findings = []
-    previous = (record or {}).get("previous")
+    previous = record.get("previous")
     if ours:
         changes.append(f"back up {settings_path()}")
         if previous is None:
@@ -190,8 +261,11 @@ def uninstall_statusline(*, apply: bool) -> dict[str, Any]:
                 severity="warning",
             )
         )
-    if has_record:
-        changes.append(f"delete {record_path()}")
+    if has_previous:
+        if record.get("options"):
+            changes.append(f"forget the recorded status bar in {record_path()} (options kept)")
+        else:
+            changes.append(f"delete {record_path()}")
     if apply:
         if ours:
             _backup(settings_path())
@@ -200,8 +274,8 @@ def uninstall_statusline(*, apply: bool) -> dict[str, Any]:
             else:
                 settings["statusLine"] = previous
             _write_json(settings_path(), settings)
-        if has_record:
-            record_path().unlink()
+        if has_previous:
+            write_record(options=record.get("options"))
     return _result(
         True,
         "uninstall",
@@ -214,8 +288,7 @@ def uninstall_statusline(*, apply: bool) -> dict[str, Any]:
 
 
 def chained_command() -> str:
-    record, _ = _read_json(record_path())
-    previous = (record or {}).get("previous")
+    previous = read_record().get("previous")
     if not isinstance(previous, dict) or is_badge_command(previous):
         return ""
     command = previous.get("command")

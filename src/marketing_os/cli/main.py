@@ -26,11 +26,23 @@ from marketing_os.core.rename import rename_repo
 from marketing_os.core.results import envelope, finding, next_action
 from marketing_os.core.skills import sync_result
 from marketing_os.core.status import doctor_repo, status_repo
-from marketing_os.core.statusline import render_badge, render_divider, statusline_repo
+from marketing_os.core.statusline import (
+    OPTION_DEFAULTS,
+    render_badge,
+    render_divider,
+    statusline_repo,
+)
 from marketing_os.core.statusline_install import (
     install_statusline,
     run_chained,
     uninstall_statusline,
+)
+from marketing_os.core.statusline_options import (
+    effective_options,
+    preview_badge,
+    reset_options,
+    set_options,
+    show_options,
 )
 from marketing_os.core.think import think_repo
 from marketing_os.core.update import update_engine
@@ -337,14 +349,23 @@ def build_parser(
 
     statusline = commands.add_parser("statusline", help="Print a one-line ambient status badge.")
     statusline.add_argument("path", nargs="?", default=".")
-    statusline.add_argument("--color", action="store_true", help="Colour the badge (ANSI).")
-    statusline.add_argument(
+    colour = statusline.add_mutually_exclusive_group()
+    colour.add_argument("--color", action="store_true", help="Colour the badge (ANSI).")
+    colour.add_argument(
+        "--no-color", action="store_true", dest="no_color", help="Never colour the badge."
+    )
+    rule = statusline.add_mutually_exclusive_group()
+    rule.add_argument(
         "--divider", action="store_true", help="Print a horizontal rule under the badge."
+    )
+    rule.add_argument(
+        "--no-divider", action="store_true", dest="no_divider", help="Never print the rule."
     )
     statusline.add_argument(
         "--claude",
         action="store_true",
-        help="Read Claude Code's status line JSON on stdin and use its folder.",
+        help="Read Claude Code's status line JSON on stdin and use its folder; "
+        "draw the badge with the saved options.",
     )
     statusline.add_argument(
         "--chain",
@@ -359,6 +380,24 @@ def build_parser(
     )
     wiring.add_argument(
         "--uninstall", action="store_true", help="Restore the status bar --install replaced."
+    )
+    wiring.add_argument("--options", action="store_true", help="Show the badge options in effect.")
+    wiring.add_argument(
+        "--reset", action="store_true", help="Drop the saved options and go back to the defaults."
+    )
+    wiring.add_argument(
+        "--preview",
+        action="store_true",
+        help="Draw the badge with the saved options plus any --set, and write nothing.",
+    )
+    statusline.add_argument(
+        "--set",
+        action="append",
+        dest="sets",
+        default=[],
+        metavar="KEY=VALUE",
+        help="Change a badge option (with --plan or --yes); repeatable. "
+        f"Keys: {', '.join(OPTION_DEFAULTS)}.",
     )
     _add_mutation(statusline, required=False)
     _add_output(statusline)
@@ -508,14 +547,29 @@ def dispatch(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _dispatch_statusline(args: argparse.Namespace) -> dict[str, Any]:
-    wiring = getattr(args, "install", False) or getattr(args, "uninstall", False)
-    if not wiring:
-        if getattr(args, "plan", False) or getattr(args, "yes", False):
-            raise ValueError("--plan and --yes only apply with --install or --uninstall")
-        return statusline_repo(_path(args.path))
+    if args.sets and (args.install or args.uninstall or args.options or args.reset):
+        raise ValueError("--set goes with --plan, --yes, or --preview, not another operation")
     if args.install:
         return install_statusline(apply=_mutation_mode(args))
-    return uninstall_statusline(apply=_mutation_mode(args))
+    if args.uninstall:
+        return uninstall_statusline(apply=_mutation_mode(args))
+    if args.reset:
+        return reset_options(apply=_mutation_mode(args))
+    if args.preview:
+        return preview_badge(_path(args.path), args.sets)
+    if args.sets:
+        return set_options(args.sets, apply=_mutation_mode(args))
+    if args.plan or args.yes:
+        raise ValueError("--plan and --yes go with --install, --uninstall, --set or --reset")
+    if args.options:
+        return show_options()
+    # The saved options shape the badge only where the installed command draws it; the
+    # plain form keeps its documented look for prompts and scripts.
+    options = effective_options() if args.claude else None
+    result = statusline_repo(_path(args.path), options=options)
+    if options is not None:
+        result["options"] = options
+    return result
 
 
 def _open_on_first_install() -> dict[str, Any]:
@@ -600,8 +654,22 @@ def _render_human(result: dict[str, Any]) -> str:
         if result.get("draft"):
             lines.append("Draft:")
             lines.extend(f"  {line}" for line in str(result["draft"]).splitlines())
+    lines.extend(_option_lines(result))
     lines.append(f"Next: {result['next_action']['reason']}")
     return "\n".join(lines)
+
+
+def _option_lines(result: dict[str, Any]) -> list[str]:
+    """The badge options, for the statusline forms that report or change them."""
+    if result.get("operation") not in {"options", "set", "reset"} or "options" not in result:
+        return []
+    lines = [f"Installed: {'yes' if result.get('installed') else 'no'}", "Options:"]
+    saved = result.get("saved") or {}
+    pending = {} if result.get("applied") else result.get("pending") or {}
+    for key, value in result["options"].items():
+        origin = "pending" if key in pending else "saved" if key in saved else "default"
+        lines.append(f"  {key}: {json.dumps(value)} ({origin})")
+    return lines
 
 
 def _resolve_stdin_text(args: argparse.Namespace) -> None:
@@ -672,25 +740,63 @@ def _silence_stdout() -> None:
         pass
 
 
+def _badge_options(args: argparse.Namespace, result: dict[str, Any]) -> dict[str, Any]:
+    """What to draw: the options the dispatch resolved, then the explicit flags on top."""
+    options = dict(result.get("options") or {**OPTION_DEFAULTS, "color": False, "divider": False})
+    if args.color or args.no_color:
+        options["color"] = bool(args.color)
+    if args.divider or args.no_divider:
+        options["divider"] = bool(args.divider)
+    return options
+
+
 def _emit_badge(args: argparse.Namespace, result: dict[str, Any], payload: bytes) -> None:
+    lines: list[str] = []
+    options = _badge_options(args, result)
     if "active" in result:
-        sys.stdout.write(render_badge(result, color=args.color) + "\n")
-        if args.divider:
-            sys.stdout.write(render_divider(color=args.color) + "\n")
+        color = bool(options["color"])
+        lines.append(render_badge(result, color=color, options=options))
+        if options["divider"]:
+            lines.append(render_divider(color=color))
+    chained = run_chained(payload) if args.chain else b""
+    # The divider always sits between the badge and the other bar: under the badge on top,
+    # over it at the bottom.
+    if options.get("position") == "bottom":
+        lines.reverse()
+        _write_bytes(chained)
+        sys.stdout.write("".join(line + "\n" for line in lines))
+    else:
+        sys.stdout.write("".join(line + "\n" for line in lines))
+        _write_bytes(chained)
     sys.stdout.flush()
-    if not args.chain:
+
+
+def _write_bytes(chained: bytes) -> None:
+    if not chained:
         return
-    chained = run_chained(payload)
+    sys.stdout.flush()
     stream = getattr(sys.stdout, "buffer", None)
     if stream is not None:
         stream.write(chained)
         stream.flush()
-    elif chained:
+    else:
         sys.stdout.write(chained.decode("utf-8", errors="replace"))
 
 
-def _statusline_wiring(args: argparse.Namespace) -> bool:
-    return args.command == "statusline" and bool(args.install or args.uninstall)
+def _statusline_form(args: argparse.Namespace) -> str:
+    """Which output rules a statusline call follows: ``badge``, ``preview``, or ``envelope``.
+
+    The badge is drawn on every status bar redraw, so it prints only itself and always
+    exits 0. A preview draws the same badge but reports a bad ``--set`` like any other
+    command. Everything else is an ordinary envelope.
+    """
+    if args.command != "statusline":
+        return ""
+    if args.install or args.uninstall or args.options or args.reset:
+        return "envelope"
+    if args.preview:
+        return "preview"
+    return "envelope" if args.sets else "badge"
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -699,14 +805,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     _resolve_stdin_text(args)
     payload = _resolve_statusline_stdin(args)
     result = _dispatch_result(args)
-    badge = args.command == "statusline" and not _statusline_wiring(args)
+    form = _statusline_form(args)
     if getattr(args, "json_out", False):
         sys.stdout.write(json.dumps(result, indent=2, sort_keys=True) + "\n")
-    elif badge:
+    elif form == "badge" or (form == "preview" and result["ok"]):
         _write_badge(args, result, payload)
     else:
         sys.stdout.write(_render_human(result) + "\n")
-    if badge:
+    if form == "badge":
         return 0
     return 0 if result["ok"] else 1
 
