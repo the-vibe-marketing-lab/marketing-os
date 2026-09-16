@@ -92,6 +92,8 @@ mos statusline --preview --set label=MOS --set show_skills=false --json .
 ```
 
 `line` is the plain badge and `rendered` the coloured one; show `line` and name the colour.
+The preview draws the badge alone, so when `position` or `divider` is changing, say in
+words where it will sit: above or below their own status bar, with or without the rule.
 A bad value fails here with an `invalid-option` or `unknown-option` finding that names the
 key. Fix it with the member rather than guessing.
 
