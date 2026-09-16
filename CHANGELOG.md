@@ -12,6 +12,18 @@ All notable changes to marketing-os are recorded here. Versions follow
   you already have, and puts the MarketingOS badge above it; `--uninstall` puts yours back.
   New `--color`, `--divider`, `--claude` (read Claude Code's status line JSON on stdin) and
   `--chain` (run the recorded status bar underneath) flags do the rendering.
+- **The badge is yours to change.** `mos statusline --set KEY=VALUE --plan`, then `--yes`,
+  saves the look under `~/.marketing-os/statusline.json`: `label`, `accent` colour,
+  `color` and `divider` on or off, `show_name`, `show_skills`, `show_cwd`, and `position`
+  (`top` or `bottom` of the existing bar). `--options` shows what is in effect,
+  `--preview` draws the badge with pending changes and writes nothing, `--reset` goes back
+  to the defaults, and `--no-color`/`--no-divider` force either off for a manual run. Every
+  pair is validated before anything is written. The installed command is now
+  `mos statusline --claude --chain` (the look comes from the file); an earlier install's
+  spelling is still recognised and updated in place by `--install`.
+- **`/mos-statusline`, the tenth bundled skill.** Checks whether the badge is installed,
+  switches it on or off through the `--plan`/`--yes` pair, and walks a member through
+  customising it with a preview first. Claude Code only; Codex has no status bar.
 
 ### Changed
 
