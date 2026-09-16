@@ -19,7 +19,7 @@ from pathlib import Path
 ORG = "the-vibe-marketing-lab"
 OUT = Path(__file__).resolve().parents[1] / "src/marketing_os/ui/static/catalog/skills.json"
 
-# The engine's own repository ships the nine bootstrap skills inside the wheel; every other
+# The engine's own repository ships the ten bootstrap skills inside the wheel; every other
 # repository is a pack the operator installs beside them.
 CATEGORY = {
     "marketing-os": ("Built in", "Ships with MarketingOS. Installed by mos install."),

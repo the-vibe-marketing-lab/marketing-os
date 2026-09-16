@@ -33,7 +33,7 @@ def test_clone_recovery_regenerates_ignored_runtime_files(tmp_path: Path) -> Non
     )
     actions, findings = plan_sync(clone, "all", manifest_path=project_manifest(clone))
     assert findings == []
-    assert len(actions) == 18
+    assert len(actions) == 20  # ten skills, two runtimes
     apply_sync(actions, project_manifest(clone))
     assert all(item["ready"] for item in inspect_runtimes(clone).values())
 
