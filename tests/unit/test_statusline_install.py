@@ -175,7 +175,7 @@ def test_cli_claude_reads_the_workspace_folder(home: Path, tmp_path: Path, capsy
     code = main(["statusline", "--claude", str(tmp_path)])
     output = capsys.readouterr().out
     assert code == 0
-    assert output.startswith("MARKETINGOS │ ● ACTIVE │ AGENCY BRAIN · Acme Co │ skills ")
+    assert output.startswith("MARKETINGOS │ ● ACTIVE │ AGENCY BRAIN · Acme Co │ SKILLS ")
 
 
 def test_cli_claude_falls_back_to_cwd_field(home: Path, tmp_path: Path, capsys, monkeypatch):

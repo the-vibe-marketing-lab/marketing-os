@@ -42,7 +42,7 @@ def test_statusline_active_line_is_plain(tmp_path: Path) -> None:
     assert result["ok"] is True
     assert result["active"] is True
     assert result["line"].startswith("MARKETINGOS │ ● ACTIVE │ IN-HOUSE BRAIN · Acme Co")
-    assert "skills" in result["line"]
+    assert "SKILLS" in result["line"]
     assert "\x1b" not in result["line"]
     assert result["skills"]["installed"] == result["skills"]["total"]
     assert result["skills"]["total"] >= 1
@@ -67,7 +67,7 @@ def test_statusline_counts_missing_skills(tmp_path: Path) -> None:
     total = result["skills"]["total"]
     assert total >= 1
     # A config with no mode names a plain brain rather than guessing its type.
-    assert result["line"] == f"MARKETINGOS │ ● ACTIVE │ BRAIN · Solo │ skills 0/{total}"
+    assert result["line"] == f"MARKETINGOS │ ● ACTIVE │ BRAIN · Solo │ SKILLS 0/{total}"
 
 
 def test_statusline_includes_mode_segment(tmp_path: Path) -> None:
@@ -85,7 +85,7 @@ def test_statusline_omits_mode_for_legacy_repo(tmp_path: Path) -> None:
     result = statusline_repo(root)
     assert result["mode"] is None
     total = result["skills"]["total"]
-    assert result["line"] == f"MARKETINGOS │ ● ACTIVE │ BRAIN · Legacy Co │ skills 0/{total}"
+    assert result["line"] == f"MARKETINGOS │ ● ACTIVE │ BRAIN · Legacy Co │ SKILLS 0/{total}"
 
 
 def test_statusline_omits_invalid_mode_but_keeps_fact(tmp_path: Path) -> None:
@@ -100,7 +100,7 @@ def test_statusline_omits_invalid_mode_but_keeps_fact(tmp_path: Path) -> None:
     assert result["mode"] == "franchise"
     assert "franchise" not in result["line"].lower()
     total = result["skills"]["total"]
-    assert result["line"] == f"MARKETINGOS │ ● ACTIVE │ BRAIN · Acme Co │ skills {total}/{total}"
+    assert result["line"] == f"MARKETINGOS │ ● ACTIVE │ BRAIN · Acme Co │ SKILLS {total}/{total}"
 
 
 def test_statusline_business_fact_is_status_shaped(tmp_path: Path) -> None:
@@ -130,7 +130,7 @@ def test_statusline_counts_mismatched_skills_as_not_installed(tmp_path: Path) ->
     assert result["skills"]["total"] == total
     # A stale (mismatched) skill is not installed.
     assert result["skills"]["installed"] == total - 1
-    assert result["line"].endswith(f"skills {total - 1}/{total}")
+    assert result["line"].endswith(f"SKILLS {total - 1}/{total}")
 
 
 def test_statusline_color_wraps_segments_and_plain_matches(tmp_path: Path) -> None:

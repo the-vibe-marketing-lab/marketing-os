@@ -706,7 +706,7 @@ Prints a badge for an ambient status bar, and writes nothing. Inside a brain it 
 brain is active, what kind it is, and how many skills are installed:
 
 ```text
-MARKETINGOS │ ● ACTIVE │ AGENCY BRAIN · Acme Co │ skills 9/9
+MARKETINGOS │ ● ACTIVE │ AGENCY BRAIN · Acme Co │ SKILLS 9/9
 ```
 
 Outside one it says so, and names the folder you are in, with your home folder shortened

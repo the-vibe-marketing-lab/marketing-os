@@ -93,7 +93,7 @@ def _segments(result: dict[str, Any]) -> list[list[tuple[str, str]]]:
     if name:
         brain += [(" · ", RULE), (name, "")]
     skills = result.get("skills", {})
-    count = f"skills {skills.get('installed', 0)}/{skills.get('total', 0)}"
+    count = f"SKILLS {skills.get('installed', 0)}/{skills.get('total', 0)}"
     return [head, [("● ACTIVE", GREEN)], brain, [(count, SLATE)]]
 
 

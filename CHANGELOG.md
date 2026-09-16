@@ -16,7 +16,7 @@ All notable changes to marketing-os are recorded here. Versions follow
 ### Changed
 
 - **`mos statusline` says whether you are in a brain, and which kind.** The badge now reads
-  `MARKETINGOS │ ● ACTIVE │ AGENCY BRAIN · Acme Co │ skills 9/9`, or `IN-HOUSE BRAIN`, or
+  `MARKETINGOS │ ● ACTIVE │ AGENCY BRAIN · Acme Co │ SKILLS 9/9`, or `IN-HOUSE BRAIN`, or
   plain `BRAIN` when the mode is missing or invalid. **Contract change:** outside a brain it
   no longer prints nothing; it prints `MARKETINGOS │ ○ INACTIVE │ CWD: <folder>`, with the
   home folder shortened to `~`. A shell prompt that relied on the empty output should check
