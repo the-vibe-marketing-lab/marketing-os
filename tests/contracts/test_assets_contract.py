@@ -182,3 +182,12 @@ def test_template_gitignore_keeps_vault_config_but_drops_ui_state() -> None:
     rules = [line for line in text.splitlines() if line and not line.startswith("#")]
     assert ".obsidian/" not in rules
     assert not any("plugins" in rule for rule in rules)
+
+
+def test_end_skill_saves_through_a_pull_request_by_default() -> None:
+    text = (assets_root() / "skills" / "mos-end" / "SKILL.md").read_text(encoding="utf-8")
+    assert "gh pr create" in text
+    assert "git push -u origin HEAD" in text
+    assert "commit only" in text
+    assert "push directly" in text
+    assert "Never merge the pull request" in text
