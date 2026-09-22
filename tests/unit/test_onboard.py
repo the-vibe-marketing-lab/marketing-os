@@ -321,10 +321,12 @@ def test_onboard_scaffolds_the_obsidian_vault(tmp_path: Path) -> None:
     icons = (plugins / "obsidian-icon-folder" / "data.json").read_text(encoding="utf-8")
     assert '"business/clients"' in icons
     assert (target / "business" / "clients" / "clients.md").is_file()
-    # The MarketingOS theme ships byte-identical and is the active theme.
+    # The MarketingOS theme ships intact and is the active theme. Compared as text:
+    # the scaffolder writes platform newlines, so Windows gets CRLF on disk.
     theme = target / ".obsidian" / "themes" / "MarketingOS"
     shipped = assets_root() / "business-template" / ".obsidian" / "themes" / "MarketingOS"
     for name in ("manifest.json", "theme.css"):
-        assert (theme / name).read_bytes() == (shipped / name).read_bytes(), name
+        scaffolded = (theme / name).read_text(encoding="utf-8")
+        assert scaffolded == (shipped / name).read_text(encoding="utf-8"), name
     appearance = (target / ".obsidian" / "appearance.json").read_text(encoding="utf-8")
     assert '"cssTheme": "MarketingOS"' in appearance
