@@ -1,0 +1,2 @@
+[console_scripts]
+mos = marketing_os.cli.main:entrypoint

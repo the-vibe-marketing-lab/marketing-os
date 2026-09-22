@@ -1,0 +1,9 @@
+{
+  "id": "git-file-explorer-colors",
+  "name": "Git File Explorer Colors",
+  "version": "1.0.2",
+  "minAppVersion": "1.5.0",
+  "description": "Color the File Explorer from Git status so changed files and folders stand out at a glance.",
+  "author": "Peter Szymczak",
+  "isDesktopOnly": true
+}

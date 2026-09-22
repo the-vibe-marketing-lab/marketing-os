@@ -24,6 +24,14 @@ All notable changes to marketing-os are recorded here. Versions follow
 - **`/mos-statusline`, the tenth bundled skill.** Checks whether the badge is installed,
   switches it on or off through the `--plan`/`--yes` pair, and walks a member through
   customising it with a preview first. Claude Code only; Codex has no status bar.
+- **New brains open in the MarketingOS theme.** The business template now ships the
+  MarketingOS Obsidian theme (1.0.0, Ember) under `.obsidian/themes/MarketingOS/`, and
+  `appearance.json` makes it the active theme on Obsidian's dark base, next to the existing
+  `hide-machinery` snippet. Settings → Appearance switches it off or to another theme. A
+  brain set up earlier gets the theme files from `mos fix --all`, which only ever adds what
+  is missing, so its `appearance.json` is left as it was and the theme is one click away
+  under Settings → Appearance. The golden tree, the assets contract, the onboard test and the
+  wheel smoke all assert the theme ships and is selected.
 
 ### Changed
 

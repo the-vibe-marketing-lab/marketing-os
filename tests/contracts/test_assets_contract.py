@@ -151,9 +151,14 @@ def test_template_ships_an_obsidian_vault_config() -> None:
         assert manifest["id"] == plugin_id
         assert (folder / "main.js").is_file(), plugin_id
         assert (folder / "LICENSE").is_file(), plugin_id
-    snippets = json.loads((root / "appearance.json").read_text(encoding="utf-8"))
-    for snippet in snippets["enabledCssSnippets"]:
+    appearance = json.loads((root / "appearance.json").read_text(encoding="utf-8"))
+    for snippet in appearance["enabledCssSnippets"]:
         assert (root / "snippets" / f"{snippet}.css").is_file(), snippet
+    assert appearance["theme"] == "obsidian"
+    theme = root / "themes" / appearance["cssTheme"]
+    manifest = json.loads((theme / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["name"] == appearance["cssTheme"] == "MarketingOS"
+    assert (theme / "theme.css").is_file()
 
 
 def test_obsidian_icon_map_names_real_template_folders() -> None:

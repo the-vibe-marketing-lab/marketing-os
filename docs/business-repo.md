@@ -15,7 +15,7 @@ my-business/
 |-- .mos/
 |   |-- config.yaml
 |   `-- local/                         generated and ignored
-|-- .obsidian/                         vault config: 19 files, tracked
+|-- .obsidian/                         vault config: 21 files, tracked
 |-- .claude/skills/                    generated and ignored
 |-- .agents/skills/                    generated and ignored
 |-- business/

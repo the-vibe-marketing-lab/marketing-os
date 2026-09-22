@@ -382,10 +382,17 @@ anything starting with `_`) are handled by two separate mechanisms. The `hide-ma
 snippet is CSS, and hides their rows in the file explorer; the Hide Empty Folders plugin
 mirrors the same rules. Search exclusion is `userIgnoreFilters` in `.obsidian/app.json`.
 Disabling the snippet therefore changes the explorer but not what search returns. New notes
-default to `knowledge/sources/`. The theme is left on Obsidian's default - pick your own
-under Settings → Appearance. The vault config and plugins are committed with the brain so a
+default to `knowledge/sources/`. The vault config and plugins are committed with the brain so a
 fresh clone opens identically; only per-machine UI state (`workspace.json`, caches,
 `.trash/`) is ignored.
+
+**The MarketingOS theme is on from the first open.** The scaffold ships it under
+`.obsidian/themes/MarketingOS/` and `appearance.json` selects it (`"cssTheme": "MarketingOS"`
+on Obsidian's dark base). To use a different look, open Settings → Appearance and pick another
+theme, or choose "Default" under Themes to go back to Obsidian's own; the MarketingOS theme
+stays in the folder, so you can switch back the same way. A brain set up before the theme
+shipped gets the theme folder from `mos fix --all` (preview with `--plan`, then `--yes`), but
+its `appearance.json` is never rewritten: turn the theme on under Settings → Appearance.
 
 **Recommended: Excalidraw.** Drawings are a one-click install rather than bundled (its
 AGPL-3.0 licence does not sit inside an MIT wheel, and it weighs eight megabytes): Settings →

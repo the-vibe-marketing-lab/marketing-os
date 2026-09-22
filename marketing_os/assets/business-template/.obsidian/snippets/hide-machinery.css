@@ -1,0 +1,27 @@
+/* Hide agent-facing and repo-machinery items from the file explorer.
+   Rule: anything behind-the-scenes or AI-facing is hidden; only reader-relevant
+   content shows. Keep in sync with plugins/hide-empty-folders/main.js. */
+
+/* 1. Any file or folder whose name starts with an underscore, at any depth
+      (_index.md, _log.md, _templates/ ...) */
+.nav-file:has(> .nav-file-title[data-path^="_"]),
+.nav-file:has(> .nav-file-title[data-path*="/_"]),
+.nav-folder:has(> .nav-folder-title[data-path^="_"]),
+.nav-folder:has(> .nav-folder-title[data-path*="/_"]),
+
+/* 2. Agent / repo instruction files at any depth */
+.nav-file:has(> .nav-file-title[data-path$="README.md"]),
+.nav-file:has(> .nav-file-title[data-path$="CLAUDE.md"]),
+.nav-file:has(> .nav-file-title[data-path$="AGENTS.md"]),
+.nav-file:has(> .nav-file-title[data-path$=".code-workspace"]),
+
+/* 3. Tooling folders at any depth */
+.nav-folder:has(> .nav-folder-title[data-path$="/scripts"]),
+.nav-folder:has(> .nav-folder-title[data-path$="/runs"]),
+.nav-folder:has(> .nav-folder-title[data-path$="/node_modules"]),
+
+/* 4. Root-level contract documents the agent reads, not the owner */
+.nav-file:has(> .nav-file-title[data-path="CONTEXT.md"]),
+.nav-file:has(> .nav-file-title[data-path="CONTRACT.md"]) {
+  display: none !important;
+}

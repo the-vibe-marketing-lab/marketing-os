@@ -7,6 +7,7 @@ import pytest
 from marketing_os.core import atomic as atomic_module
 from marketing_os.core import onboard as onboard_mod
 from marketing_os.core.onboard import onboard_repo
+from marketing_os.core.schema import assets_root
 from marketing_os.core.setup import setup_repo
 
 HAS_GIT = shutil.which("git") is not None
@@ -320,3 +321,10 @@ def test_onboard_scaffolds_the_obsidian_vault(tmp_path: Path) -> None:
     icons = (plugins / "obsidian-icon-folder" / "data.json").read_text(encoding="utf-8")
     assert '"business/clients"' in icons
     assert (target / "business" / "clients" / "clients.md").is_file()
+    # The MarketingOS theme ships byte-identical and is the active theme.
+    theme = target / ".obsidian" / "themes" / "MarketingOS"
+    shipped = assets_root() / "business-template" / ".obsidian" / "themes" / "MarketingOS"
+    for name in ("manifest.json", "theme.css"):
+        assert (theme / name).read_bytes() == (shipped / name).read_bytes(), name
+    appearance = (target / ".obsidian" / "appearance.json").read_text(encoding="utf-8")
+    assert '"cssTheme": "MarketingOS"' in appearance

@@ -1,0 +1,4 @@
+{
+  "schema": "mos.skills.v1",
+  "skills": ["mos-start", "mos-help", "mos-status", "mos-end", "mos-think", "mos-bet", "mos-update", "mos-onboard", "mos-migrate", "mos-statusline"]
+}

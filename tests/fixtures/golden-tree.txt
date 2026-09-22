@@ -40,6 +40,8 @@
 .obsidian/plugins/obsidian-icon-folder/manifest.json
 .obsidian/plugins/obsidian-icon-folder/styles.css
 .obsidian/snippets/hide-machinery.css
+.obsidian/themes/MarketingOS/manifest.json
+.obsidian/themes/MarketingOS/theme.css
 .obsidian/webviewer.json
 AGENTS.md
 BRAIN.md

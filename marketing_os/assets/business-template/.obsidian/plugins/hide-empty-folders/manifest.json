@@ -1,0 +1,9 @@
+{
+  "id": "hide-empty-folders",
+  "name": "Hide Empty Folders",
+  "version": "1.0.0",
+  "minAppVersion": "1.4.0",
+  "description": "Hides folders that contain no visible file (empty, or only hidden machinery). Re-checks on create/delete/rename so a folder reappears the moment a real file lands in it.",
+  "author": "Richard Magallanes",
+  "isDesktopOnly": false
+}

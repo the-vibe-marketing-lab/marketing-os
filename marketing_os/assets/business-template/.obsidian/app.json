@@ -1,0 +1,17 @@
+{
+  "showUnsupportedFiles": true,
+  "alwaysUpdateLinks": true,
+  "newFileLocation": "folder",
+  "newFileFolderPath": "knowledge/sources",
+  "attachmentFolderPath": "business/brand/assets",
+  "userIgnoreFilters": [
+    "CLAUDE.md",
+    "AGENTS.md",
+    "CONTEXT.md",
+    "CONTRACT.md",
+    "README.md",
+    "/(^|\\/)_[^/]*$/",
+    "/(^|\\/)(README|CLAUDE|AGENTS)\\.md$/",
+    "/\\/(scripts|runs|node_modules)$/"
+  ]
+}
