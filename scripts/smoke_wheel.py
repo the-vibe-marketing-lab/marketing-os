@@ -65,6 +65,11 @@ def main() -> int:
             for name in archive.namelist()
         ):
             raise RuntimeError("The wheel is missing the Obsidian vault config.")
+        if not any(
+            name.endswith("/assets/business-template/.obsidian/themes/MarketingOS/theme.css")
+            for name in archive.namelist()
+        ):
+            raise RuntimeError("The wheel is missing the MarketingOS Obsidian theme.")
 
     with tempfile.TemporaryDirectory(prefix="mos-wheel-smoke-") as temp:
         temp_root = Path(temp)
@@ -120,6 +125,10 @@ def main() -> int:
             raise RuntimeError("Setup did not scaffold the document contract.")
         if not list((brain / ".obsidian" / "plugins").glob("*/main.js")):
             raise RuntimeError("Setup did not scaffold the Obsidian vault with its plugins.")
+        appearance = json.loads((brain / ".obsidian" / "appearance.json").read_text("utf-8"))
+        theme_css = brain / ".obsidian" / "themes" / "MarketingOS" / "theme.css"
+        if appearance.get("cssTheme") != "MarketingOS" or not theme_css.is_file():
+            raise RuntimeError("Setup did not scaffold the MarketingOS theme as the active theme.")
         if "{{TODAY}}" in (brain / "business" / "brand" / "brand.md").read_text(encoding="utf-8"):
             raise RuntimeError("Template placeholders were not rendered.")
         build = json.loads(run([str(mos), "index", "build", str(brain), "--json"]).stdout)

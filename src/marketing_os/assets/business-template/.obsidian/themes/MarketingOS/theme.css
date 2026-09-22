@@ -1,0 +1,781 @@
+/* ============================================================================
+   MarketingOS
+   An Obsidian theme for the MarketingOS brain. Warm dark, one accent, and
+   type doing the work ornament would do in a weaker system.
+
+   The system
+   ----------
+   Ember v3, the current TVML design system. Warm dark is the home state: the
+   ground is a brown black, never a neutral grey black. Ember is lamp light on
+   that ground and appears once per surface. Sun is the second warm and is
+   reserved for status and highlight, never a second call to action. There is
+   no blue anywhere.
+
+   Four decisions worth knowing about
+   ----------------------------------
+   1. Chrome and editor share one ground. Ember separates sections with a
+      hairline or with space, never with a filled band, so the sidebars, the
+      tab strip and the note all sit on Ink and a single divider line does the
+      separating. Raised things (modals, callouts, code) step up to Surface.
+   2. One atmosphere. A single blurred Ember radial sits behind the top right
+      of the note, and nowhere else in the app. It is the lamp.
+   3. The one ornament is earned, not applied. The system's 56 by 3px Ember bar
+      works under a hero you see once. Under a note title you open two hundred
+      times a day it is furniture, and Obsidian prints two titles, the filename
+      and the H1, so it stacked. It lives on the horizontal rule instead, where
+      only a person typing three dashes can summon it.
+   4. Radii are scaled, not copied. The brand's 18px card radius holds for
+      modals, callouts and code blocks. Dense controls get a derived 10px step,
+      because an 18px radius on a 24px row reads as a pill by accident.
+
+   Faces
+   -----
+   Bricolage Grotesque for display, Figtree for everything else, both from the
+   system. IBM Plex Mono carries code only: Ember names no monospace face and
+   explicitly rules out JetBrains Mono, and code blocks genuinely need one.
+
+   Credit
+   ------
+   Cupertino by Alexis C was the starting reference, and two things are worth
+   recording about why this is written from scratch rather than forked from it.
+   Cupertino's desktop colours are literal hex and color-mix rather than tokens,
+   so a token level retint would not have moved them. Only its Android Material
+   You path derives a tinted neutral ramp from a single accent hue, and that
+   idea is the one borrowed here. Its translucency is also the glass that Ember
+   rules out.
+   ============================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+/* ----------------------------------------------------------------------------
+   1 · Brand tokens. The only colours in the building.
+   ---------------------------------------------------------------------------- */
+.theme-dark,
+.theme-light {
+  /* Warm tinted neutrals */
+  --mos-ink:       #0d0b0a;  /* the ground                                    */
+  --mos-surface:   #1a1614;  /* raised: modals, callouts, code                */
+  --mos-surface-2: #241e1b;  /* second elevation, hover on raised             */
+  --mos-surface-3: #201a17;  /* alternate band                                */
+  --mos-paper:     #faf7f2;  /* primary text                                  */
+
+  /* The accent. Rare by design. */
+  --mos-ember:        #c96442;  /* fills: primary button, the Lab Rule        */
+  --mos-ember-bright: #e2794f;  /* accent text, hover, focus ring             */
+  --mos-ember-soft:   rgb(201 100 66 / 16%);
+  --mos-ember-line:   rgb(201 100 66 / 32%);
+
+  /* The second warm. Status and highlight only. */
+  --mos-sun:      #f4c24b;
+  --mos-sun-soft: rgb(244 194 75 / 14%);
+  --mos-sun-line: rgb(244 194 75 / 32%);
+
+  /* Lines */
+  --mos-mist:    #2c2622;  /* borders on raised surfaces                      */
+  --mos-divider: #241f1c;  /* the hairline that separates everything else     */
+
+  /* Paper ladder. The text hierarchy, verbatim from the system. */
+  --mos-paper-78: rgb(250 247 242 / 78%);
+  --mos-paper-50: rgb(250 247 242 / 50%);
+  --mos-paper-32: rgb(250 247 242 / 32%);
+  --mos-paper-08: rgb(250 247 242 / 8%);
+  --mos-paper-05: rgb(250 247 242 / 5%);
+
+  /* Ink ladder, for the Paper variant */
+  --mos-ink-78: rgb(13 11 10 / 78%);
+  --mos-ink-55: rgb(13 11 10 / 55%);
+  --mos-ink-38: rgb(13 11 10 / 38%);
+  --mos-ink-06: rgb(13 11 10 / 6%);
+
+  /* Alert. Ember names no error colour and the accessibility floor needs one,
+     so this is the single functional hue outside Ember and Sun. */
+  --mos-alert:      #ef7a7a;
+  --mos-alert-deep: #b23b3b;
+  --mos-alert-soft: rgb(239 122 122 / 14%);
+  --mos-sage:       #8fbf95;  /* success, so failure has an opposite */
+
+  /* Faces */
+  --mos-display: 'Bricolage Grotesque', 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  --mos-body:    'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mos-mono:    'IBM Plex Mono', ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+
+  /* Shape. The brand radius, plus one derived step for dense controls. */
+  --mos-radius-card:    18px;
+  --mos-radius-control: 10px;
+  --mos-radius-chip:    999px;
+
+  /* Motion */
+  --mos-ease:      cubic-bezier(0.2, 0, 0, 1);
+  --mos-fast:      0.15s;
+  --mos-base:      0.22s;
+
+  /* The one ornament */
+  --mos-rule-width:  56px;
+  --mos-rule-height: 3px;
+}
+
+/* ----------------------------------------------------------------------------
+   2 · Dark. The home state.
+   ---------------------------------------------------------------------------- */
+.theme-dark {
+  color-scheme: dark;
+
+  /* Obsidian derives toggles, sliders and its own accent UI from these, so
+     seeding them with Ember keeps the parts this file never touches on brand.
+     Ember #c96442 is hsl(15, 56%, 52%). */
+  --accent-h: 15;
+  --accent-s: 56%;
+  --accent-l: 52%;
+
+  /* Ground. Chrome and editor share it; the divider does the separating. */
+  --background-primary:       var(--mos-ink);
+  --background-primary-alt:   var(--mos-surface-3);
+  --background-secondary:     var(--mos-ink);
+  --background-secondary-alt: var(--mos-ink);
+
+  --background-modifier-hover:        var(--mos-paper-05);
+  --background-modifier-active-hover: var(--mos-ember-soft);
+  --background-modifier-border:        var(--mos-mist);
+  --background-modifier-border-hover:  #3a322d;
+  --background-modifier-border-focus:  var(--mos-ember-bright);
+  --background-modifier-flair:         var(--mos-ember);
+  --background-modifier-form-field:    var(--mos-surface);
+  --background-modifier-success:       rgb(120 160 120 / 22%);
+  --background-modifier-error:         var(--mos-alert-soft);
+  --background-modifier-error-hover:   rgb(239 122 122 / 22%);
+  --background-modifier-message:       var(--mos-surface-2);
+
+  --divider-color:       var(--mos-divider);
+  --divider-color-hover: var(--mos-mist);
+
+  /* Text */
+  --text-normal:    var(--mos-paper);
+  --text-muted:     var(--mos-paper-50);
+  --text-faint:     var(--mos-paper-32);
+  --text-accent:        var(--mos-ember-bright);
+  --text-accent-hover:  var(--mos-ember-bright);
+  /* Ink on Ember, never Paper. Paper on Ember is 3.6:1 and fails AA. */
+  --text-on-accent:     var(--mos-ink);
+  --text-on-accent-inverted: var(--mos-ink);
+  --text-selection:     rgb(201 100 66 / 26%);
+  --text-highlight-bg:  var(--mos-sun-soft);
+  --text-error:         var(--mos-alert);
+  --text-success:       var(--mos-sage);
+  --text-warning:       var(--mos-sun);
+
+  /* Interactive */
+  --interactive-normal:       var(--mos-surface);
+  --interactive-hover:        var(--mos-surface-2);
+  --interactive-accent:       var(--mos-ember);
+  --interactive-accent-hover: var(--mos-ember-bright);
+  --interactive-accent-hsl:   15, 56%, 52%;
+
+  /* Surfaces that step up */
+  --code-background: var(--mos-surface);
+  --code-normal:     #e0d5cb;
+  --hr-color:        var(--mos-divider);
+  --blockquote-border-color: var(--mos-ember-line);
+  --blockquote-background-color: transparent;
+
+  --titlebar-background:         var(--mos-ink);
+  --titlebar-background-focused: var(--mos-ink);
+  --tab-background-active:       var(--mos-ink);
+  --tab-outline-color:           transparent;
+
+  --table-border-color:      var(--mos-divider);
+  --table-header-background: transparent;
+  --table-row-alt-background: transparent;
+
+  --scrollbar-thumb-bg:        rgb(250 247 242 / 10%);
+  --scrollbar-active-thumb-bg: rgb(250 247 242 / 22%);
+  --scrollbar-bg:              transparent;
+
+  --icon-color:       var(--mos-paper-50);
+  --icon-color-hover: var(--mos-paper);
+  --icon-color-focused: var(--mos-paper);
+  --icon-opacity: 1;
+
+  --shadow-s: 0 2px 10px rgb(0 0 0 / 30%);
+  --shadow-l: 0 18px 56px rgb(0 0 0 / 55%);
+}
+
+/* ----------------------------------------------------------------------------
+   3 · Paper. The deliberate variant.
+   Ember is dark only on the web. The system keeps a Paper variant for print
+   and newsletter, and Obsidian users can flip the scheme whether a theme is
+   ready or not, so this is that variant rather than an unstyled fallback.
+   Ember darkens here: #c96442 on Paper measures 4.3:1 and misses AA.
+   ---------------------------------------------------------------------------- */
+.theme-light {
+  color-scheme: light;
+  --accent-h: 15;
+  --accent-s: 56%;
+  --accent-l: 43%;
+
+  --mos-ember-print: #a94a2b;  /* 5.6:1 on Paper */
+
+  --background-primary:       var(--mos-paper);
+  --background-primary-alt:   #f3efe8;
+  --background-secondary:     var(--mos-paper);
+  --background-secondary-alt: #f3efe8;
+
+  --background-modifier-hover:        var(--mos-ink-06);
+  --background-modifier-active-hover: rgb(169 74 43 / 12%);
+  --background-modifier-border:        #e4ddd2;
+  --background-modifier-border-hover:  #d6ccbd;
+  --background-modifier-border-focus:  var(--mos-ember-print);
+  --background-modifier-form-field:    #ffffff;
+  --background-modifier-error:         rgb(178 59 59 / 10%);
+
+  --divider-color:       #e8e1d6;
+  --divider-color-hover: #d6ccbd;
+
+  --text-normal:    var(--mos-ink);
+  --text-muted:     var(--mos-ink-55);
+  --text-faint:     var(--mos-ink-38);
+  --text-accent:        var(--mos-ember-print);
+  --text-accent-hover:  #8f3c22;
+  --text-on-accent:     var(--mos-paper);
+  --text-selection:     rgb(201 100 66 / 20%);
+  --text-highlight-bg:  rgb(244 194 75 / 34%);
+  --text-error:         var(--mos-alert-deep);
+
+  --interactive-normal:       #f3efe8;
+  --interactive-hover:        #eae3d8;
+  --interactive-accent:       var(--mos-ember-print);
+  --interactive-accent-hover: #8f3c22;
+  --interactive-accent-hsl:   15, 60%, 41%;
+
+  --code-background: #f3efe8;
+  --code-normal:     #4a3f38;
+  --hr-color:        #e8e1d6;
+  --blockquote-border-color: rgb(169 74 43 / 38%);
+
+  --titlebar-background:         var(--mos-paper);
+  --titlebar-background-focused: var(--mos-paper);
+  --tab-background-active:       var(--mos-paper);
+
+  --table-border-color: #e8e1d6;
+
+  --scrollbar-thumb-bg:        rgb(13 11 10 / 14%);
+  --scrollbar-active-thumb-bg: rgb(13 11 10 / 28%);
+
+  --icon-color:       var(--mos-ink-55);
+  --icon-color-hover: var(--mos-ink);
+
+  --shadow-s: 0 2px 10px rgb(74 63 56 / 12%);
+  --shadow-l: 0 18px 56px rgb(74 63 56 / 20%);
+}
+
+/* ----------------------------------------------------------------------------
+   4 · Type. Bricolage display, Figtree everywhere, Plex Mono for code.
+   ---------------------------------------------------------------------------- */
+body {
+  --font-interface-theme: var(--mos-body);
+  --font-text-theme:      var(--mos-body);
+  --font-monospace-theme: var(--mos-mono);
+
+  --font-text-size:     18px;   /* the system's body size */
+  --line-height-normal: 1.7;
+  --line-height-tight:  1.3;
+  --file-line-width:    720px;  /* 62ch at 18px Figtree */
+  --p-spacing:          1.15rem;
+
+  --font-ui-smaller: 12px;
+  --font-ui-small:   13px;
+  --font-ui-medium:  15px;
+  --font-ui-large:   19px;
+
+  --bold-weight: 700;
+  --font-weight: 400;
+
+  --radius-s: 6px;
+  --radius-m: var(--mos-radius-control);
+  --radius-l: var(--mos-radius-card);
+  --radius-xl: 24px;
+
+  --input-radius: var(--mos-radius-control);
+  --tab-radius:   var(--mos-radius-control);
+  --tab-radius-active: var(--mos-radius-control) var(--mos-radius-control) 0 0;
+  --modal-radius: var(--mos-radius-card);
+
+  --nav-item-size: 14px;
+  --nav-item-weight: 450;
+  --nav-item-weight-active: 600;
+  --nav-item-color-active: var(--text-normal);
+  --nav-item-background-active: var(--mos-ember-soft);
+  --nav-indentation-guide-color: var(--divider-color);
+
+  --icon-size: 17px;
+  --icon-stroke: 1.7px;
+
+  --anim-duration-fast: var(--mos-fast);
+  --anim-duration-moderate: var(--mos-base);
+  --anim-motion-smooth: var(--mos-ease);
+
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Headings. Bricolage carries h1 and h2, the display sizes. Figtree takes over
+   at h3 and below, where a display face at small sizes is just noise. */
+.markdown-preview-view,
+.markdown-source-view.mod-cm6,
+.markdown-rendered {
+  --h1-font: var(--mos-display);
+  --h2-font: var(--mos-display);
+  --h3-font: var(--mos-display);
+  --h4-font: var(--mos-body);
+  --h5-font: var(--mos-body);
+  --h6-font: var(--mos-body);
+
+  --h1-color: var(--text-normal);
+  --h2-color: var(--text-normal);
+  --h3-color: var(--text-normal);
+  --h4-color: var(--text-normal);
+  --h5-color: var(--text-normal);
+  --h6-color: var(--text-muted);
+
+  --h1-weight: 800;  --h1-size: 2.45em;  --h1-line-height: 1.02;
+  --h2-weight: 800;  --h2-size: 2em;     --h2-line-height: 1.12;
+  --h3-weight: 600;  --h3-size: 1.44em;  --h3-line-height: 1.25;
+  --h4-weight: 700;  --h4-size: 1.12em;  --h4-line-height: 1.35;
+  --h5-weight: 700;  --h5-size: 1em;
+  --h6-weight: 700;  --h6-size: 0.8em;
+}
+
+/* Tracking is not expressible through Obsidian's heading variables. */
+.markdown-rendered h1, .cm-header-1 { letter-spacing: -0.03em; }
+.markdown-rendered h2, .cm-header-2 { letter-spacing: -0.02em; }
+.markdown-rendered h3, .cm-header-3 { letter-spacing: -0.02em; }
+.markdown-rendered h4, .cm-header-4 { letter-spacing: -0.01em; }
+.markdown-rendered h6, .cm-header-6 { text-transform: uppercase; letter-spacing: 0.14em; }
+
+/* More space above a heading than below it. */
+.markdown-rendered h2 { margin-top: 2.2em; margin-bottom: 0.5em; }
+.markdown-rendered h3 { margin-top: 1.9em; margin-bottom: 0.4em; }
+.markdown-rendered h4 { margin-top: 1.7em; margin-bottom: 0.35em; }
+
+.markdown-rendered strong, .cm-strong { font-weight: 700; color: var(--text-normal); }
+.markdown-rendered em, .cm-em { color: var(--text-normal); }
+.markdown-rendered mark, .cm-highlight {
+  background: var(--text-highlight-bg);
+  color: var(--text-normal);
+  padding: 0.05em 0.2em;
+  border-radius: 3px;
+}
+
+/* ----------------------------------------------------------------------------
+   5 · Titles. Carried by the size step and the space, with nothing under them.
+   Whitespace is the system's first rule: space and typography build hierarchy
+   before borders do. Bricolage at 800 against 18px Figtree is already a huge
+   step, so the title needs room beneath it, not a bar. The filename Obsidian
+   prints above the H1 drops back to quiet metadata in the body face, sentence
+   case, because a small tracked label above a heading is the one silhouette
+   the system rules out by name.
+   ---------------------------------------------------------------------------- */
+.inline-title {
+  font-family: var(--mos-body);
+  font-size: 0.8em;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--text-faint);
+  margin-bottom: 0.35em;
+}
+.markdown-rendered h1,
+.cm-sizer .inline-title + .cm-line { margin-top: 0; }
+.markdown-rendered h1 { margin-bottom: 0.85em; }
+
+/* ----------------------------------------------------------------------------
+   6 · The atmosphere. One blurred Ember radial, behind the top right of the
+   note and nowhere else. This is the lamp, so it never repeats.
+   ---------------------------------------------------------------------------- */
+.workspace-split.mod-root .workspace-leaf-content[data-type="markdown"] {
+  position: relative;
+  isolation: isolate;
+}
+.workspace-split.mod-root .workspace-leaf-content[data-type="markdown"]::before {
+  content: '';
+  position: absolute;
+  top: -180px;
+  right: -140px;
+  width: 620px;
+  height: 620px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(circle, rgb(201 100 66 / 15%) 0%, transparent 62%);
+  filter: blur(40px);
+}
+.theme-light .workspace-split.mod-root .workspace-leaf-content[data-type="markdown"]::before {
+  background: radial-gradient(circle, rgb(201 100 66 / 9%) 0%, transparent 62%);
+}
+
+/* ----------------------------------------------------------------------------
+   7 · The editor surface. Whitespace is the luxury.
+   ---------------------------------------------------------------------------- */
+.markdown-preview-view,
+.markdown-source-view.mod-cm6 .cm-content { padding-block: 2.2rem; }
+.markdown-source-view.mod-cm6 .cm-active-line { background: var(--mos-paper-05); }
+.theme-light .markdown-source-view.mod-cm6 .cm-active-line { background: var(--mos-ink-06); }
+
+.markdown-source-view.mod-cm6 .cm-cursor,
+.markdown-source-view.mod-cm6 .cm-cursorLayer .cm-cursor {
+  border-left-color: var(--mos-ember-bright);
+  border-left-width: 2px;
+}
+.theme-light .markdown-source-view.mod-cm6 .cm-cursor { border-left-color: var(--mos-ember-print); }
+
+.markdown-rendered ul > li::marker,
+.markdown-rendered ol > li::marker { color: var(--text-muted); }
+.markdown-rendered ol > li::marker { font-variant-numeric: tabular-nums; }
+
+/* Body prose sits at Paper 78%, the system's --text-body. Headings, bold and
+   the UI stay at full Paper, so the hierarchy is carried by the text itself. */
+.markdown-preview-view,
+.markdown-rendered,
+.markdown-source-view.mod-cm6 .cm-content { color: var(--mos-paper-78); }
+.theme-light .markdown-preview-view,
+.theme-light .markdown-rendered,
+.theme-light .markdown-source-view.mod-cm6 .cm-content { color: var(--mos-ink-78); }
+.markdown-rendered h1, .markdown-rendered h2, .markdown-rendered h3,
+.markdown-rendered h4, .markdown-rendered h5 { color: var(--text-normal); }
+
+/* Links. Underlined, Ember Bright, the single recurring accent in body copy. */
+.markdown-rendered a,
+.cm-link, .cm-url, .cm-hmd-internal-link, .internal-link, .external-link {
+  color: var(--text-accent);
+  text-decoration: underline;
+  text-decoration-color: var(--mos-ember-line);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  transition: text-decoration-color var(--mos-fast) var(--mos-ease),
+              color var(--mos-fast) var(--mos-ease);
+}
+.markdown-rendered a:hover,
+.internal-link:hover, .external-link:hover {
+  color: var(--text-accent);
+  text-decoration-color: var(--text-accent);
+}
+
+/* Blockquote. A hairline, not a slab. */
+.markdown-rendered blockquote {
+  border-left: 2px solid var(--blockquote-border-color);
+  padding: 0.1em 0 0.1em 1.15rem;
+  margin-left: 0;
+  color: var(--mos-paper-78);
+  font-style: normal;
+}
+.theme-light .markdown-rendered blockquote { color: var(--mos-ink-78); }
+
+/* The ornament lives here. A section break is an authored act rather than
+   furniture, so the Ember bar appears only where someone typed three dashes. */
+.markdown-rendered hr {
+  border: none;
+  height: var(--mos-rule-height);
+  width: var(--mos-rule-width);
+  border-radius: 2px;
+  background: var(--mos-ember);
+  margin: 3rem 0;
+}
+.theme-light .markdown-rendered hr { background: var(--mos-ember-print); }
+
+/* ----------------------------------------------------------------------------
+   8 · Code. Plex Mono on a raised surface.
+   ---------------------------------------------------------------------------- */
+.markdown-rendered code, .cm-inline-code {
+  font-family: var(--mos-mono);
+  font-size: 0.86em;
+  background: var(--code-background);
+  border: 1px solid var(--divider-color);
+  border-radius: 6px;
+  padding: 0.1em 0.38em;
+  color: var(--code-normal);
+}
+.markdown-rendered pre, .HyperMD-codeblock-bg {
+  background: var(--code-background);
+}
+.markdown-rendered pre {
+  border: 1px solid var(--divider-color);
+  border-radius: var(--mos-radius-card);
+  padding: 1.1rem 1.25rem;
+}
+.markdown-rendered pre code {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 0.84em;
+  line-height: 1.65;
+}
+
+/* ----------------------------------------------------------------------------
+   9 · Callouts. Ember for information and tips, Sun for caution, Sage for
+   success, one red for error. Ember names two hues; the accessibility floor
+   needs success and failure to read as opposites, so those two are functional
+   additions and the palette stops there.
+   ---------------------------------------------------------------------------- */
+.callout {
+  --callout-radius: var(--mos-radius-card);
+  --callout-border-width: 1px;
+  --callout-border-opacity: 0.22;
+  --callout-padding: 14px 18px;
+  --callout-title-weight: 700;
+  background: var(--mos-surface);
+  mix-blend-mode: normal;
+}
+.theme-light .callout { background: #f3efe8; }
+.callout-title { letter-spacing: -0.01em; }
+.callout-content { color: var(--mos-paper-78); }
+.theme-light .callout-content { color: var(--mos-ink-78); }
+
+/* Information and tips take the accent. */
+.callout[data-callout="note"],
+.callout[data-callout="info"],
+.callout[data-callout="abstract"],
+.callout[data-callout="summary"],
+.callout[data-callout="quote"],
+.callout[data-callout="cite"],
+.callout[data-callout="example"],
+.callout[data-callout="todo"],
+.callout[data-callout="tip"],
+.callout[data-callout="hint"] { --callout-color: 226, 121, 79; }
+
+/* Caution takes Sun. */
+.callout[data-callout="warning"],
+.callout[data-callout="caution"],
+.callout[data-callout="attention"],
+.callout[data-callout="important"],
+.callout[data-callout="question"],
+.callout[data-callout="help"],
+.callout[data-callout="faq"] { --callout-color: 244, 194, 75; }
+
+/* Success and failure are a pair, so they need to read as opposites rather
+   than as two shades of warm. Sage is the fourth hue, and the last. */
+.callout[data-callout="success"],
+.callout[data-callout="check"],
+.callout[data-callout="done"] { --callout-color: 143, 191, 149; }
+
+.callout[data-callout="danger"],
+.callout[data-callout="error"],
+.callout[data-callout="bug"],
+.callout[data-callout="failure"],
+.callout[data-callout="fail"],
+.callout[data-callout="missing"] { --callout-color: 239, 122, 122; }
+
+/* ----------------------------------------------------------------------------
+   10 · Tags. Quiet chips. Pills are for buttons and topic chips only.
+   ---------------------------------------------------------------------------- */
+body {
+  --tag-background: transparent;
+  --tag-background-hover: var(--mos-ember-soft);
+  --tag-color: var(--text-accent);
+  --tag-color-hover: var(--text-accent);
+  --tag-radius: var(--mos-radius-chip);
+  --tag-padding-x: 9px;
+  --tag-padding-y: 2px;
+  --tag-size: 0.78em;
+  --tag-weight: 600;
+  --tag-decoration: none;
+  --tag-decoration-hover: none;
+}
+.markdown-rendered a.tag, .cm-hashtag {
+  border: 1px solid var(--mos-ember-line);
+  line-height: 1.6;
+}
+.markdown-rendered a.tag:hover { border-color: var(--text-accent); }
+
+/* ----------------------------------------------------------------------------
+   11 · Tables. Lines carry it. No zebra, no fills.
+   ---------------------------------------------------------------------------- */
+/* Horizontal rules only. A full grid is a box drawn around weak hierarchy. */
+.markdown-rendered table { border-collapse: collapse; }
+.markdown-rendered th, .markdown-rendered td {
+  border: none;
+  border-bottom: 1px solid var(--table-border-color);
+  padding: 0.62em 1em 0.62em 0;
+  text-align: left;
+}
+.markdown-rendered th {
+  font-family: var(--mos-body);
+  font-weight: 700;
+  font-size: 0.76em;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  background: transparent;
+  border-bottom-color: var(--background-modifier-border);
+  padding-bottom: 0.5em;
+}
+.markdown-rendered tr:last-child td { border-bottom: none; }
+.markdown-rendered td { font-variant-numeric: tabular-nums; }
+
+/* ----------------------------------------------------------------------------
+   12 · Chrome. One instrument lit at a time.
+   ---------------------------------------------------------------------------- */
+.workspace-ribbon,
+.workspace-split.mod-left-split,
+.workspace-split.mod-right-split,
+.workspace-tab-header-container,
+.status-bar {
+  background-color: var(--background-primary);
+}
+.workspace-ribbon { border-right: 1px solid var(--divider-color); }
+.workspace-split.mod-left-split  { border-right: 1px solid var(--divider-color); }
+.workspace-split.mod-right-split { border-left: 1px solid var(--divider-color); }
+.workspace-tab-header-container { border-bottom: 1px solid var(--divider-color); }
+
+/* The active tab is the chrome's single accent. */
+.workspace-tab-header { position: relative; }
+.workspace-tab-header.is-active::after {
+  content: '';
+  position: absolute;
+  left: 10px; right: 10px; bottom: 0;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--mos-ember);
+}
+.theme-light .workspace-tab-header.is-active::after { background: var(--mos-ember-print); }
+.workspace-tab-header.is-active .workspace-tab-header-inner-title { color: var(--text-normal); font-weight: 600; }
+.workspace-tab-header:not(.is-active) .workspace-tab-header-inner-title { color: var(--text-faint); }
+.workspace-tab-header-inner-title { font-size: var(--font-ui-small); letter-spacing: -0.005em; }
+
+/* File explorer. The active file is marked by a wash, never by a bar. */
+.nav-file-title, .nav-folder-title {
+  font-family: var(--mos-body);
+  border-radius: var(--mos-radius-control);
+}
+.nav-folder-title-content { font-weight: 600; color: var(--text-muted); }
+.nav-file-title.is-active {
+  background: var(--mos-ember-soft);
+  color: var(--text-normal);
+}
+.nav-file-title.is-active .nav-file-title-content { font-weight: 600; }
+.tree-item-self.is-clickable:hover { background: var(--background-modifier-hover); }
+.nav-header { border-bottom: 1px solid var(--divider-color); }
+
+.view-header { background: transparent; }
+.view-header-title { font-weight: 600; letter-spacing: -0.005em; }
+
+/* Status bar. Figtree, uppercase and tracked. The system retired the mono
+   label treatment, so this is a label, not a readout. */
+.status-bar {
+  border-top: 1px solid var(--divider-color);
+  font-family: var(--mos-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.status-bar-item { color: inherit; }
+
+/* ----------------------------------------------------------------------------
+   13 · Controls. One primary action per viewport.
+   ---------------------------------------------------------------------------- */
+button:not(.clickable-icon), input, textarea, select, .prompt-input {
+  font-family: var(--mos-body);
+}
+button:not(.clickable-icon) {
+  border-radius: var(--mos-radius-chip);
+  font-weight: 700;
+  padding: 7px 18px;
+  transition: background-color var(--mos-fast) var(--mos-ease),
+              transform var(--mos-fast) var(--mos-ease),
+              box-shadow var(--mos-fast) var(--mos-ease);
+}
+button.mod-cta {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+button.mod-cta:hover {
+  background: var(--interactive-accent-hover);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgb(201 100 66 / 40%);
+}
+button.mod-warning {
+  background: transparent;
+  border: 1px solid var(--mos-alert);
+  color: var(--mos-alert);
+}
+button.mod-warning:hover { background: var(--mos-alert-soft); }
+
+input, textarea, .prompt-input {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--mos-radius-control);
+}
+input:focus, textarea:focus, .prompt-input:focus,
+input:focus-visible, button:focus-visible, .clickable-icon:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--mos-ember-line);
+  border-color: var(--background-modifier-border-focus);
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+}
+
+/* Search, palette, suggestions */
+.suggestion-item.is-selected { background: var(--mos-ember-soft); }
+.suggestion-title { font-weight: 500; }
+.search-result-file-matched-text {
+  background: var(--mos-sun-soft);
+  color: var(--text-normal);
+  border-radius: 3px;
+}
+.prompt, .modal, .menu, .popover {
+  border-radius: var(--mos-radius-card);
+  border: 1px solid var(--divider-color);
+  background: var(--mos-surface);
+  box-shadow: var(--shadow-l);
+}
+.theme-light .prompt, .theme-light .modal, .theme-light .menu, .theme-light .popover { background: var(--mos-paper); }
+.prompt-input { font-size: var(--font-ui-large); }
+
+/* ----------------------------------------------------------------------------
+   14 · Metadata. Kept quiet, set as a label.
+   ---------------------------------------------------------------------------- */
+.metadata-container {
+  border: none;
+  border-bottom: 1px solid var(--divider-color);
+  background: transparent;
+}
+.metadata-properties-title { display: none; }
+.metadata-property-key,
+.metadata-property-key-input {
+  font-family: var(--mos-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.metadata-property-value { font-size: 0.92em; color: var(--text-muted); }
+
+/* ----------------------------------------------------------------------------
+   15 · Graph. Ink space, Paper nodes, the focused cluster lit Ember.
+   ---------------------------------------------------------------------------- */
+.graph-view.color-fill         { color: var(--mos-paper-50); }
+.graph-view.color-fill-focused { color: var(--mos-ember-bright); }
+.graph-view.color-fill-tag     { color: var(--mos-sun); }
+.graph-view.color-line         { color: var(--mos-mist); }
+.graph-view.color-text         { color: var(--mos-paper-78); }
+.graph-view.color-circle       { color: var(--mos-paper); }
+.theme-light .graph-view.color-fill { color: var(--mos-ink-38); }
+.theme-light .graph-view.color-text { color: var(--mos-ink-78); }
+.theme-light .graph-view.color-line { color: #d6ccbd; }
+
+/* ----------------------------------------------------------------------------
+   16 · Browser surfaces. The parts nobody draws still carry the design.
+   ---------------------------------------------------------------------------- */
+::selection { background: var(--text-selection); }
+::-webkit-scrollbar-thumb { border-radius: var(--mos-radius-chip); }
+.markdown-rendered td,
+.status-bar-item { font-feature-settings: "tnum" 1; }
+
+/* ----------------------------------------------------------------------------
+   17 · Reduced motion. The system honours it in the tokens.
+   ---------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  button.mod-cta:hover { transform: none; }
+}
