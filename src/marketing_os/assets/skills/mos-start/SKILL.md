@@ -26,6 +26,17 @@ mos status . --json
 
 If health or runtime discovery is unclear, also run `mos doctor . --json`.
 
+Check which branch the brain is on. `mos-end` leaves the operator on its `session/...` branch
+until the pull request merges, so their files stay visible. If `git branch --show-current` is a
+non-default branch, run `gh pr view --json state,url`:
+
+- **Merged:** the work has landed. Offer to switch to the default branch and
+  `git pull --ff-only` so the session starts from it.
+- **Closed without merging:** the files exist only on this branch. Say so, and do not switch;
+  `mos-end` offers to reopen or replace the pull request.
+- **Open:** say the pull request is still waiting on a merge, give its URL, and carry on here.
+  New work joins the same pull request at the next `mos-end`.
+
 ## Ground
 
 Read in this order:

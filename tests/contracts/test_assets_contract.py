@@ -191,3 +191,8 @@ def test_end_skill_saves_through_a_pull_request_by_default() -> None:
     assert "commit only" in text
     assert "push directly" in text
     assert "Never merge the pull request" in text
+    assert "Stay on the session branch" in text
+    assert "whose pull request is open" in text
+    assert "Never use `git add -f`" in text
+    start = (assets_root() / "skills" / "mos-start" / "SKILL.md").read_text(encoding="utf-8")
+    assert "gh pr view" in start
