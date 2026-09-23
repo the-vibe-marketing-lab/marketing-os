@@ -5,6 +5,18 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ## [Unreleased]
 
+### Changed
+
+- **`/mos-end` now saves through a pull request.** The session's work is committed on its own
+  `session/YYYY-MM-DD-<slug>` branch, pushed, and opened as a pull request against the default
+  branch, so the operator finalises it by merging. Saying "commit only" keeps the old
+  local-commit behaviour; "push directly" commits and pushes to the current branch. Without a
+  remote or a signed-in `gh`, it commits on the branch and hands over the exact commands.
+- **`/mos-end` stays on the session branch after opening the pull request.** Switching back to
+  the default branch removed the session's new files from disk until the merge, so they vanished
+  from the editor and Obsidian. Now the files stay visible, later `/mos-end` runs add commits to
+  the same open pull request, and `/mos-start` offers the switch-and-pull once it is merged.
+
 ### Added
 
 - **The badge can sit on top of your Claude Code status bar.** `mos statusline --install`
