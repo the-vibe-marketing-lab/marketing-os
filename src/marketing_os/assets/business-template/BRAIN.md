@@ -21,6 +21,7 @@ Before producing work:
 - Performance reports belong in `reporting/YYYY/QN/YYYY-MM/`.
 - Work with no better destination belongs in `outputs/YYYY/MM/YYYY-MM-DD-slug/`.
 - Retired material belongs in `archive/` and must not be used for ordinary grounding.
+- `MM` month folders are `09`, or `09-Sep` when `.mos/config.yaml` sets `"month_folder": "MM-Mon"`.
 
 ## Navigation
 

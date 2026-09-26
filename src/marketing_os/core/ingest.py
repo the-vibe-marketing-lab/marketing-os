@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from marketing_os.core.results import envelope, finding, next_action
-from marketing_os.core.schema import find_root, slugify
+from marketing_os.core.schema import find_root, month_dir, read_config, slugify
 
 TEXT_SUFFIXES = {".md", ".txt"}
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -166,7 +166,8 @@ def ingest_repo(
         origin = "literal"
 
     folder_name = f"{date_str}-{resolved_slug}"
-    dest = root / "knowledge" / "sources" / date_str[:4] / date_str[5:7] / folder_name
+    month = month_dir(datetime.date.fromisoformat(date_str), read_config(root))
+    dest = root / "knowledge" / "sources" / date_str[:4] / month / folder_name
 
     if dest.exists():
         return envelope(

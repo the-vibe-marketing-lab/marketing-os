@@ -238,7 +238,8 @@ mos validate [path] [--strict] [--json]
 
 Validates the canonical schema, the dated-folder grammar (config identity,
 required directories and files, allowed top-level paths, and the
-`YYYY/MM/YYYY-MM-DD-slug` layout for dated artifacts), and the frontmatter
+`YYYY/MM/YYYY-MM-DD-slug` layout for dated artifacts, with month folders as `MM`
+or, when `.mos/config.yaml` sets `"month_folder": "MM-Mon"`, as `09-Sep`), and the frontmatter
 contract. Structural problems are `error` findings; unknown top-level paths and
 contract gaps are `warning` findings. Exit is `1` only when there is at least one
 error.
@@ -335,7 +336,8 @@ Captures raw material into `knowledge/sources/` so it can be distilled later.
 `source` is a file, a directory, an `http://` or `https://` URL, or literal text —
 checked in that order, so an argument that names a real file is a file and anything
 left over is text. The capture lands in
-`knowledge/sources/YYYY/MM/YYYY-MM-DD-slug/source.md`: a file's contents are copied
+`knowledge/sources/YYYY/MM/YYYY-MM-DD-slug/source.md` (the month folder is `09-Sep`
+style when the brain sets `"month_folder": "MM-Mon"`): a file's contents are copied
 in under a short header, a directory writes a manifest plus every `.md` and `.txt`
 member beneath `files/`, a URL records the address, and literal text becomes the
 body. Directory members go under `files/` rather than the folder root so a member
@@ -500,7 +502,8 @@ query` uses. Those three go in whatever the topic is, because a recommendation
 reasoned without them is a recommendation about a different business.
 
 The steps name the file the decision should land in —
-`business/decisions/YYYY/MM/YYYY-MM-DD-<topic-slug>/decision.md` — and tell the agent to
+`business/decisions/YYYY/MM/YYYY-MM-DD-<topic-slug>/decision.md`, with the month folder in
+the brain's `month_folder` style — and tell the agent to
 append a line naming that decision file to `knowledge/wiki/_log.md`. (The folder-name
 convention is `mos ingest --pending`'s, for sources; it is not what think emits.) The command
 supplies the prompt; the `mos-think` skill is what runs it.

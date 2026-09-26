@@ -38,7 +38,8 @@ Only after approval, write the bet as a schema-conformant dated artifact:
 business/decisions/YYYY/MM/YYYY-MM-DD-<slug>/bet.md
 ```
 
-Use today's date and a lowercase hyphenated slug. Record: hypothesis, stake, deadline, success
+Use today's date and a lowercase hyphenated slug; `MM` is `09-Sep` style when
+`.mos/config.yaml` sets `"month_folder": "MM-Mon"`. Record: hypothesis, stake, deadline, success
 signal, failure signal, status (`open`), and an empty evidence log.
 
 ## Update and close

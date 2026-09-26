@@ -109,7 +109,9 @@ still parses. `mos onboard` emits sorted keys, for example an agency HQ:
 ```
 
 Client repos additionally carry an `agency` key. Repos created before modes existed omit
-`mode` entirely and read as in-house (see Modes below).
+`mode` entirely and read as in-house (see Modes below). An optional `month_folder` key picks
+how month folders are named in the dated trees — `"MM"` (the default when absent) or
+`"MM-Mon"` — see the dated-folder grammar below.
 
 `mos status`, `mos validate`, and `mos doctor` read `.mos/config.yaml` at exactly the path
 they are given. They do not walk up, so run them from the repository root or pass it
@@ -195,6 +197,17 @@ deterministically. `mos validate` enforces the exact names:
   month is `01`-`12`, and the leaf is a `YYYY-MM-DD` date followed by a lowercase hyphenated
   slug (`a-z`, `0-9`, and single hyphens between segments), for example
   `content/2026/07/2026-07-18-launch-recap/`.
+- A brain can opt into named month folders with `"month_folder": "MM-Mon"` in
+  `.mos/config.yaml`. The month folder is then `MM-Mon` — the two-digit month, a hyphen, and
+  the fixed English three-letter abbreviation (`Jan` `Feb` `Mar` `Apr` `May` `Jun` `Jul` `Aug`
+  `Sep` `Oct` `Nov` `Dec`), for example `content/2026/09-Sep/2026-09-26-launch-recap/`. The
+  number and the name must agree, and the case is exact: `09-Aug`, `09-sep`, `09-Sept`, and a
+  bare `09` are all `invalid-month` in that mode. The style is all-or-nothing per brain, and
+  `mos think` and `mos ingest` generate paths in it (one formatter, `month_dir` in
+  `core/schema.py`, serves the validator and every generator). Without the key, or with
+  `"MM"`, nothing changes. Any other value is an `invalid-month-folder` error, and month
+  folder names are then not judged at all rather than judged against a style nobody
+  understands. Leaf folders keep their numeric `YYYY-MM-DD` date in both styles.
 - Reporting uses `reporting/YYYY/QN/YYYY-MM/` instead: a four-digit year, a quarter
   `Q1`-`Q4`, then a `YYYY-MM` month, for example `reporting/2026/Q3/2026-07/`.
 
@@ -207,7 +220,8 @@ Three file names are skipped by the checker — `.gitkeep`, `_index.md`, and `_l
 empty scaffolded tree passes and a generated navigation file sitting beside dated folders is
 not read as malformed content. Any folder that breaks the grammar surfaces as an
 `invalid-year`, `invalid-month`, `invalid-dated-artifact`, `invalid-quarter`, or
-`invalid-report-month` finding.
+`invalid-report-month` finding; an `invalid-month` message names the expected form, for
+example `Expected an MM-Mon directory like 09-Sep.`
 
 ## File lifecycle
 

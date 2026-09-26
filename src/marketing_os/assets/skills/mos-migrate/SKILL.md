@@ -54,6 +54,8 @@ relative to the repo root:
 
 Follow the canonical naming: dated artifacts as `YYYY/MM/YYYY-MM-DD-slug/` under `content`,
 `campaigns`, `outputs`, `business/decisions`, and `knowledge/sources`; reports as `YYYY/QN/YYYY-MM`.
+If `.mos/config.yaml` sets `"month_folder": "MM-Mon"`, the month folder is named `09-Sep`
+(two-digit month plus English three-letter name) instead of `09`; route every destination that way.
 
 ## 3. Preview, then apply
 

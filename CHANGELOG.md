@@ -19,6 +19,13 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ### Added
 
+- **Named month folders, opt-in.** Set `"month_folder": "MM-Mon"` in `.mos/config.yaml` and
+  the dated trees use month folders like `09-Sep` instead of `09`. `mos validate` then accepts
+  only the matching two-digit number plus English three-letter name (`09-Aug`, `09-sep`,
+  `09-Sept` and a bare `09` are `invalid-month`, and the message names the expected folder),
+  and `mos think` and `mos ingest` generate paths the same way through one formatter. Without
+  the key, or with `"MM"`, nothing changes; any other value is an `invalid-month-folder` error.
+
 - **The badge can sit on top of your Claude Code status bar.** `mos statusline --install`
   (`--plan` first, then `--yes`) backs up `~/.claude/settings.json`, records the status bar
   you already have, and puts the MarketingOS badge above it; `--uninstall` puts yours back.

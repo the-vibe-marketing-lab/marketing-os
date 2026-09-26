@@ -8,12 +8,18 @@ from marketing_os.core.catalog import build_catalog
 from marketing_os.core.graphlint import CODES, contract_findings
 from marketing_os.core.parallel import gather
 from marketing_os.core.results import envelope, finding, next_action
-from marketing_os.core.schema import load_schema, read_config, repo_mode
+from marketing_os.core.schema import (
+    MONTH_ABBREVIATIONS,
+    is_month_dir,
+    load_schema,
+    month_folder_style,
+    read_config,
+    repo_mode,
+)
 
 CONTRACT_CODES = frozenset(CODES)
 
 YEAR = re.compile(r"^\d{4}$")
-MONTH = re.compile(r"^(0[1-9]|1[0-2])$")
 DATED = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$")
 QUARTER = re.compile(r"^Q[1-4]$")
 YEAR_MONTH = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
@@ -33,7 +39,27 @@ def _visible_children(path: Path) -> list[Path]:
     return [child for child in path.iterdir() if child.name not in NAV_FILES]
 
 
-def _check_year_month_dated(root: Path, relative: str) -> list[dict[str, str]]:
+def _month_message(name: str, style: str) -> str:
+    """Name the expected month folder, using the folder's own number when it has one."""
+    if style != "MM-Mon":
+        return "Expected an MM directory."
+    number = name[:2]
+    example = (
+        f"{number}-{MONTH_ABBREVIATIONS[int(number) - 1]}"
+        if is_month_dir(number, "MM")
+        else "09-Sep"
+    )
+    return f"Expected an MM-Mon directory like {example}."
+
+
+def _check_year_month_dated(
+    root: Path, relative: str, month_style: str | None = "MM"
+) -> list[dict[str, str]]:
+    """Judge a YYYY/<month>/YYYY-MM-DD-slug tree.
+
+    ``month_style`` is ``MM`` or ``MM-Mon``; ``None`` means the configured style is
+    invalid, so month folder names are not judged (the config finding says why).
+    """
     findings: list[dict[str, str]] = []
     base = root / relative
     for year in _visible_children(base):
@@ -41,9 +67,15 @@ def _check_year_month_dated(root: Path, relative: str) -> list[dict[str, str]]:
             findings.append(finding("invalid-year", "Expected a YYYY directory.", path=str(year)))
             continue
         for month in _visible_children(year):
-            if not month.is_dir() or not MONTH.fullmatch(month.name):
+            if not month.is_dir() or (
+                month_style is not None and not is_month_dir(month.name, month_style)
+            ):
                 findings.append(
-                    finding("invalid-month", "Expected an MM directory.", path=str(month))
+                    finding(
+                        "invalid-month",
+                        _month_message(month.name, month_style or "MM"),
+                        path=str(month),
+                    )
                 )
                 continue
             for artifact in _visible_children(month):
@@ -104,7 +136,12 @@ def validation_findings(root: Path) -> list[dict[str, str]]:
             )
         )
 
+    month_style: str | None = "MM"
     if config is not None:
+        month_style, month_findings = month_folder_style(config)
+        findings.extend(month_findings)
+        if month_findings:
+            month_style = None  # fail closed: do not judge month folders against an unknown style
         mode, mode_findings = repo_mode(config)
         findings.extend(mode_findings)
         registry = root / "business" / "clients" / "clients.md"
@@ -150,7 +187,7 @@ def validation_findings(root: Path) -> list[dict[str, str]]:
     # they have always come in — structure, then contract — because a caller comparing two
     # validation runs must not see them shuffle.
     structure, contract = gather(
-        lambda: _structure_findings(root, schema),
+        lambda: _structure_findings(root, schema, month_style),
         # The catalogue is built here and handed down. ``contract_findings`` has always
         # taken one and has always built its own when it was not given one, which meant
         # every validation pass read all fifteen hundred documents a second time for an
@@ -162,7 +199,9 @@ def validation_findings(root: Path) -> list[dict[str, str]]:
     return findings
 
 
-def _structure_findings(root: Path, schema: dict[str, Any]) -> list[dict[str, str]]:
+def _structure_findings(
+    root: Path, schema: dict[str, Any], month_style: str | None = "MM"
+) -> list[dict[str, str]]:
     """Everything the brain's folders say about themselves: what is missing, what is odd.
 
     Split out of ``validation_findings`` so it can be walked alongside the catalogue rather
@@ -204,7 +243,7 @@ def _structure_findings(root: Path, schema: dict[str, Any]) -> list[dict[str, st
         "business/decisions",
         "knowledge/sources",
     ):
-        findings.extend(_check_year_month_dated(root, relative))
+        findings.extend(_check_year_month_dated(root, relative, month_style))
     findings.extend(_check_reporting(root))
     return findings
 

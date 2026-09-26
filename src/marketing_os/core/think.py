@@ -6,7 +6,7 @@ from typing import Any
 
 from marketing_os.core.query import score_corpus, tokenize
 from marketing_os.core.results import envelope, finding, next_action
-from marketing_os.core.schema import find_root, slugify
+from marketing_os.core.schema import find_root, month_dir, read_config, slugify
 
 _ALWAYS = ("BRAIN.md", "business/strategy/strategy.md", "business/strategy/goals.md")
 
@@ -42,8 +42,9 @@ def think_repo(root: Path, topic: str) -> dict[str, Any]:
 
     today = datetime.date.today()
     iso = today.isoformat()
+    month = month_dir(today, read_config(root))
     decision_path = (
-        f"business/decisions/{today.year:04d}/{today.month:02d}/{iso}-{slugify(topic)}/decision.md"
+        f"business/decisions/{today.year:04d}/{month}/{iso}-{slugify(topic)}/decision.md"
     )
     prompt = {
         "objective": f"Reason to a grounded recommendation on: {topic}.",
