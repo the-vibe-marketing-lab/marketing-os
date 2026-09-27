@@ -634,3 +634,91 @@ def test_a_crash_after_a_move_is_reconciled_on_the_next_run(tmp_path: Path) -> N
     assert "business/decisions/2026/09/" not in context
     assert not journal.exists()
     assert validate_repo(root)["ok"] is True
+
+
+# --- final review: frontmatter, code, footnotes, open wikilinks, journal shape ---------
+
+_TARGET = "content/2026/09/2026-09-01-a/post.md"
+_MOVED = _TARGET.replace("/09/", "/09-Sep/")
+
+
+def test_crlf_frontmatter_links_are_rewritten(tmp_path: Path) -> None:
+    """A CRLF file's frontmatter is still frontmatter; its related: links move with the month."""
+    root = _with_content_month(tmp_path)
+    page = root / "knowledge" / "wiki" / "crlf.md"
+    text = f"---\r\ntitle: C\r\nrelated:\r\n  - {_TARGET}\r\n---\r\n[a]({_TARGET})\r\n"
+    page.write_bytes(text.encode())
+    migrate_month_folders(root, apply=True)
+    assert page.read_bytes() == (
+        f"---\r\ntitle: C\r\nrelated:\r\n  - {_MOVED}\r\n---\r\n[a]({_MOVED})\r\n".encode()
+    )
+
+
+def test_a_longer_fence_is_not_closed_by_a_shorter_one(tmp_path: Path) -> None:
+    root = _with_content_month(tmp_path)
+    page = root / "knowledge" / "wiki" / "fence.md"
+    text = (
+        f"````md\n```\n[in code]({_TARGET})\n```\n[still code]({_TARGET})\n````\n\n"
+        f"~~~\n```python\n[tilde code]({_TARGET})\n~~~\n\n[a]({_TARGET})\n"
+    )
+    page.write_text(text, encoding="utf-8")
+    migrate_month_folders(root, apply=True)
+    assert page.read_text(encoding="utf-8") == text.replace(f"[a]({_TARGET})", f"[a]({_MOVED})")
+
+
+def test_indented_code_is_not_rewritten_but_list_continuations_are(tmp_path: Path) -> None:
+    root = _with_content_month(tmp_path)
+    page = root / "knowledge" / "wiki" / "indent.md"
+    code = f"Some text.\n\n    [code]({_TARGET})\n    [[{_TARGET}]]\n\n"
+    listing = f"- item\n\n    [continued]({_TARGET})\n"
+    page.write_text(code + listing, encoding="utf-8")
+    migrate_month_folders(root, apply=True)
+    assert page.read_text(encoding="utf-8") == code + listing.replace(_TARGET, _MOVED)
+
+
+def test_obsidian_wikilink_properties_are_rewritten(tmp_path: Path) -> None:
+    root = _with_content_month(tmp_path)
+    page = root / "knowledge" / "wiki" / "props.md"
+    old = _TARGET.removesuffix(".md")
+    page.write_text(
+        f'---\nrelated:\n  - "[[{old}]]"\n  - "[[{old}|Alias]]"\nsources: "[[{old}#Part]]"\n---\n',
+        encoding="utf-8",
+    )
+    migrate_month_folders(root, apply=True)
+    new = _MOVED.removesuffix(".md")
+    assert page.read_text(encoding="utf-8") == (
+        f'---\nrelated:\n  - "[[{new}]]"\n  - "[[{new}|Alias]]"\nsources: "[[{new}#Part]]"\n---\n'
+    )
+
+
+def test_footnotes_and_unclosed_wikilinks_are_not_links(tmp_path: Path) -> None:
+    root = _with_content_month(tmp_path)
+    page = root / "knowledge" / "wiki" / "notes.md"
+    text = f"Text.[^1]\n\n[^1]: {_TARGET} is where it lived.\n\nBroken a[[{_TARGET} and more\n"
+    page.write_text(text, encoding="utf-8")
+    plan = migrate_month_folders(root, apply=False)
+    assert not [f for f in plan["findings"] if f["path"] == "knowledge/wiki/notes.md"]
+    migrate_month_folders(root, apply=True)
+    assert page.read_text(encoding="utf-8") == text
+
+
+def test_a_journal_entry_that_is_not_one_rename_is_dropped(tmp_path: Path) -> None:
+    """A hand-corrupted journal (different depth, or a parent change) never crashes a run."""
+    root = _with_content_month(tmp_path)
+    journal = root / ".mos/local/month-moves.json"
+    journal.parent.mkdir(parents=True, exist_ok=True)
+    (root / "content/2025/10-Oct").mkdir(parents=True)
+    (root / "content/x").mkdir()
+    journal.write_text(
+        json.dumps(
+            {
+                "moves": {
+                    "content/2025/10": {"new": "content/2025/10-Oct/extra", "state": "done"},
+                    "content/2024/10": {"new": "content/x/y", "state": "done"},
+                }
+            }
+        )
+    )
+    result = migrate_month_folders(root, apply=True)
+    assert result["ok"] is True
+    assert (root / "content/2026/09-Sep").is_dir()

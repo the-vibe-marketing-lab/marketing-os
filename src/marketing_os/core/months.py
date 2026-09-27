@@ -159,8 +159,19 @@ def _journal_entries(root: Path) -> dict[str, dict[str, str]]:
     return {
         str(old): {"new": str(entry.get("new")), "state": str(entry.get("state"))}
         for old, entry in moves.items()
-        if isinstance(entry, dict) and entry.get("new")
+        if isinstance(entry, dict) and entry.get("new") and _one_rename(str(old), str(entry["new"]))
     }
+
+
+def _one_rename(old: str, new: str) -> bool:
+    """A journal entry this rule could have written: same depth, exactly one segment renamed.
+
+    A month rename changes its last segment; a merged child changes its parent month.
+    """
+    before, after = old.split("/"), new.split("/")
+    if len(before) != len(after):
+        return False
+    return sum(x != y for x, y in zip(before, after, strict=True)) == 1
 
 
 def _journal_write(root: Path, old: str, new: str, state: str) -> None:

@@ -30,17 +30,19 @@ from collections.abc import Callable, Iterator
 #: Frontmatter keys whose values are brain paths.
 LINK_KEYS = frozenset({"sources", "related"})
 
-FRONTMATTER = re.compile(r"\A﻿?---[ \t]*\r?\n(.*?)^---[ \t]*$", re.S | re.M)
+FRONTMATTER = re.compile(r"\A﻿?---[ \t]*\r?\n(.*?)^---[ \t]*\r?$", re.S | re.M)
 KEY_LINE = re.compile(r"^([A-Za-z_][\w-]*)[ \t]*:[ \t]*(.*?)[ \t]*$")
 ITEM_LINE = re.compile(r"^[ \t]*-[ \t]+(.*?)[ \t]*$")
 INLINE_ITEM = re.compile(r"[^,\[\]]+")
-FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
+FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+INDENTED = re.compile(r"^(?: {4}|\t)")
+LIST_ITEM = re.compile(r"^[ \t]*(?:[-*+]|\d+[.)])[ \t]")
 INLINE_CODE = re.compile(r"(`+)(?:(?!\1).)+?\1")
 MARKDOWN_LINK = re.compile(
     r"!?\[(?:[^\[\]\n]|\[[^\[\]\n]*\])*\]\([ \t]*(?:<([^<>\n]+)>|([^\s()<>]+))"
 )
-REFERENCE = re.compile(r"^[ \t]{0,3}\[[^\]\n]+\]:[ \t]*(?:<([^<>\n]+)>|(\S+))", re.M)
-WIKILINK = re.compile(r"!?\[\[([^\[\]|#\n]+)")
+REFERENCE = re.compile(r"^[ \t]{0,3}\[(?!\^)[^\]\n]+\]:[ \t]*(?:<([^<>\n]+)>|(\S+))", re.M)
+WIKILINK = re.compile(r"!?\[\[([^\[\]|#\n]+)(?=\]\]|[|#][^\[\]\n]*\]\])")
 CANVAS_FILE = re.compile(r'"file"[ \t]*:[ \t]*"([^"\\\n]*)"')
 BASE_FOLDER = re.compile(r"inFolder\([ \t]*([\"'])([^\"'\n]*)\1[ \t]*\)")
 
@@ -56,8 +58,13 @@ def _group_span(match: re.Match[str], *groups: int) -> tuple[int, int] | None:
 
 
 def _unquote(start: int, value: str) -> tuple[int, int]:
+    """The path inside a frontmatter value: quotes and an Obsidian ``[[...]]`` stripped."""
     if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
-        return start + 1, start + len(value) - 1
+        start, value = start + 1, value[1:-1]
+    if value.startswith("[[") and value.endswith("]]"):
+        inner = value[2:-2]
+        cut = min((inner.index(mark) for mark in "|#" if mark in inner), default=len(inner))
+        return start + 2, start + 2 + cut
     return start, start + len(value)
 
 
@@ -96,22 +103,46 @@ def _frontmatter(text: str) -> tuple[list[Span], int]:
     return spans, match.end()
 
 
+def _closes(line: str, fence: str) -> bool:
+    """A closing fence: the opener's character, at least as long, and nothing after it."""
+    bare = line.strip()
+    return len(bare) >= len(fence) and bare == fence[0] * len(bare)
+
+
 def _protected(text: str) -> list[tuple[int, int]]:
-    """Fenced code blocks and inline code: never link positions."""
+    """Fenced and indented code blocks and inline code: never link positions.
+
+    An indented line is code only when it follows a blank line (or more code) and the
+    block is not a list item's continuation, which CommonMark also indents.
+    """
     spans: list[tuple[int, int]] = []
     fence: str | None = None
+    indented = False
+    blank = True
+    in_list = False
     offset = 0
     for line in text.splitlines(keepends=True):
+        bare = line.rstrip("\r\n")
         opener = FENCE.match(line)
         if fence is not None:
             spans.append((offset, offset + len(line)))
-            if line.lstrip().startswith(fence):
+            if _closes(bare, fence):
                 fence = None
         elif opener:
             spans.append((offset, offset + len(line)))
-            fence = opener.group(1)[0] * 3
+            fence = opener.group(1)
+        elif bare.strip() and INDENTED.match(bare) and (indented or blank) and not in_list:
+            spans.append((offset, offset + len(line)))
+            indented = True
         else:
+            if bare.strip():
+                indented = False
+                if LIST_ITEM.match(bare):
+                    in_list = True
+                elif not bare[:1].isspace():
+                    in_list = False
             spans.extend((offset + m.start(), offset + m.end()) for m in INLINE_CODE.finditer(line))
+        blank = not bare.strip()
         offset += len(line)
     return spans
 

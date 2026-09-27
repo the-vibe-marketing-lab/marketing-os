@@ -25,7 +25,10 @@ All notable changes to marketing-os are recorded here. Versions follow
   file, then `mos fix invalid-month --yes` to apply. `/mos-update` checks for this after an
   update and offers both routes. The fix renames the folders and rewrites every reference
   that resolves into them (frontmatter `sources:`/`related:`, `[[wikilinks]]`, ordinary and
-  month-relative links, Obsidian `.canvas` and `.base` files). A `09-Sep` that already sits
+  month-relative links, Obsidian `.canvas` and `.base` files, and `"[[...]]"` wikilink
+  properties), in CRLF and LF files alike. Text that is not in a link position (prose,
+  headings, tables, other frontmatter keys, footnotes, fenced, tilde and indented code) is
+  never touched. A `09-Sep` that already sits
   beside a `09` (say from a `mos ingest` run before migrating) is merged into, and only an
   entry of the same name in both refuses the run. A second run changes nothing. To keep bare `09` folders instead, set
   `"month_folder": "MM"` in `.mos/config.yaml`; nothing else changes for that brain.
