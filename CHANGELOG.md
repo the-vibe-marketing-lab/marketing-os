@@ -14,17 +14,24 @@ All notable changes to marketing-os are recorded here. Versions follow
   `content/`, `campaigns/`, `outputs/`, `business/decisions/` and `knowledge/sources/`.
   `mos validate` accepts only the two-digit month plus its English three-letter name (`Jan`
   … `Dec`, never `Sept`), and `mos think` and `mos ingest` generate paths that way.
+  **Scope:** the rule covers only the month-shaped directories (`09`, `09-Sep`, `09-Sept`)
+  directly inside a four-digit year folder of those five trees. `reporting/YYYY/QN/YYYY-MM/`
+  keeps its quarter grammar unchanged; `YYYY-MM` names, quarter folders, files and any other
+  folder in a year folder are neither validated nor renamed as months, so a year folder with
+  no month folders in it reports nothing.
   **Migrating a brain made before 0.5.0:** its bare `09` folders now read as
   `invalid-month` (`Expected an MM-Mon directory like 09-Sep.`, naming the fix). Run
   `mos fix invalid-month --plan` to see every folder rename and how many links move in each
-  file, then `mos fix invalid-month --yes` to apply. The fix renames the folders and rewrites
-  the references to them in the brain's Markdown (frontmatter `sources:`/`related:`,
-  `[[wikilinks]]`, ordinary links); it refuses, writing nothing, if a `09-Sep` already sits
-  beside a `09`, and a second run changes nothing. To keep bare `09` folders instead, set
+  file, then `mos fix invalid-month --yes` to apply. `/mos-update` checks for this after an
+  update and offers both routes. The fix renames the folders and rewrites every reference
+  that resolves into them (frontmatter `sources:`/`related:`, `[[wikilinks]]`, ordinary and
+  month-relative links, Obsidian `.canvas` and `.base` files). A `09-Sep` that already sits
+  beside a `09` (say from a `mos ingest` run before migrating) is merged into, and only an
+  entry of the same name in both refuses the run. A second run changes nothing. To keep bare `09` folders instead, set
   `"month_folder": "MM"` in `.mos/config.yaml`; nothing else changes for that brain.
 - **Two new required business documents.** `business/competitors/main-competitors/competitors.md`
   and `business/competitors/inspiration/inspiration.md` are part of the schema, so an existing
-  brain reports them as `missing-file` until `mos fix missing-file --yes` (or `--all`) adds the
+  brain reports them as `missing-file` until `mos fix missing-file --yes` adds the
   placeholders. The scaffold only ever adds what is missing.
 
 ### Changed
@@ -43,8 +50,18 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 - **`mos fix invalid-month`, the month folder migration.** Renames every legacy `YYYY/MM`
   month folder to `YYYY/MM-Mon` and carries the brain's links across with it, as one set:
-  `--plan` previews, `--yes` applies, a collision refuses the whole run. The app's "Preview
-  the fix" now appears on `invalid-month` rows, and `mos fix --all` includes it.
+  `--plan` previews, `--yes` applies. It renames only bare `MM` month folders inside those
+  year folders, and rewrites only links that resolve into a folder it renamed (this run's,
+  or an interrupted earlier run's, journalled in `.mos/local/month-moves.json`); a folder
+  renamed by hand is left to its owner. References are resolved from the brain root or the
+  document's own folder, so only links that really point into a moved month change: URLs,
+  code spans and fenced blocks, `archive/` copies and a `09.md` file are left alone. A name
+  clash in a merge refuses the whole run; a move that fails part-way (a file held open)
+  stops there, still rewrites the links to the months that moved, and says to run it again.
+  Unreadable or symlinked documents are reported, not rewritten. It runs only when named:
+  `mos fix --all` skips it. The app's "Preview the fix" now appears on `invalid-month` rows.
+- **Rewritten documents keep their permissions.** Every atomic rewrite (month links,
+  `mos context set`) used to leave the document `0600`; it now keeps the original's mode.
 - **A competitors section in every new brain.** The business template ships
   `business/competitors/main-competitors/competitors.md` (ranked competitors: what each does
   well, the gap to win, what to watch) and `business/competitors/inspiration/inspiration.md`

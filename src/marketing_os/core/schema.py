@@ -199,6 +199,15 @@ def month_dir(when: datetime.date, config: dict[str, Any] | None) -> str:
     return f"{number}-{MONTH_ABBREVIATIONS[when.month - 1]}"
 
 
+def is_month_like(name: str) -> bool:
+    """Whether a name is shaped like a month folder at all: ``01``-``12``, maybe suffixed.
+
+    Only these children of a year folder are judged as month folders. Anything else a year
+    folder holds is not a month folder, so it is neither validated nor renamed as one.
+    """
+    return _MONTH_NAME.fullmatch(name) is not None
+
+
 def is_month_dir(name: str, style: str) -> bool:
     """Whether a folder name is a valid month folder in the given style."""
     match = _MONTH_NAME.fullmatch(name)

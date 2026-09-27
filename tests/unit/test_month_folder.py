@@ -119,10 +119,10 @@ def test_a_bare_month_names_the_fix_command(tmp_path: Path, month_folder: str | 
     assert validate_repo(root)["ok"] is False
 
 
-def test_mm_mon_message_uses_a_generic_example_without_a_month_number(tmp_path: Path) -> None:
+def test_a_folder_not_shaped_like_a_month_is_not_judged_as_one(tmp_path: Path) -> None:
     root = _brain(tmp_path, "MM-Mon")
     _dated(root, "September")
-    assert _month_findings(root)[0]["message"] == "Expected an MM-Mon directory like 09-Sep."
+    assert _month_findings(root) == []
 
 
 def test_explicit_mm_brain_keeps_the_mm_grammar(tmp_path: Path) -> None:
@@ -169,3 +169,26 @@ def test_think_names_the_configured_month_folder(tmp_path: Path, month_folder: s
     expected = f"business/decisions/{today.year:04d}/{segment}/{today.isoformat()}-pricing/"
     steps = " ".join(think_repo(root, "pricing")["prompt"]["steps"])
     assert expected in steps
+
+
+def test_only_month_shaped_folders_of_a_year_are_judged(tmp_path: Path) -> None:
+    """Richard's scope rule: files and other folders in a year folder are not months."""
+    root = _brain(tmp_path, None)
+    year = root / "content" / "2026"
+    year.mkdir(parents=True)
+    (year / "09-Sep.md").write_text("a file", encoding="utf-8")
+    (year / "09").write_text("a file named like a month", encoding="utf-8")
+    (year / "notes").mkdir()
+    (year / "2026-09").mkdir()
+    assert _month_findings(root) == []
+    (year / "10").mkdir()
+    assert [Path(item["path"]).name for item in _month_findings(root)] == ["10"]
+
+
+def test_reporting_keeps_its_quarter_grammar(tmp_path: Path) -> None:
+    root = _brain(tmp_path, None)
+    (root / "reporting" / "2026" / "Q3" / "2026-09").mkdir(parents=True)
+    assert validate_repo(root)["ok"] is True
+    (root / "reporting" / "2026" / "09-Sep").mkdir()
+    codes = [item["code"] for item in validate_repo(root)["findings"]]
+    assert "invalid-quarter" in codes and "invalid-month" not in codes

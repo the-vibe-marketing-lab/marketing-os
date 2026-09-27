@@ -70,6 +70,28 @@ mos doctor . --json
 If skill directories changed, tell the user that Claude Code loads its skills at session start,
 so a restart from this repository may be needed before new routes appear.
 
+## Check month folders
+
+Since 0.5.0 a brain's month folders are named like `09-Sep`. A brain made earlier still has
+bare `09` folders, which now fail validation. After updating, run:
+
+```bash
+mos validate . --json
+```
+
+If any `invalid-month` finding names `mos fix invalid-month --plan`, explain that the brain
+predates the new naming and offer the user two choices, then wait for their pick:
+
+1. **Rename them (recommended).** Preview with `mos fix invalid-month . --plan --json` and walk
+   through the renames, merges, and the links it will rewrite. After approval, apply with
+   `mos fix invalid-month . --yes --json`, then run `mos validate . --json` again. If it reports
+   `month-move-failed`, ask the user to close Obsidian or anything else holding those files and
+   run the same command again to finish.
+2. **Keep the bare folders.** Add `"month_folder": "MM"` to `.mos/config.yaml`, showing the edit
+   and applying it only after approval.
+
+Never apply the rename without approval. It is not part of `mos fix --all`.
+
 ## Document contract
 
 Every file you write under `business/`, `knowledge/`, `content/`, `campaigns/`, `reporting/`,

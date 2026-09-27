@@ -126,8 +126,9 @@ The engine lives under `src/marketing_os/`:
   that puts it right, and the `FIXABLE` set the app reads to decide which rows get
   preview-and-apply.
 - `core/months.py` — the `invalid-month` fixer behind `mos fix`; renames legacy `YYYY/MM`
-  month folders to `YYYY/MM-Mon` and rewrites the brain's Markdown references to them, as
-  one refused-or-applied set (a `09-Sep` already beside `09` refuses the run).
+  month folders to `YYYY/MM-Mon` (merging into an existing `09-Sep` when no name clashes)
+  and rewrites every reference that resolves into a moved month, from the brain root or the
+  document's folder, in `.md`, `.canvas` and `.base` files. Explicit only: `--all` skips it.
 - `core/graphlint.py` — the frontmatter-contract sensors, surfaced through `mos validate`
   rather than a command of their own, because the repository already has one place for
   structural truth.

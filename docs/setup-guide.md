@@ -401,7 +401,7 @@ AGPL-3.0 licence does not sit inside an MIT wheel, and it weighs eight megabytes
 Community
 plugins → Browse → search "Excalidraw" → Install → Enable. Save each drawing beside the note
 it illustrates, inside a dated source folder such as
-`knowledge/sources/2026/08/2026-08-28-funnel-map/` (a loose `drawings/` folder, or
+`knowledge/sources/2026/08-Aug/2026-08-28-funnel-map/` (a loose `drawings/` folder, or
 Excalidraw's default `Excalidraw/` folder at the vault root, is off-schema and `mos validate`
 will say so). `*.excalidraw.md` files are exempt from the frontmatter contract, so
 `mos validate --strict` never flags a drawing.

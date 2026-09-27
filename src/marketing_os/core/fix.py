@@ -85,6 +85,10 @@ FIXERS: dict[str, Fixer] = {
 #: The codes the dashboard may offer "Preview the fix" for.
 FIXABLE: frozenset[str] = frozenset(FIXERS)
 
+#: Fixes that run only when named. Renaming every month folder in a brain is not
+#: something ``--all`` should do as a side effect of adding a missing file.
+EXPLICIT_ONLY: frozenset[str] = frozenset({"invalid-month"})
+
 
 def fix_repo(
     root: Path, code: str | None, *, apply: bool, all_codes: bool = False
@@ -133,7 +137,7 @@ def _fix_all(root: Path, apply: bool) -> dict[str, Any]:
     ok = True
     done: list[Fixer] = []
     for code, fixer in FIXERS.items():
-        if fixer in done:
+        if code in EXPLICIT_ONLY or fixer in done:
             continue  # three codes share the scaffold; it runs once
         done.append(fixer)
         inner = fixer(root, apply)

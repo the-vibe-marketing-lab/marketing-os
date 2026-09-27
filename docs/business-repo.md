@@ -203,6 +203,10 @@ deterministically. `mos validate` enforces the exact names:
   slug (`a-z`, `0-9`, and single hyphens between segments), for example
   `content/2026/09-Sep/2026-09-26-launch-recap/`. The number and the name must agree, and
   the case is exact: `09-Aug`, `09-sep`, `09-Sept`, and a bare `09` are all `invalid-month`.
+- Only month-shaped directories (`01`-`12`, with or without a suffix) directly inside a
+  year folder are judged as month folders. A file, a `YYYY-MM` folder or any other folder
+  in a year folder is not a month folder and is neither validated nor renamed as one, and
+  `reporting/` keeps its own quarter grammar below.
 - `MM-Mon` is the default since 0.5.0, when `.mos/config.yaml` has no `month_folder` key.
   A brain can keep the older bare-number folders (`content/2026/09/...`) by setting
   `"month_folder": "MM"`; the validator then accepts only `01`-`12`. The style is
@@ -213,8 +217,9 @@ deterministically. `mos validate` enforces the exact names:
   their numeric `YYYY-MM-DD` date in both styles.
 - A brain made before 0.5.0 without the key still has `09` folders, which now read as
   `invalid-month`. `mos fix invalid-month --plan` lists the renames and the links that move
-  with them; `mos fix invalid-month --yes` applies both. It never merges two folders for the
-  same month, and running it again changes nothing.
+  with them; `mos fix invalid-month --yes` applies both. A `09-Sep` already beside a `09`
+  is merged into unless both hold an entry of the same name, which refuses the run; running
+  it again changes nothing. `/mos-update` offers this, or the `"MM"` pin, after an update.
 - Reporting uses `reporting/YYYY/QN/YYYY-MM/` instead: a four-digit year, a quarter
   `Q1`-`Q4`, then a `YYYY-MM` month, for example `reporting/2026/Q3/2026-07/`.
 

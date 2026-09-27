@@ -453,12 +453,12 @@ terminal share one map from finding to fix:
 | `missing-file`, `missing-directory`, `missing-client-registry` | The scaffold, which only ever creates what is missing. Name and mode come from `.mos/config.yaml`; without a name it stops with `needs-name`. |
 | `no-catalog`, `stale-catalog` | `mos index build`. The build has no plan of its own, so `--plan` reports the one line `rebuild the catalogue`. |
 | `unlinked-document` | `mos related`, with no limit. |
-| `invalid-month` | The month folder migration: every bare `YYYY/MM` folder under `content/`, `campaigns/`, `outputs/`, `business/decisions/` and `knowledge/sources/` is renamed to `YYYY/MM-Mon` (`09` becomes `09-Sep`), and every reference to the old paths in the brain's Markdown (frontmatter `sources:` and `related:`, `[[wikilinks]]`, ordinary links) is rewritten. `--plan` lists each rename and how many links move in each file. It refuses, writing nothing, when `09-Sep` already sits beside `09` (`month-folder-exists`; merge by hand), and does nothing in a brain that sets `"month_folder": "MM"`. A second run is a no-op. |
+| `invalid-month` | The month folder migration, run only when named (`--all` skips it): every bare `MM` folder directly inside a four-digit year folder under `content/`, `campaigns/`, `outputs/`, `business/decisions/` and `knowledge/sources/` is renamed to `YYYY/MM-Mon` (`09` becomes `09-Sep`), or merged into an existing `09-Sep`. `reporting/` and anything else are never touched. Every reference that resolves into a month this command moved (this run, or an interrupted run journalled in `.mos/local/month-moves.json`), from the brain root or from the document's own folder, is rewritten in `.md`, `.canvas` and `.base` files; URLs, code spans and fenced blocks are left alone. `--plan` lists each rename or merge and how many links move in each file. A merge where both folders hold an entry of the same name refuses the run (`month-folder-exists`). A move that fails part-way reports `month-move-failed`, still rewrites the links to what moved, and finishes on the next run. Unreadable and symlinked documents are reported as warnings. It does nothing in a brain that sets `"month_folder": "MM"`, and a second run is a no-op. |
 | `runtime-not-ready` | `mos skills sync` for both runtimes. |
 
 Any other code returns `no-deterministic-fix` with a `copy-prompt` next action: those
 findings are judgement calls for the assistant, not for a script. `--all` runs every
-fixer once, in the order above, prefixes each change with its code, and lists the codes
+fixer except `invalid-month` once, in the order above, prefixes each change with its code, and lists the codes
 that reported a change under `ran`. `--plan` and `--yes` mean what they mean everywhere
 else; the envelope is `mos.fix.v1`.
 

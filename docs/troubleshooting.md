@@ -235,9 +235,12 @@ priority.
   `"month_folder": "MM"`; the message names the expected folder. A bare `09` left from before
   0.5.0 is renamed, with every link to it, by `mos fix invalid-month --plan` then `--yes`.
   Anything else (`09-Sept`, `9`) is renamed by hand.
-- `month-folder-exists` — `mos fix invalid-month` found `09-Sep` already beside `09` in the
-  same year and refused to merge them. Move the contents into one folder by hand, then run
-  it again.
+- `month-folder-exists` — `mos fix invalid-month` would merge `09` into an existing
+  `09-Sep`, but both hold an entry of the same name (listed in the message). Resolve those by
+  hand, then run it again.
+- `month-move-failed` — a month folder could not be moved, usually because a file in it is
+  open in another app (Obsidian, on Windows). Close it and run `mos fix invalid-month --yes`
+  again; the links to the months that did move were already rewritten.
 - `invalid-month-folder` — an error: `.mos/config.yaml` has a `month_folder` value other than
   `MM` or `MM-Mon`. Fix the value (or remove the key for the `MM-Mon` default). Until then month folder
   names are not judged.

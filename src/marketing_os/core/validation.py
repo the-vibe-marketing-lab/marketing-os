@@ -12,6 +12,7 @@ from marketing_os.core.schema import (
     DATED_ROOTS,
     MONTH_ABBREVIATIONS,
     is_month_dir,
+    is_month_like,
     load_schema,
     month_folder_style,
     read_config,
@@ -46,7 +47,7 @@ MONTH_FIX_COMMAND = "mos fix invalid-month --plan"
 
 
 def _month_message(name: str, style: str) -> str:
-    """Name the expected month folder, using the folder's own number when it has one.
+    """Name the expected month folder, using the folder's own number.
 
     A bare ``MM`` folder in an ``MM-Mon`` brain is exactly what the month migration
     renames, so that message names the command; anything else is renamed by hand.
@@ -54,12 +55,7 @@ def _month_message(name: str, style: str) -> str:
     if style != "MM-Mon":
         return "Expected an MM directory."
     number = name[:2]
-    example = (
-        f"{number}-{MONTH_ABBREVIATIONS[int(number) - 1]}"
-        if is_month_dir(number, "MM")
-        else "09-Sep"
-    )
-    message = f"Expected an MM-Mon directory like {example}."
+    message = f"Expected an MM-Mon directory like {number}-{MONTH_ABBREVIATIONS[int(number) - 1]}."
     if is_month_dir(name, "MM"):
         message += f" Run `{MONTH_FIX_COMMAND}` to rename MM month folders and their links."
     return message
@@ -72,6 +68,10 @@ def _check_year_month_dated(
 
     ``month_style`` is ``MM`` or ``MM-Mon``; ``None`` means the configured style is
     invalid, so month folder names are not judged (the config finding says why).
+
+    Only the month-shaped directories of a year folder (``09``, ``09-Sep``, ``09-Sept``)
+    are month folders. Anything else a year folder holds, a file or a folder named some
+    other way, is not judged as one, so a year folder with no months in it reports nothing.
     """
     findings: list[dict[str, str]] = []
     base = root / relative
@@ -80,13 +80,13 @@ def _check_year_month_dated(
             findings.append(finding("invalid-year", "Expected a YYYY directory.", path=str(year)))
             continue
         for month in _visible_children(year):
-            if not month.is_dir() or (
-                month_style is not None and not is_month_dir(month.name, month_style)
-            ):
+            if not (month.is_dir() and is_month_like(month.name)):
+                continue
+            if month_style is not None and not is_month_dir(month.name, month_style):
                 findings.append(
                     finding(
                         "invalid-month",
-                        _month_message(month.name, month_style or "MM-Mon"),
+                        _month_message(month.name, month_style),
                         path=str(month),
                     )
                 )
