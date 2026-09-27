@@ -2,32 +2,30 @@
 
 Since 0.5.0 a brain with no ``month_folder`` key files its dated work under ``09-Sep``
 rather than ``09``. A brain made before then still has ``09`` folders, and every document
-that points into them. This module moves both across in one deterministic pass:
+that points into them. This module moves both across in one deterministic pass.
 
-- every ``YYYY/MM`` directory under the dated trees becomes ``YYYY/MM-Mon``. Only a bare
-  month directly inside a four-digit year folder of ``content``, ``campaigns``, ``outputs``,
-  ``business/decisions`` or ``knowledge/sources`` is renamed: ``reporting/`` (quarters),
-  ``YYYY-MM`` names and any other folder are never touched; when an
-  ``MM-Mon`` folder for the same month already exists (the first ``mos ingest`` after an
-  upgrade makes one), the two are merged, unless an entry of the same name is in both;
-- every reference that resolves into a moved folder is rewritten, in the brain's Markdown,
-  Obsidian canvases and bases. A reference is resolved the way Obsidian resolves it — from
-  the brain root, or from the document's own folder — so ``archive/content/2026/09`` (never
-  moved), ``content/2026/09.md`` (a file, not the month) and anything with a ``://`` in it
-  are left alone, and a month-relative ``../09/...`` is carried across. Code spans and
-  fenced blocks are never touched.
+Scope: only a bare ``MM`` directory directly inside a four-digit year folder of
+``content``, ``campaigns``, ``outputs``, ``business/decisions`` or ``knowledge/sources`` is
+renamed. ``reporting/`` (quarters), ``YYYY-MM`` names, files and any other folder are never
+touched. When an ``MM-Mon`` folder for the same month already exists (the first
+``mos ingest`` after an upgrade makes one), the two are merged, unless an entry of the same
+name is in both. A folder whose name differs from ``09-Sep`` only in case (``09-sep``) is
+refused rather than guessed at, because a case-insensitive disk would merge into it.
 
-A merge never overwrites: a name clash refuses the whole run. A move that fails part-way
-(a file held open on Windows) stops there, the links to the months already moved are still
-rewritten, and running it again finishes the job: each completed move is journalled in
-``.mos/local/month-moves.json``, and a later run rewrites links for journalled months too.
-Only links into a month this command moved are rewritten. A brain that says
-``month_folder: "MM"`` has opted out and is left alone. A second run changes nothing.
+Links: ``core/monthlinks.py`` decides what is a link and rewrites only links that resolve
+into a folder this command moved. Prose, headings, tables, dates and code are never touched.
+
+Recovery: each move is journalled in ``.mos/local/month-moves.json`` before it happens and
+confirmed after, one entry per child during a merge. A run that stops part-way (a file held
+open on Windows, a crash) still rewrites the links for what moved, and the next run
+finishes. An entry is honoured only while its old path is gone and its new path exists, and
+the journal is deleted after a run that finished without an error, so a later hand rename
+is never mistaken for one of these moves. A brain that says ``month_folder: "MM"`` has
+opted out and is left alone. A second run changes nothing.
 """
 
 from __future__ import annotations
 
-import bisect
 import contextlib
 import json
 import os
@@ -35,6 +33,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from marketing_os.core import monthlinks
 from marketing_os.core.atomic import atomic_write
 from marketing_os.core.results import envelope, finding, next_action
 from marketing_os.core.schema import (
@@ -46,19 +45,25 @@ from marketing_os.core.schema import (
 )
 
 YEAR = re.compile(r"^\d{4}$")
-#: The documents whose references are rewritten: notes, canvases and bases.
+#: The documents whose links are rewritten: notes, canvases and bases.
 SUFFIXES = (".md", ".canvas", ".base")
-#: One path-like run of text. The delimiters are what surround a path in Markdown, a
-#: wikilink, YAML and JSON, so a token is the path and nothing around it.
-TOKEN = re.compile(r"[^\s()\[\]<>|\"'`#,;{}*]+")
-FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
-INLINE_CODE = re.compile(r"(`+)(?:(?!\1).)+?\1")
-#: Machine-local record of the months this command moved, so an interrupted run's links
-#: are finished by the next one. Under ``.mos/local/``, which every brain ignores.
+#: Machine-local record of the moves this command makes, under ``.mos/local/``, which
+#: every brain ignores.
 JOURNAL = ".mos/local/month-moves.json"
-JOURNAL_SCHEMA = "mos.month-moves.v1"
+JOURNAL_SCHEMA = "mos.month-moves.v2"
 #: A merge drops the source's copy of these instead of calling it a clash.
 DISPOSABLE = frozenset({".gitkeep"})
+
+WARNINGS = {
+    "ambiguous-link": (
+        "A link here reads as two different existing paths (from this document's folder and "
+        "from the brain root) and one is a moved month; it was left alone, so check it by hand."
+    ),
+    "backslash-link": (
+        "A link here uses backslashes and points into a moved month; it was left alone, so "
+        "rewrite it with forward slashes by hand."
+    ),
+}
 
 Move = tuple[Path, Path, bool]  # source, target, whether the target already exists
 Edit = tuple[Path, str, int]
@@ -85,38 +90,65 @@ def _new_name(number: str) -> str:
     return f"{number}-{MONTH_ABBREVIATIONS[int(number) - 1]}"
 
 
+def _plan_one(root: Path, month: Path) -> tuple[Move | None, dict[str, str] | None]:
+    """How one bare month folder moves, or why it cannot.
+
+    The year folder's real entry names are compared, not ``exists()``: on a case-insensitive
+    disk ``09-Sep`` "exists" when only ``09-sep`` does, and a merge would land there.
+    """
+    name = _new_name(month.name)
+    target = month.parent / name
+    siblings = os.listdir(month.parent)
+    if name not in siblings:
+        twins = sorted(entry for entry in siblings if entry.lower() == name.lower())
+        if twins:
+            return None, finding(
+                "month-folder-case",
+                f"{twins[0]} differs from {name} only in case; rename it to {name} by hand, "
+                "then run this again.",
+                path=_rel(root, month),
+            )
+        return (month, target, False), None
+    if not target.is_dir():
+        return None, finding(
+            "month-folder-exists",
+            f"{name} beside {month.name} is not a folder; move it aside by hand, then run "
+            "this again.",
+            path=_rel(root, month),
+        )
+    present = set(os.listdir(target))
+    both = sorted(
+        child for child in os.listdir(month) if child not in DISPOSABLE and child in present
+    )
+    if both:
+        return None, finding(
+            "month-folder-exists",
+            f"{name} already exists beside {month.name} and both hold {', '.join(both)}; "
+            "merge those by hand, then run this again.",
+            path=_rel(root, month),
+        )
+    return (month, target, True), None
+
+
 def _plan_moves(root: Path) -> tuple[list[Move], list[dict[str, str]]]:
-    """Every bare month folder's move, and a finding for each merge that would clash."""
+    """Every bare month folder's move, and a finding for each one that cannot be made."""
     moves: list[Move] = []
-    clashes: list[dict[str, str]] = []
+    problems: list[dict[str, str]] = []
     for month in _month_folders(root):
         if not is_month_dir(month.name, "MM"):
             continue
-        target = month.parent / _new_name(month.name)
-        if not target.exists():
-            moves.append((month, target, False))
-            continue
-        both = sorted(
-            child.name
-            for child in month.iterdir()
-            if child.name not in DISPOSABLE and (target / child.name).exists()
-        )
-        if both:
-            clashes.append(
-                finding(
-                    "month-folder-exists",
-                    f"{target.name} already exists beside {month.name} and both hold "
-                    f"{', '.join(both)}; merge those by hand, then run this again.",
-                    path=_rel(root, month),
-                )
-            )
-        else:
-            moves.append((month, target, True))
-    return moves, clashes
+        move, problem = _plan_one(root, month)
+        if move is not None:
+            moves.append(move)
+        if problem is not None:
+            problems.append(problem)
+    return moves, problems
 
 
-def _journal(root: Path) -> dict[str, str]:
-    """The months this command has already moved in this brain, old path -> new name."""
+# --- journal ----------------------------------------------------------------------------
+
+
+def _journal_entries(root: Path) -> dict[str, dict[str, str]]:
     try:
         payload = json.loads((root / JOURNAL).read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -124,109 +156,64 @@ def _journal(root: Path) -> dict[str, str]:
     moves = payload.get("moves") if isinstance(payload, dict) else None
     if not isinstance(moves, dict):
         return {}
-    return {str(old): str(new) for old, new in moves.items()}
+    return {
+        str(old): {"new": str(entry.get("new")), "state": str(entry.get("state"))}
+        for old, entry in moves.items()
+        if isinstance(entry, dict) and entry.get("new")
+    }
 
 
-def _record(root: Path, source: Path, target: Path) -> None:
-    """Journal one completed move, so a run that stops before its links finishes them later."""
-    moves = _journal(root)
-    moves[_rel(root, source)] = target.name
-    payload = {"schema": JOURNAL_SCHEMA, "moves": dict(sorted(moves.items()))}
-    atomic_write(root / JOURNAL, json.dumps(payload, indent=2) + "\n")
+def _journal_write(root: Path, old: str, new: str, state: str) -> None:
+    """Record one move's state; losing the journal only loses crash recovery."""
+    with contextlib.suppress(OSError):
+        entries = _journal_entries(root)
+        entries[old] = {"new": new, "state": state}
+        payload = {"schema": JOURNAL_SCHEMA, "moves": dict(sorted(entries.items()))}
+        atomic_write(root / JOURNAL, json.dumps(payload, indent=2) + "\n")
+
+
+def _journalled(root: Path) -> dict[str, str]:
+    """Journal entries that describe a move that really happened: old gone, new there.
+
+    A ``pending`` entry whose move did happen (a crash before it was confirmed) passes this
+    too, which is what reconciles it; one whose move did not is ignored, and the plan
+    proposes that move again.
+    """
+    return {
+        old: entry["new"]
+        for old, entry in _journal_entries(root).items()
+        if not (root / old).exists() and (root / entry["new"]).exists()
+    }
+
+
+# --- links ------------------------------------------------------------------------------
 
 
 def _moved(root: Path, moves: list[Move]) -> dict[str, str]:
-    """Old month path -> new month name, for every month a reference may still name.
+    """Old path -> new path for every folder this command moves or has moved.
 
-    Only months this command moves: the ones about to move and the ones an earlier run
-    moved (the journal). A folder someone renamed by hand is not this rule's to follow, and
-    a month folder that was always ``MM-Mon`` was never renamed at all.
+    A folder someone renamed by hand is not this rule's to follow, and a month folder that
+    was always ``MM-Mon`` was never renamed at all, so neither is here.
     """
-    moved = _journal(root)
-    moved.update({_rel(root, source): target.name for source, target, _ in moves})
+    moved = _journalled(root)
+    moved.update({_rel(root, source): _rel(root, target) for source, target, _ in moves})
     return moved
 
 
-def _walk(base: list[str], parts: list[str], moved: dict[str, str]) -> str | None:
-    """Resolve ``parts`` from ``base``; the token with each moved segment renamed, or None."""
-    current = list(base)
-    out = list(parts)
-    changed = False
-    for index, segment in enumerate(parts):
-        if segment in ("", "."):
-            continue
-        if segment == "..":
-            if not current:
-                return None  # climbs out of the brain
-            current.pop()
-            continue
-        current.append(segment)
-        new = moved.get("/".join(current))
-        if new is not None:
-            out[index] = current[-1] = new
-            changed = True
-    return "/".join(out) if changed else None
+def _exists(root: Path, moved: dict[str, str]) -> monthlinks.Exists:
+    """Whether a path existed before the moves, answered before or after them."""
 
+    def exists(relative: str) -> bool:
+        if (root / relative).exists():
+            return True
+        parts = relative.split("/")
+        for depth in range(len(parts), 0, -1):
+            new = moved.get("/".join(parts[:depth]))
+            if new is not None:
+                return (root / new).joinpath(*parts[depth:]).exists()
+        return False
 
-def _retarget(token: str, folder: list[str], moved: dict[str, str]) -> str | None:
-    """The rewritten token when it resolves into a moved month, else None."""
-    if "/" not in token or "://" in token or token.startswith("//"):
-        return None
-    parts = token.split("/")
-    if ":" in parts[0]:
-        return None  # mailto:, C:, and other schemes
-    if parts[0] in (".", ".."):
-        bases = [folder]
-    elif parts[0] == "":
-        bases = [[]]  # a leading slash means the brain root
-    else:
-        bases = [[], folder]  # vault-absolute first, then relative to the document
-    for base in bases:
-        new = _walk(base, parts, moved)
-        if new is not None:
-            return new
-    return None
-
-
-def _protected(text: str) -> list[tuple[int, int]]:
-    """The spans of fenced code blocks and inline code, which are never rewritten."""
-    spans: list[tuple[int, int]] = []
-    fence: str | None = None
-    offset = 0
-    for line in text.splitlines(keepends=True):
-        opener = FENCE.match(line)
-        if fence is not None:
-            spans.append((offset, offset + len(line)))
-            if line.lstrip().startswith(fence):
-                fence = None
-        elif opener:
-            spans.append((offset, offset + len(line)))
-            fence = opener.group(1)[0] * 3
-        else:
-            spans.extend((offset + m.start(), offset + m.end()) for m in INLINE_CODE.finditer(line))
-        offset += len(line)
-    return spans
-
-
-def _rewrite_text(
-    text: str, folder: list[str], moved: dict[str, str], markdown: bool
-) -> tuple[str, int]:
-    spans = _protected(text) if markdown else []
-    starts = [start for start, _ in spans]
-    count = 0
-
-    def replace(match: re.Match[str]) -> str:
-        nonlocal count
-        index = bisect.bisect_right(starts, match.start()) - 1
-        if index >= 0 and match.start() < spans[index][1]:
-            return match.group(0)
-        new = _retarget(match.group(0), folder, moved)
-        if new is None:
-            return match.group(0)
-        count += 1
-        return new
-
-    return TOKEN.sub(replace, text), count
+    return exists
 
 
 def _documents(root: Path) -> list[Path]:
@@ -260,22 +247,28 @@ def _read(path: Path, relative: str) -> tuple[str | None, dict[str, str] | None]
 
 
 def _rewrites(root: Path, moved: dict[str, str]) -> tuple[list[Edit], list[dict[str, str]]]:
-    """Each document a rewrite changes, and a warning for each one it could not check."""
+    """Each document a rewrite changes, and a warning for each link or file it left alone."""
     edits: list[Edit] = []
-    skipped: list[dict[str, str]] = []
+    notes: list[dict[str, str]] = []
     if not moved:
-        return edits, skipped
+        return edits, notes
+    exists = _exists(root, moved)
     for path in _documents(root):
         relative = _rel(root, path)
         text, problem = _read(path, relative)
         if text is None:
             if problem is not None:
-                skipped.append(problem)
+                notes.append(problem)
             continue
-        new, count = _rewrite_text(text, relative.split("/")[:-1], moved, path.suffix == ".md")
+        folder = relative.split("/")[:-1]
+        new, count, warnings = monthlinks.rewrite(text, path.suffix, folder, moved, exists)
+        notes.extend(
+            finding(code, WARNINGS[code], severity="warning", path=relative)
+            for code in sorted(set(warnings))
+        )
         if count:
             edits.append((path, new, count))
-    return edits, skipped
+    return edits, notes
 
 
 def _envelope(root: Path, apply: bool, **facts: Any) -> dict[str, Any]:
@@ -345,52 +338,63 @@ def _edit_lines(root: Path, edits: list[Edit]) -> list[str]:
     ]
 
 
-def _move(source: Path, target: Path, merge: bool) -> None:
+def _step(root: Path, source: Path, target: Path) -> None:
+    """One journalled rename: intent first, then the move, then the confirmation."""
+    old, new = _rel(root, source), _rel(root, target)
+    _journal_write(root, old, new, "pending")
+    source.rename(target)
+    _journal_write(root, old, new, "done")
+
+
+def _move(root: Path, source: Path, target: Path, merge: bool, progress: list[str]) -> None:
+    """Rename a month, or merge it child by child; ``progress`` names each child moved."""
     if not merge:
-        source.rename(target)
+        _step(root, source, target)
         return
     for child in sorted(source.iterdir()):
         if child.name in DISPOSABLE and (target / child.name).exists():
             child.unlink()
-        else:
-            child.rename(target / child.name)
+            continue
+        _step(root, child, target / child.name)
+        progress.append(child.name)
     source.rmdir()
+    _journal_write(root, _rel(root, source), _rel(root, target), "done")
 
 
-def _move_all(root: Path, moves: list[Move]) -> tuple[list[Move], list[dict[str, str]]]:
-    """Move in order, stopping at the first failure; the moves that happened, and why not."""
-    done: list[Move] = []
-    for move in moves:
+def _move_all(root: Path, moves: list[Move]) -> tuple[list[str], int, list[dict[str, str]]]:
+    """Move in order, stopping at the first failure: change lines, whole moves, findings."""
+    lines: list[str] = []
+    for count, move in enumerate(moves):
+        progress: list[str] = []
         try:
-            _move(*move)
+            _move(root, *move, progress)
         except OSError as exc:
-            return done, [
+            if progress:
+                lines.append(
+                    f"{_move_line(root, move)} (partly: {len(progress)} "
+                    f"entr{'y' if len(progress) == 1 else 'ies'} moved)"
+                )
+            return lines, count, [
                 finding(
                     "month-move-failed",
-                    f"Could not move it ({exc.strerror or exc}). Close any app holding "
+                    f"Could not move it ({exc.strerror or exc}); "
+                    f"{len(progress)} of its entries had already moved. Close any app holding "
                     "files in it open, then run this again to finish.",
                     path=_rel(root, move[0]),
                 )
             ]
-        done.append(move)
-        with contextlib.suppress(OSError):  # losing the journal only loses crash recovery
-            _record(root, move[0], move[1])
-    return done, []
+        lines.append(_move_line(root, move))
+    return lines, len(moves), []
 
 
-def _apply(root: Path, moves: list[Move]) -> dict[str, Any]:
-    """Move what can be moved, then rewrite the links to every month that did move."""
-    done, findings = _move_all(root, moves)
-    # Links follow exactly the months that moved: this run's, and any an earlier,
-    # interrupted run moved (the journal).
-    edits, skipped = _rewrites(root, _moved(root, done))
-    findings.extend(skipped)
+def _write(root: Path, edits: list[Edit]) -> tuple[list[Edit], list[dict[str, str]]]:
     written: list[Edit] = []
+    failures: list[dict[str, str]] = []
     for edit in edits:
         try:
             atomic_write(edit[0], edit[1])
         except OSError:
-            findings.append(
+            failures.append(
                 finding(
                     "rewrite-failed",
                     "Could not rewrite its links; run this again to finish.",
@@ -399,10 +403,25 @@ def _apply(root: Path, moves: list[Move]) -> dict[str, Any]:
             )
             continue
         written.append(edit)
+    return written, failures
+
+
+def _apply(root: Path, moves: list[Move]) -> dict[str, Any]:
+    """Move what can be moved, then rewrite the links to everything that did move."""
+    lines, renamed, findings = _move_all(root, moves)
+    # The journal now holds exactly what moved, this run's and any interrupted run's.
+    edits, notes = _rewrites(root, _moved(root, []))
+    written, failures = _write(root, edits)
+    findings.extend(failures)
+    findings.extend(notes)
     failed = any(item["severity"] == "error" for item in findings)
+    if not failed:
+        # Finished: nothing is left to recover, so nothing may be mistaken for a move later.
+        with contextlib.suppress(OSError):
+            (root / JOURNAL).unlink(missing_ok=True)
     if failed:
         action = next_action("rerun-fix", "Part of it did not finish; run it again to complete.")
-    elif done or written:
+    elif lines or written:
         action = next_action("run-validate", "Month folders renamed; run validate to confirm.")
     else:
         action = next_action("none", "Every month folder is already MM-Mon; nothing to rename.")
@@ -410,11 +429,11 @@ def _apply(root: Path, moves: list[Move]) -> dict[str, Any]:
         root,
         True,
         ok=not failed,
-        applied=bool(done or written),
-        changes=[_move_line(root, move) for move in done] + _edit_lines(root, written),
+        applied=bool(lines or written),
+        changes=lines + _edit_lines(root, written),
         findings=findings,
         action=action,
-        renamed=len(done),
+        renamed=renamed,
         rewritten_files=len(written),
         rewritten_links=sum(count for _, _, count in written),
     )
@@ -427,20 +446,20 @@ def migrate_month_folders(root: Path, apply: bool) -> dict[str, Any]:
     if refused is not None:
         return refused
 
-    moves, clashes = _plan_moves(root)
-    if clashes:
+    moves, problems = _plan_moves(root)
+    if problems:
         return _envelope(
             root,
             apply,
             ok=False,
             applied=False,
-            findings=clashes,
-            action=next_action("merge-by-hand", "Resolve each clash by hand, then re-run."),
+            findings=problems,
+            action=next_action("merge-by-hand", "Resolve each one by hand, then re-run."),
         )
     if apply:
         return _apply(root, moves)
 
-    edits, skipped = _rewrites(root, _moved(root, moves))
+    edits, notes = _rewrites(root, _moved(root, moves))
     changes = [_move_line(root, move) for move in moves] + _edit_lines(root, edits)
     if changes:
         action = next_action("apply-fix", "Review the plan, then run it again with --yes.")
@@ -451,7 +470,7 @@ def migrate_month_folders(root: Path, apply: bool) -> dict[str, Any]:
         False,
         applied=False,
         changes=changes,
-        findings=skipped,
+        findings=notes,
         action=action,
         renamed=len(moves),
         rewritten_files=len(edits),

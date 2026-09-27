@@ -53,13 +53,21 @@ All notable changes to marketing-os are recorded here. Versions follow
   `--plan` previews, `--yes` applies. It renames only bare `MM` month folders inside those
   year folders, and rewrites only links that resolve into a folder it renamed (this run's,
   or an interrupted earlier run's, journalled in `.mos/local/month-moves.json`); a folder
-  renamed by hand is left to its owner. References are resolved from the brain root or the
-  document's own folder, so only links that really point into a moved month change: URLs,
-  code spans and fenced blocks, `archive/` copies and a `09.md` file are left alone. A name
-  clash in a merge refuses the whole run; a move that fails part-way (a file held open)
-  stops there, still rewrites the links to the months that moved, and says to run it again.
-  Unreadable or symlinked documents are reported, not rewritten. It runs only when named:
-  `mos fix --all` skips it. The app's "Preview the fix" now appears on `invalid-month` rows.
+  renamed by hand is left to its owner, and the journal is deleted after a clean run.
+  **Only link positions are rewritten**: Markdown link and image targets, reference
+  definitions, wikilinks and embeds (alias and heading kept), frontmatter values under
+  `sources:` and `related:` only, canvas `"file"` values and base `inFolder("…")`
+  arguments. Prose, headings, tables, other frontmatter keys (a `date: 2026/09/15`), URLs
+  and code are never touched. A Markdown link is read from its own document first and from
+  the brain root only when that path does not exist; a link that reads as two different
+  existing paths is reported as `ambiguous-link`, and a backslash link into a moved month as
+  `backslash-link`, both left alone. Wikilinks and frontmatter paths are read from the brain
+  root, the way Obsidian and the contract write them. A name clash in a merge, or a folder
+  differing from `09-Sep` only in case (`09-sep`), refuses the whole run. A move that fails
+  part-way (a file held open), even inside a merge, stops there, still rewrites the links to
+  what moved, and says to run it again; intent is journalled before each move, so even a
+  crash is finished by the next run. Unreadable or symlinked documents are reported, not
+  rewritten. It runs only when named: `mos fix --all` skips it. The app's "Preview the fix" now appears on `invalid-month` rows.
 - **Rewritten documents keep their permissions.** Every atomic rewrite (month links,
   `mos context set`) used to leave the document `0600`; it now keeps the original's mode.
 - **A competitors section in every new brain.** The business template ships

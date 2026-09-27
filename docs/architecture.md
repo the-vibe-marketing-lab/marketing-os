@@ -127,8 +127,11 @@ The engine lives under `src/marketing_os/`:
   preview-and-apply.
 - `core/months.py` — the `invalid-month` fixer behind `mos fix`; renames legacy `YYYY/MM`
   month folders to `YYYY/MM-Mon` (merging into an existing `09-Sep` when no name clashes)
-  and rewrites every reference that resolves into a moved month, from the brain root or the
-  document's folder, in `.md`, `.canvas` and `.base` files. Explicit only: `--all` skips it.
+  and rewrites the links into what it moved, with a journal in `.mos/local/` for recovery.
+  Explicit only: `--all` skips it.
+- `core/monthlinks.py` — which characters of a document are a link (Markdown and reference
+  targets, wikilinks, `sources:`/`related:` frontmatter values, canvas `"file"`, base
+  `inFolder`) and how each resolves; nothing outside a link position is ever rewritten.
 - `core/graphlint.py` — the frontmatter-contract sensors, surfaced through `mos validate`
   rather than a command of their own, because the repository already has one place for
   structural truth.

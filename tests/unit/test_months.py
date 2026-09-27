@@ -54,7 +54,7 @@ def _legacy_brain(tmp_path: Path) -> Path:
     context.write_text(
         context.read_text(encoding="utf-8")
         + f"\n- [[{DECISION}]]\n- [The month](business/decisions/2026/09)\n"
-        + "- Relative: ./business/decisions/2026/09/2026-09-22-platform/decision.md\n"
+        + "- [Relative](./business/decisions/2026/09/2026-09-22-platform/decision.md)\n"
         + "- Prose: sales rose 2026/09 to 2026/10.\n",
         encoding="utf-8",
     )
@@ -171,15 +171,16 @@ def test_a_failed_rewrite_is_finished_by_the_next_run(
     assert first["ok"] is False
     assert [f["code"] for f in first["findings"]] == ["rewrite-failed"]
     assert first["renamed"] == 2
+    journal = json.loads((root / ".mos/local/month-moves.json").read_text(encoding="utf-8"))
+    assert journal["moves"] == {
+        "business/decisions/2026/09": {"new": "business/decisions/2026/09-Sep", "state": "done"},
+        "knowledge/sources/2026/09": {"new": "knowledge/sources/2026/09-Sep", "state": "done"},
+    }
     monkeypatch.setattr(months_mod, "atomic_write", real)
     second = migrate_month_folders(root, apply=True)
     assert second["ok"] is True and second["renamed"] == 0
     assert second["changes"] == ["rewrite 3 links in CONTEXT.md"]
-    journal = json.loads((root / ".mos/local/month-moves.json").read_text(encoding="utf-8"))
-    assert journal["moves"] == {
-        "business/decisions/2026/09": "09-Sep",
-        "knowledge/sources/2026/09": "09-Sep",
-    }
+    assert not (root / ".mos/local/month-moves.json").exists()  # a clean run clears it
 
 
 def test_crlf_documents_keep_their_line_endings(tmp_path: Path) -> None:
@@ -304,10 +305,10 @@ def test_a_failed_move_still_rewrites_what_moved_and_finishes_on_rerun(
     root = _legacy_brain(tmp_path)
     real = months_mod._move
 
-    def locked(source: Path, target: Path, merge: bool) -> None:
+    def locked(root: Path, source: Path, target: Path, merge: bool, progress: list) -> None:
         if source.as_posix().endswith("knowledge/sources/2026/09"):
             raise PermissionError(13, "The process cannot access the file")
-        real(source, target, merge)
+        real(root, source, target, merge, progress)
 
     monkeypatch.setattr(months_mod, "_move", locked)
     result = migrate_month_folders(root, apply=True)
@@ -446,3 +447,190 @@ def test_a_mixed_year_folder_renames_only_its_bare_months(tmp_path: Path) -> Non
     assert result["changes"][0] == "rename content/2026/09 -> content/2026/09-Sep"
     assert result["renamed"] == 1
     assert sorted(p.name for p in year.iterdir()) == ["09-Sep", "10-Oct", "2026-11", "notes"]
+
+
+# --- final review round -------------------------------------------------------------------
+
+
+def _with_content_month(tmp_path: Path) -> Path:
+    root = _legacy_brain(tmp_path)
+    _post(root, "content/2026/09/2026-09-01-a/post.md", "# A")
+    return root
+
+
+def test_text_outside_link_positions_is_never_rewritten(tmp_path: Path) -> None:
+    """Dates and month-looking text in prose, headings, tables and other keys stay put."""
+    root = _with_content_month(tmp_path)
+    page = root / "content" / "p.md"
+    page_text = (
+        "---\ntitle: P\ndate: 2026/09/15\nperiod: 2026/09\nnotes: content/2026/09\n---\n"
+        "# In 2026/09 we launched\n\n| Month | Result |\n|---|---|\n| 2026/09 | up |\n\n"
+        "On 2026/09/15 we shipped content/2026/09/2026-09-01-a/post.md as plain text.\n"
+    )
+    page.write_text(page_text, encoding="utf-8")
+    year_note = root / "content" / "2026" / "c.md"
+    year_note.write_text("US date 09/15 and 09/2026, and 09/2026-09-01-a in prose.\n")
+    migrate_month_folders(root, apply=True)
+    assert page.read_text(encoding="utf-8") == page_text
+    assert year_note.read_text() == "US date 09/15 and 09/2026, and 09/2026-09-01-a in prose.\n"
+
+
+def test_every_link_position_is_rewritten(tmp_path: Path) -> None:
+    root = _with_content_month(tmp_path)
+    target = "content/2026/09/2026-09-01-a/post.md"
+    moved = target.replace("/09/", "/09-Sep/")
+    page = root / "knowledge" / "wiki" / "links.md"
+    page.write_text(
+        "---\ntitle: L\n"
+        f"sources: {target}\n"
+        f'related: [{target}, "content/2026/09"]\n'
+        "---\n"
+        f"[a]({target}) ![img]({target}) [t](<{target}> \"Title\") [h]({target}#part)\n"
+        f"[[{target}|Alias]] ![[{target}#Heading]]\n\n"
+        f"[ref]: {target}\n",
+        encoding="utf-8",
+    )
+    result = migrate_month_folders(root, apply=True)
+    assert "rewrite 10 links in knowledge/wiki/links.md" in result["changes"]
+    assert page.read_text(encoding="utf-8") == (
+        "---\ntitle: L\n"
+        f"sources: {moved}\n"
+        f'related: [{moved}, "content/2026/09-Sep"]\n'
+        "---\n"
+        f"[a]({moved}) ![img]({moved}) [t](<{moved}> \"Title\") [h]({moved}#part)\n"
+        f"[[{moved}|Alias]] ![[{moved}#Heading]]\n\n"
+        f"[ref]: {moved}\n"
+    )
+
+
+def test_a_document_relative_link_that_exists_wins(tmp_path: Path) -> None:
+    """A Markdown link in archive/ that names archive's own copy is not redirected."""
+    root = _with_content_month(tmp_path)
+    old = "content/2026/09/2026-09-01-old/a.md"
+    (root / "archive" / old).parent.mkdir(parents=True)
+    (root / "archive" / old).write_text("# Old\n", encoding="utf-8")
+    index = root / "archive" / "idx.md"
+    index.write_text(f"[a]({old})\n", encoding="utf-8")
+    result = migrate_month_folders(root, apply=True)
+    assert index.read_text(encoding="utf-8") == f"[a]({old})\n"
+    assert not [f for f in result["findings"] if f["path"] == "archive/idx.md"]
+
+
+def test_a_link_that_reads_two_existing_ways_is_reported(tmp_path: Path) -> None:
+    root = _with_content_month(tmp_path)
+    link = "content/2026/09/2026-09-01-a/post.md"
+    (root / "archive" / link).parent.mkdir(parents=True)
+    (root / "archive" / link).write_text("# Copy\n", encoding="utf-8")
+    index = root / "archive" / "idx.md"
+    index.write_text(f"[a]({link})\n", encoding="utf-8")
+    plan = migrate_month_folders(root, apply=False)
+    found = {(f["code"], f["path"]) for f in plan["findings"]}
+    assert ("ambiguous-link", "archive/idx.md") in found
+    migrate_month_folders(root, apply=True)
+    assert index.read_text(encoding="utf-8") == f"[a]({link})\n"
+
+
+def test_the_journal_does_not_outlive_a_clean_run(tmp_path: Path) -> None:
+    root = _with_content_month(tmp_path)
+    assert migrate_month_folders(root, apply=True)["ok"] is True
+    assert not (root / ".mos/local/month-moves.json").exists()
+    # Later, by hand: a new 2025 month, renamed, and a note that links the old name.
+    (root / "content/2025/09/2025-09-01-z").mkdir(parents=True)
+    (root / "content/2025/09").rename(root / "content/2025/09-Sep")
+    note = root / "knowledge/wiki/later.md"
+    note.write_text("[[content/2025/09/2025-09-01-z/post.md]]\n", encoding="utf-8")
+    plan = migrate_month_folders(root, apply=False)
+    assert plan["changes"] == []
+
+
+def test_a_stale_journal_entry_is_ignored(tmp_path: Path) -> None:
+    root = _with_content_month(tmp_path)
+    journal = root / ".mos/local/month-moves.json"
+    journal.parent.mkdir(parents=True, exist_ok=True)
+    journal.write_text(
+        json.dumps({"moves": {"content/2025/09": {"new": "content/2025/09-Sep", "state": "done"}}})
+    )
+    note = root / "knowledge/wiki/later.md"
+    note.write_text("[[content/2025/09/x.md]]\n", encoding="utf-8")
+    plan = migrate_month_folders(root, apply=False)
+    assert not any("later.md" in line for line in plan["changes"])
+
+
+def test_a_partial_merge_is_journalled_reported_and_finished(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _with_content_month(tmp_path)
+    _post(root, "content/2026/09/2026-09-02-b/post.md", "# B")
+    (root / "content/2026/09-Sep/2026-09-26-new").mkdir(parents=True)
+    note = root / "knowledge/wiki/n.md"
+    note.write_text("[[content/2026/09/2026-09-01-a/post.md]]\n", encoding="utf-8")
+    real = months_mod._step
+
+    def locked(root_: Path, source: Path, target: Path) -> None:
+        if source.name == "2026-09-02-b":
+            raise PermissionError(13, "The process cannot access the file")
+        real(root_, source, target)
+
+    monkeypatch.setattr(months_mod, "_step", locked)
+    first = migrate_month_folders(root, apply=True)
+    assert first["ok"] is False and first["applied"] is True
+    assert (
+        "merge content/2026/09 into content/2026/09-Sep (partly: 1 entry moved)" in first["changes"]
+    )
+    assert note.read_text() == "[[content/2026/09-Sep/2026-09-01-a/post.md]]\n"
+    monkeypatch.setattr(months_mod, "_step", real)
+    second = migrate_month_folders(root, apply=True)
+    assert second["ok"] is True
+    assert not (root / "content/2026/09").exists()
+    assert validate_repo(root)["ok"] is True
+
+
+def test_a_backslash_link_into_a_moved_month_is_reported(tmp_path: Path) -> None:
+    root = _with_content_month(tmp_path)
+    note = root / "knowledge/wiki/win.md"
+    note.write_text("[a](content\\2026\\09\\2026-09-01-a\\post.md)\n", encoding="utf-8")
+    plan = migrate_month_folders(root, apply=False)
+    assert ("backslash-link", "knowledge/wiki/win.md") in {
+        (f["code"], f["path"]) for f in plan["findings"]
+    }
+    migrate_month_folders(root, apply=True)
+    assert note.read_text() == "[a](content\\2026\\09\\2026-09-01-a\\post.md)\n"
+
+
+def test_a_case_only_twin_is_refused(tmp_path: Path) -> None:
+    """On a case-insensitive disk 09-sep would pass for 09-Sep; the real name is compared."""
+    root = _with_content_month(tmp_path)
+    (root / "content/2026/09-sep").mkdir()
+    result = migrate_month_folders(root, apply=True)
+    assert result["ok"] is False
+    assert [f["code"] for f in result["findings"]] == ["month-folder-case"]
+    assert (root / "content/2026/09").is_dir()
+    assert (root / "business/decisions/2026/09").is_dir()  # nothing moved anywhere
+
+
+def test_a_crash_after_a_move_is_reconciled_on_the_next_run(tmp_path: Path) -> None:
+    """Intent is journalled before a move, so a move whose links never ran is finished."""
+    root = _legacy_brain(tmp_path)
+    journal = root / ".mos/local/month-moves.json"
+    journal.parent.mkdir(parents=True, exist_ok=True)
+    journal.write_text(
+        json.dumps(
+            {
+                "moves": {
+                    "business/decisions/2026/09": {
+                        "new": "business/decisions/2026/09-Sep",
+                        "state": "pending",
+                    }
+                }
+            }
+        )
+    )
+    # The crash: the rename happened, the confirmation and the link rewrites did not.
+    (root / "business/decisions/2026/09").rename(root / "business/decisions/2026/09-Sep")
+    result = migrate_month_folders(root, apply=True)
+    assert result["ok"] is True
+    context = (root / "CONTEXT.md").read_text(encoding="utf-8")
+    assert "business/decisions/2026/09-Sep/2026-09-22-platform" in context
+    assert "business/decisions/2026/09/" not in context
+    assert not journal.exists()
+    assert validate_repo(root)["ok"] is True

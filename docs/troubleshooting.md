@@ -241,6 +241,11 @@ priority.
 - `month-move-failed` — a month folder could not be moved, usually because a file in it is
   open in another app (Obsidian, on Windows). Close it and run `mos fix invalid-month --yes`
   again; the links to the months that did move were already rewritten.
+- `month-folder-case` — a folder that differs from `09-Sep` only in case (`09-sep`) sits
+  beside `09`. Rename it to the exact `09-Sep` by hand, then run the fix again.
+- `ambiguous-link` / `backslash-link` — warnings from `mos fix invalid-month`: a Markdown
+  link that reads as two different existing paths, or a backslash path, points into a moved
+  month and was left alone. Fix the link by hand (forward slashes, one clear path).
 - `invalid-month-folder` — an error: `.mos/config.yaml` has a `month_folder` value other than
   `MM` or `MM-Mon`. Fix the value (or remove the key for the `MM-Mon` default). Until then month folder
   names are not judged.
