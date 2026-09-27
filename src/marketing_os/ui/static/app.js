@@ -271,6 +271,14 @@
       title: "Your proof",
       body: "Results and testimonials you can point at when someone asks why you.",
     },
+    competitors: {
+      title: "Who you compete with",
+      body: "The brands chasing the same buyer, what they do well, and where you can beat them.",
+    },
+    inspiration: {
+      title: "Who you want to be like",
+      body: "Brands you admire but do not compete with, and exactly what to borrow from each.",
+    },
   };
 
   function contextInfo(key) {
@@ -470,7 +478,7 @@
     field: {
       label: "Which question",
       help: "The business question this answer belongs to.",
-      choices: ["brand", "voice", "audience", "offer", "strategy", "proof"],
+      choices: ["brand", "voice", "audience", "offer", "strategy", "proof", "competitors", "inspiration"],
       empty: "Choose one",
     },
     text: { label: "Your answer", help: "In your own words. Specifics beat adjectives." },
@@ -1364,11 +1372,12 @@
     "invalid-month": {
       one: "A folder in the log is not named for a month.",
       many: "{n} folders in the log are not named for a month.",
-      fix: "Months are two digits, 01 to 12.",
+      fix: "Months are named like 09-Sep. Preview the fix to rename them and the links to them.",
       more: [
-        "Month folders in the log are named with two digits, 01 to 12, so they sort in order. " +
-        "This one is named differently.",
-        "Rename it to the two-digit month.",
+        "Month folders in the log are named with the two-digit month and its short name, like " +
+        "09-Sep, so they sort in order and read at a glance. This one is named differently.",
+        "A plain 09 from an older brain is renamed for you, along with every link that points " +
+        "into it. Anything else, like 09-Sept, is renamed by hand.",
       ],
     },
     "invalid-report-month": {
@@ -1516,6 +1525,9 @@
     "unknown-top-level": "run mos migrate with --plan, review where each item would go, then apply it",
     "no-catalog": "run the index build command",
     "stale-catalog": "run the index build command",
+    "invalid-month":
+      "run mos fix invalid-month with --plan, review the renames and link rewrites, then run " +
+      "it with --yes; rename any folder it does not cover by hand, like 09-Sep",
     "invalid-type": "correct the type in each summary header listed to one the contract allows",
     "invalid-status": "correct the status in each summary header listed to one the contract allows",
   };
@@ -4383,7 +4395,16 @@
   /* The order an operator meets the questions in, and nothing more. Which of them are
    * required is the server's answer, read from status.context.required — a question this
    * list has never heard of still appears, and still counts. */
-  var CONTEXT_ORDER = ["brand", "voice", "audience", "offer", "strategy", "proof"];
+  var CONTEXT_ORDER = [
+    "brand",
+    "voice",
+    "audience",
+    "offer",
+    "strategy",
+    "proof",
+    "competitors",
+    "inspiration",
+  ];
 
   /* The three states one answer can be in: written at the path the schema names, found
    * somewhere else in the brain, or not answered at all.

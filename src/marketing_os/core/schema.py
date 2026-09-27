@@ -13,6 +13,8 @@ from marketing_os.core.results import finding
 
 MODES = ("in-house", "agency", "client")
 MONTH_FOLDER_STYLES = ("MM", "MM-Mon")
+#: The trees whose artifacts are filed as ``YYYY/<month>/YYYY-MM-DD-slug``.
+DATED_ROOTS = ("content", "campaigns", "outputs", "business/decisions", "knowledge/sources")
 MONTH_ABBREVIATIONS = (
     "Jan",
     "Feb",
@@ -164,13 +166,14 @@ def slugify(value: str) -> str:
 def month_folder_style(config: dict[str, Any] | None) -> tuple[str, list[dict[str, str]]]:
     """Resolve how month folders under the dated trees are named.
 
-    Missing ``month_folder`` means ``MM`` (``09``), the original grammar. ``MM-Mon``
-    (``09-Sep``) is the opt-in alternative. An unrecognised value returns an
-    ``invalid-month-folder`` error and is returned verbatim so callers never guess.
+    Missing ``month_folder`` means ``MM-Mon`` (``09-Sep``), the default since 0.5.0.
+    ``MM`` (``09``) is the legacy opt-out a brain keeps by saying so. An unrecognised
+    value returns an ``invalid-month-folder`` error and is returned verbatim so callers
+    never guess.
     """
     raw = config.get("month_folder") if isinstance(config, dict) else None
     if raw is None:
-        return "MM", []
+        return "MM-Mon", []
     if raw not in MONTH_FOLDER_STYLES:
         return str(raw), [
             finding(
@@ -183,17 +186,17 @@ def month_folder_style(config: dict[str, Any] | None) -> tuple[str, list[dict[st
 
 
 def month_dir(when: datetime.date, config: dict[str, Any] | None) -> str:
-    """The month folder name for a date: ``09`` by default, ``09-Sep`` under ``MM-Mon``.
+    """The month folder name for a date: ``09-Sep`` by default, ``09`` under ``MM``.
 
     The single formatter every path generator uses, so a brain's month folders are
     always written the way its validator reads them. An invalid style falls back to
-    ``MM``; validation reports the bad value separately.
+    ``MM-Mon``; validation reports the bad value separately.
     """
     style, findings = month_folder_style(config)
     number = f"{when.month:02d}"
-    if style == "MM-Mon" and not findings:
-        return f"{number}-{MONTH_ABBREVIATIONS[when.month - 1]}"
-    return number
+    if style == "MM" and not findings:
+        return number
+    return f"{number}-{MONTH_ABBREVIATIONS[when.month - 1]}"
 
 
 def is_month_dir(name: str, style: str) -> bool:

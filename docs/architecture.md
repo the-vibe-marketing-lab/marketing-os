@@ -103,8 +103,8 @@ The engine lives under `src/marketing_os/`:
   `body`, and a `set` there writes a second copy rather than editing the answer already on
   disk.
 - `core/validation.py` — `mos validate`; checks required directories and files, unknown
-  top-level paths, the dated-folder grammar (month folders as `MM` or, with
-  `"month_folder": "MM-Mon"`, as `09-Sep`), mode-aware structure (the agency client
+  top-level paths, the dated-folder grammar (month folders as `09-Sep` by default or, with
+  `"month_folder": "MM"`, as a bare `09`), mode-aware structure (the agency client
   registry, stray client folders, and fail-closed `invalid-mode`), and the frontmatter
   contract, with `--strict` promoting contract warnings to errors.
 - `core/catalog.py` — `mos index build`; parses frontmatter and links across every document
@@ -125,11 +125,14 @@ The engine lives under `src/marketing_os/`:
 - `core/fix.py` — `mos fix`; the one table from a finding code to the existing core fixer
   that puts it right, and the `FIXABLE` set the app reads to decide which rows get
   preview-and-apply.
+- `core/months.py` — the `invalid-month` fixer behind `mos fix`; renames legacy `YYYY/MM`
+  month folders to `YYYY/MM-Mon` and rewrites the brain's Markdown references to them, as
+  one refused-or-applied set (a `09-Sep` already beside `09` refuses the run).
 - `core/graphlint.py` — the frontmatter-contract sensors, surfaced through `mos validate`
   rather than a command of their own, because the repository already has one place for
   structural truth.
 - `core/ingest.py` — `mos ingest`; captures a file, directory, URL, or literal text into a
-  validator-conformant `knowledge/sources/YYYY/MM/YYYY-MM-DD-slug/` folder (atomically; the
+  validator-conformant `knowledge/sources/YYYY/MM-Mon/YYYY-MM-DD-slug/` folder (atomically; the
   month folder follows the brain's `month_folder` style via `month_dir`) and
   lists sources not yet compiled (`--pending`).
 - `core/query.py` — `mos query`; a deterministic retrieval planner. It scores catalogued
@@ -137,7 +140,7 @@ The engine lives under `src/marketing_os/`:
   candidate documents plus the `_index.md` route to them, and offers `--grep` for literal
   lookups (its `score_corpus` is reused by `think`).
 - `core/think.py` — `mos think`; emits a grounded thinking handoff (objective, context paths,
-  steps, output contract) that targets a `business/decisions/YYYY/MM/YYYY-MM-DD-slug/` file
+  steps, output contract) that targets a `business/decisions/YYYY/MM-Mon/YYYY-MM-DD-slug/` file
   (month folder per `month_folder`, like ingest).
 - `core/onboard.py` — `mos onboard`; reuses the setup scaffold, optionally `git init`s the
   repository, appends a client row to an agency HQ registry when `--mode client --hq` is given,

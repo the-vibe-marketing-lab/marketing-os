@@ -1,7 +1,7 @@
 import datetime
 from pathlib import Path
 
-from marketing_os.core.schema import config_text
+from marketing_os.core.schema import MONTH_ABBREVIATIONS, config_text
 from marketing_os.core.think import think_repo
 
 
@@ -64,8 +64,9 @@ def test_think_steps_reference_todays_decision_file(tmp_path: Path) -> None:
     _make_repo(root)
     result = think_repo(root, "Pricing Strategy")
     today = datetime.date.today()
+    month = f"{today.month:02d}-{MONTH_ABBREVIATIONS[today.month - 1]}"
     expected = (
-        f"business/decisions/{today.year:04d}/{today.month:02d}/"
+        f"business/decisions/{today.year:04d}/{month}/"
         f"{today.isoformat()}-pricing-strategy/decision.md"
     )
     steps_text = " ".join(result["prompt"]["steps"])

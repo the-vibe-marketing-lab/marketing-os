@@ -35,11 +35,11 @@ List existing bets by reading every `bet.md` under `business/decisions/` (glob
 Only after approval, write the bet as a schema-conformant dated artifact:
 
 ```
-business/decisions/YYYY/MM/YYYY-MM-DD-<slug>/bet.md
+business/decisions/YYYY/MM-Mon/YYYY-MM-DD-<slug>/bet.md
 ```
 
-Use today's date and a lowercase hyphenated slug; `MM` is `09-Sep` style when
-`.mos/config.yaml` sets `"month_folder": "MM-Mon"`. Record: hypothesis, stake, deadline, success
+Use today's date and a lowercase hyphenated slug; `MM-Mon` is `09-Sep` style, or a bare `09`
+when `.mos/config.yaml` sets `"month_folder": "MM"`. Record: hypothesis, stake, deadline, success
 signal, failure signal, status (`open`), and an empty evidence log.
 
 ## Update and close

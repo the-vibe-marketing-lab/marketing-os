@@ -96,6 +96,9 @@ conversationally, asking one at a time and waiting for each answer — never fil
 5. The strategy: how the business intends to win, the goals worth measuring, and the roadmap of
    phases ahead. Draw out a lean first pass the operator can sharpen later rather than forcing
    false precision.
+6. The competition: who chases the same buyer, ranked by how directly, with what each does well,
+   the gap to win, and what to watch; then the brands worth emulating that are not competitors,
+   with what to take and what to leave from each. Optional; skip if the operator does not know yet.
 
 For each answer, propose the exact edit and get approval before saving. After approval:
 
@@ -104,6 +107,8 @@ For each answer, propose the exact edit and get approval before saving. After ap
 - create `business/offers/<offer-slug>/offer.md` using a lowercase hyphenated slug;
 - update `business/strategy/strategy.md` (the approach to win), `business/strategy/goals.md`
   (measurable targets), and `business/strategy/roadmap.md` (the phases ahead);
+- update `business/competitors/main-competitors/competitors.md` (ranked competitors) and
+  `business/competitors/inspiration/inspiration.md` (brands to emulate, not compete with);
 - update `CONTEXT.md` with the current focus and desired outcome.
 
 Never collect secrets, credentials, raw customer exports, or private account data into tracked

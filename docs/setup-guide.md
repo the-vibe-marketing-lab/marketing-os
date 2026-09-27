@@ -36,7 +36,7 @@ Check it is available:
 mos --version
 ```
 
-You should see `mos 0.4.0`. `mos open` and `mos rename` are the newest two commands; if
+You should see `mos 0.5.0`. `mos open` and `mos rename` are the newest two commands; if
 `mos open --help` answers `invalid choice: 'open'` you are on an older install, and section 3
 will not work until you upgrade (`pipx upgrade marketing-os`, or pull the checkout).
 
@@ -250,13 +250,15 @@ skips every destination that already exists, so what you wrote stays exactly as 
 
 ## 6. Establish minimum context
 
-Scaffolding creates empty rooms. Six fields furnish them: brand, voice, audience, offer,
-strategy, and proof. Only the first four gate readiness — `mos status` reports
-`needs-context` until brand, voice, audience, and offer are answered. Strategy
-(`business/strategy/strategy.md`) and proof are interviewed and settable the same way, but
-a brain reaches `ready` without them.
+Scaffolding creates empty rooms. Eight fields furnish them: brand, voice, audience, offer,
+strategy, proof, competitors, and inspiration. Only the first four gate readiness — `mos
+status` reports `needs-context` until brand, voice, audience, and offer are answered.
+Strategy (`business/strategy/strategy.md`), proof, competitors
+(`business/competitors/main-competitors/competitors.md`) and inspiration
+(`business/competitors/inspiration/inspiration.md`) are interviewed and settable the same
+way, but a brain reaches `ready` without them.
 
-Run inside an agent, the onboard skill interviews you across all six, proposes the exact
+Run inside an agent, the onboard skill interviews you across all of them, proposes the exact
 edits, and saves them only after you approve. Nothing is invented and no non-placeholder
 file is overwritten without discussion.
 

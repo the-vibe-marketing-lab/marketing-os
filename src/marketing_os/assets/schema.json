@@ -12,6 +12,9 @@
     "business/proof",
     "business/operations",
     "business/decisions",
+    "business/competitors",
+    "business/competitors/main-competitors",
+    "business/competitors/inspiration",
     "knowledge",
     "knowledge/sources",
     "knowledge/wiki",
@@ -37,6 +40,8 @@
     "business/strategy/goals.md",
     "business/strategy/roadmap.md",
     "business/proof/testimonials.md",
+    "business/competitors/main-competitors/competitors.md",
+    "business/competitors/inspiration/inspiration.md",
     "knowledge/wiki/_index.md",
     "knowledge/wiki/_log.md"
   ],
@@ -54,7 +59,9 @@
     "voice": "business/brand/voice.md",
     "audience": "business/audience/primary.md",
     "strategy": "business/strategy/strategy.md",
-    "proof": "business/proof/testimonials.md"
+    "proof": "business/proof/testimonials.md",
+    "competitors": "business/competitors/main-competitors/competitors.md",
+    "inspiration": "business/competitors/inspiration/inspiration.md"
   },
   "excluded_from_grounding": [
     "archive"

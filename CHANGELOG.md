@@ -5,6 +5,28 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-27 — Named months
+
+### Breaking
+
+- **Month folders are `MM-Mon` by default.** A brain with no `month_folder` key in
+  `.mos/config.yaml` now files dated work under `YYYY/09-Sep/` instead of `YYYY/09/`, across
+  `content/`, `campaigns/`, `outputs/`, `business/decisions/` and `knowledge/sources/`.
+  `mos validate` accepts only the two-digit month plus its English three-letter name (`Jan`
+  … `Dec`, never `Sept`), and `mos think` and `mos ingest` generate paths that way.
+  **Migrating a brain made before 0.5.0:** its bare `09` folders now read as
+  `invalid-month` (`Expected an MM-Mon directory like 09-Sep.`, naming the fix). Run
+  `mos fix invalid-month --plan` to see every folder rename and how many links move in each
+  file, then `mos fix invalid-month --yes` to apply. The fix renames the folders and rewrites
+  the references to them in the brain's Markdown (frontmatter `sources:`/`related:`,
+  `[[wikilinks]]`, ordinary links); it refuses, writing nothing, if a `09-Sep` already sits
+  beside a `09`, and a second run changes nothing. To keep bare `09` folders instead, set
+  `"month_folder": "MM"` in `.mos/config.yaml`; nothing else changes for that brain.
+- **Two new required business documents.** `business/competitors/main-competitors/competitors.md`
+  and `business/competitors/inspiration/inspiration.md` are part of the schema, so an existing
+  brain reports them as `missing-file` until `mos fix missing-file --yes` (or `--all`) adds the
+  placeholders. The scaffold only ever adds what is missing.
+
 ### Changed
 
 - **`/mos-end` now saves through a pull request.** The session's work is committed on its own
@@ -19,12 +41,18 @@ All notable changes to marketing-os are recorded here. Versions follow
 
 ### Added
 
-- **Named month folders, opt-in.** Set `"month_folder": "MM-Mon"` in `.mos/config.yaml` and
-  the dated trees use month folders like `09-Sep` instead of `09`. `mos validate` then accepts
-  only the matching two-digit number plus English three-letter name (`09-Aug`, `09-sep`,
-  `09-Sept` and a bare `09` are `invalid-month`, and the message names the expected folder),
-  and `mos think` and `mos ingest` generate paths the same way through one formatter. Without
-  the key, or with `"MM"`, nothing changes; any other value is an `invalid-month-folder` error.
+- **`mos fix invalid-month`, the month folder migration.** Renames every legacy `YYYY/MM`
+  month folder to `YYYY/MM-Mon` and carries the brain's links across with it, as one set:
+  `--plan` previews, `--yes` applies, a collision refuses the whole run. The app's "Preview
+  the fix" now appears on `invalid-month` rows, and `mos fix --all` includes it.
+- **A competitors section in every new brain.** The business template ships
+  `business/competitors/main-competitors/competitors.md` (ranked competitors: what each does
+  well, the gap to win, what to watch) and `business/competitors/inspiration/inspiration.md`
+  (brands to emulate but not compete with: what to take, what to leave). Both are optional
+  context fields: `mos status` and `mos context show`/`set` treat them like strategy and proof,
+  status discovery recognises them under other names, the onboard interview asks about them,
+  and the app lists them. The Obsidian vault gives the new folders their own icons
+  (`business/competitors` 🥊, `main-competitors` ⚔️, `inspiration` 💡).
 
 - **The badge can sit on top of your Claude Code status bar.** `mos statusline --install`
   (`--plan` first, then `--yes`) backs up `~/.claude/settings.json`, records the status bar

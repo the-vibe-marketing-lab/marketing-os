@@ -9,6 +9,7 @@ from marketing_os.core.graphlint import CODES, contract_findings
 from marketing_os.core.parallel import gather
 from marketing_os.core.results import envelope, finding, next_action
 from marketing_os.core.schema import (
+    DATED_ROOTS,
     MONTH_ABBREVIATIONS,
     is_month_dir,
     load_schema,
@@ -39,8 +40,17 @@ def _visible_children(path: Path) -> list[Path]:
     return [child for child in path.iterdir() if child.name not in NAV_FILES]
 
 
+#: The command that renames legacy ``MM`` month folders; named in the finding so the
+#: operator is told the fix, not just the fault.
+MONTH_FIX_COMMAND = "mos fix invalid-month --plan"
+
+
 def _month_message(name: str, style: str) -> str:
-    """Name the expected month folder, using the folder's own number when it has one."""
+    """Name the expected month folder, using the folder's own number when it has one.
+
+    A bare ``MM`` folder in an ``MM-Mon`` brain is exactly what the month migration
+    renames, so that message names the command; anything else is renamed by hand.
+    """
     if style != "MM-Mon":
         return "Expected an MM directory."
     number = name[:2]
@@ -49,11 +59,14 @@ def _month_message(name: str, style: str) -> str:
         if is_month_dir(number, "MM")
         else "09-Sep"
     )
-    return f"Expected an MM-Mon directory like {example}."
+    message = f"Expected an MM-Mon directory like {example}."
+    if is_month_dir(name, "MM"):
+        message += f" Run `{MONTH_FIX_COMMAND}` to rename MM month folders and their links."
+    return message
 
 
 def _check_year_month_dated(
-    root: Path, relative: str, month_style: str | None = "MM"
+    root: Path, relative: str, month_style: str | None = "MM-Mon"
 ) -> list[dict[str, str]]:
     """Judge a YYYY/<month>/YYYY-MM-DD-slug tree.
 
@@ -73,7 +86,7 @@ def _check_year_month_dated(
                 findings.append(
                     finding(
                         "invalid-month",
-                        _month_message(month.name, month_style or "MM"),
+                        _month_message(month.name, month_style or "MM-Mon"),
                         path=str(month),
                     )
                 )
@@ -136,7 +149,7 @@ def validation_findings(root: Path) -> list[dict[str, str]]:
             )
         )
 
-    month_style: str | None = "MM"
+    month_style: str | None = "MM-Mon"
     if config is not None:
         month_style, month_findings = month_folder_style(config)
         findings.extend(month_findings)
@@ -200,7 +213,7 @@ def validation_findings(root: Path) -> list[dict[str, str]]:
 
 
 def _structure_findings(
-    root: Path, schema: dict[str, Any], month_style: str | None = "MM"
+    root: Path, schema: dict[str, Any], month_style: str | None = "MM-Mon"
 ) -> list[dict[str, str]]:
     """Everything the brain's folders say about themselves: what is missing, what is odd.
 
@@ -236,13 +249,7 @@ def _structure_findings(
                 )
             )
 
-    for relative in (
-        "content",
-        "campaigns",
-        "outputs",
-        "business/decisions",
-        "knowledge/sources",
-    ):
+    for relative in DATED_ROOTS:
         findings.extend(_check_year_month_dated(root, relative, month_style))
     findings.extend(_check_reporting(root))
     return findings

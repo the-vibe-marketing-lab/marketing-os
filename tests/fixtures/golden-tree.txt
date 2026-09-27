@@ -54,6 +54,8 @@ business/audience/primary.md
 business/brand/assets/.gitkeep
 business/brand/brand.md
 business/brand/voice.md
+business/competitors/inspiration/inspiration.md
+business/competitors/main-competitors/competitors.md
 business/decisions/.gitkeep
 business/offers/.gitkeep
 business/operations/.gitkeep

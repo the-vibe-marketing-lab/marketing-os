@@ -238,8 +238,8 @@ mos validate [path] [--strict] [--json]
 
 Validates the canonical schema, the dated-folder grammar (config identity,
 required directories and files, allowed top-level paths, and the
-`YYYY/MM/YYYY-MM-DD-slug` layout for dated artifacts, with month folders as `MM`
-or, when `.mos/config.yaml` sets `"month_folder": "MM-Mon"`, as `09-Sep`), and the frontmatter
+`YYYY/MM-Mon/YYYY-MM-DD-slug` layout for dated artifacts, with month folders as `09-Sep`
+or, when `.mos/config.yaml` sets `"month_folder": "MM"`, as a bare `09`), and the frontmatter
 contract. Structural problems are `error` findings; unknown top-level paths and
 contract gaps are `warning` findings. Exit is `1` only when there is at least one
 error.
@@ -336,8 +336,8 @@ Captures raw material into `knowledge/sources/` so it can be distilled later.
 `source` is a file, a directory, an `http://` or `https://` URL, or literal text —
 checked in that order, so an argument that names a real file is a file and anything
 left over is text. The capture lands in
-`knowledge/sources/YYYY/MM/YYYY-MM-DD-slug/source.md` (the month folder is `09-Sep`
-style when the brain sets `"month_folder": "MM-Mon"`): a file's contents are copied
+`knowledge/sources/YYYY/MM-Mon/YYYY-MM-DD-slug/source.md` (the month folder is `09-Sep`,
+or a bare `09` when the brain sets `"month_folder": "MM"`): a file's contents are copied
 in under a short header, a directory writes a manifest plus every `.md` and `.txt`
 member beneath `files/`, a URL records the address, and literal text becomes the
 body. Directory members go under `files/` rather than the folder root so a member
@@ -353,7 +353,7 @@ built in a temporary directory beside its destination and moved into place, so a
 failed write leaves no half-capture behind.
 
 `--pending` lists captures that have not been compiled yet: every
-`knowledge/sources/YYYY/MM/<folder>/source.md` whose folder name does not appear in
+`knowledge/sources/YYYY/<month>/<folder>/source.md` whose folder name does not appear in
 `knowledge/wiki/_log.md`. That log line is the entire bookkeeping mechanism — writing
 the folder name into `_log.md` is what marks a source as done.
 
@@ -453,6 +453,7 @@ terminal share one map from finding to fix:
 | `missing-file`, `missing-directory`, `missing-client-registry` | The scaffold, which only ever creates what is missing. Name and mode come from `.mos/config.yaml`; without a name it stops with `needs-name`. |
 | `no-catalog`, `stale-catalog` | `mos index build`. The build has no plan of its own, so `--plan` reports the one line `rebuild the catalogue`. |
 | `unlinked-document` | `mos related`, with no limit. |
+| `invalid-month` | The month folder migration: every bare `YYYY/MM` folder under `content/`, `campaigns/`, `outputs/`, `business/decisions/` and `knowledge/sources/` is renamed to `YYYY/MM-Mon` (`09` becomes `09-Sep`), and every reference to the old paths in the brain's Markdown (frontmatter `sources:` and `related:`, `[[wikilinks]]`, ordinary links) is rewritten. `--plan` lists each rename and how many links move in each file. It refuses, writing nothing, when `09-Sep` already sits beside `09` (`month-folder-exists`; merge by hand), and does nothing in a brain that sets `"month_folder": "MM"`. A second run is a no-op. |
 | `runtime-not-ready` | `mos skills sync` for both runtimes. |
 
 Any other code returns `no-deterministic-fix` with a `copy-prompt` next action: those
@@ -502,7 +503,7 @@ query` uses. Those three go in whatever the topic is, because a recommendation
 reasoned without them is a recommendation about a different business.
 
 The steps name the file the decision should land in —
-`business/decisions/YYYY/MM/YYYY-MM-DD-<topic-slug>/decision.md`, with the month folder in
+`business/decisions/YYYY/MM-Mon/YYYY-MM-DD-<topic-slug>/decision.md`, with the month folder in
 the brain's `month_folder` style — and tell the agent to
 append a line naming that decision file to `knowledge/wiki/_log.md`. (The folder-name
 convention is `mos ingest --pending`'s, for sources; it is not what think emits.) The command
@@ -520,7 +521,7 @@ canonical file `path`, `writes_to` (where an answer would land), whether it is
 `complete`, whether it is `required`, and `body` — the operator's own words, with the
 document's heading stripped. The offer field also carries `files`, the offer
 documents that already exist. The four required fields — brand, voice, audience,
-offer — come first, then strategy and proof.
+offer — come first, then strategy, proof, competitors and inspiration.
 
 Completeness is decided by the same function `mos status` uses, so untouched
 template boilerplate reports as no answer and the two commands can never disagree.

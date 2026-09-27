@@ -230,12 +230,16 @@ priority.
   inspects direct children of the repository root and skips dot-entries, so an off-schema
   folder nested inside an allowed tree is never reported.
 - `invalid-year` / `invalid-month` / `invalid-dated-artifact` — a folder under an execution
-  tree breaks the `YYYY/MM/YYYY-MM-DD-slug` grammar. Rename it to match. When the brain sets
-  `"month_folder": "MM-Mon"`, month folders must read `09-Sep` (number and English
-  three-letter name agreeing, exact case), so a bare `09` is flagged there; the message names
-  the expected folder.
+  tree breaks the `YYYY/MM-Mon/YYYY-MM-DD-slug` grammar. Month folders must read `09-Sep`
+  (number and English three-letter name agreeing, exact case) unless the brain sets
+  `"month_folder": "MM"`; the message names the expected folder. A bare `09` left from before
+  0.5.0 is renamed, with every link to it, by `mos fix invalid-month --plan` then `--yes`.
+  Anything else (`09-Sept`, `9`) is renamed by hand.
+- `month-folder-exists` — `mos fix invalid-month` found `09-Sep` already beside `09` in the
+  same year and refused to merge them. Move the contents into one folder by hand, then run
+  it again.
 - `invalid-month-folder` — an error: `.mos/config.yaml` has a `month_folder` value other than
-  `MM` or `MM-Mon`. Fix the value (or remove the key for the default). Until then month folder
+  `MM` or `MM-Mon`. Fix the value (or remove the key for the `MM-Mon` default). Until then month folder
   names are not judged.
 - `invalid-quarter` / `invalid-report-month` — a folder under `reporting/` breaks the
   `YYYY/QN/YYYY-MM` grammar. Rename it to match.

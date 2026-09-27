@@ -5,7 +5,7 @@ import pytest
 
 from marketing_os.core import ingest as ingest_mod
 from marketing_os.core.ingest import ingest_repo, pending_sources
-from marketing_os.core.schema import config_text
+from marketing_os.core.schema import MONTH_ABBREVIATIONS, config_text
 
 
 def _repo(tmp_path: Path) -> Path:
@@ -22,8 +22,8 @@ def test_ingest_file_writes_source_with_header(tmp_path: Path) -> None:
     result = ingest_repo(root, str(note), topic=None, slug=None, date="2026-07-18", apply=True)
     assert result["ok"] is True
     assert result["form"] == "file"
-    assert result["source_dir"] == "knowledge/sources/2026/07/2026-07-18-note"
-    text = (root / "knowledge/sources/2026/07/2026-07-18-note/source.md").read_text(
+    assert result["source_dir"] == "knowledge/sources/2026/07-Jul/2026-07-18-note"
+    text = (root / "knowledge/sources/2026/07-Jul/2026-07-18-note/source.md").read_text(
         encoding="utf-8"
     )
     assert "# Source: note" in text
@@ -31,7 +31,8 @@ def test_ingest_file_writes_source_with_header(tmp_path: Path) -> None:
     assert "Raw research body." in text
     assert result["next_action"]["id"] == "compile-source"
     # The compile-source reason is self-contained: it names the real folder.
-    assert "knowledge/sources/2026/07/2026-07-18-note/source.md" in result["next_action"]["reason"]
+    reason = result["next_action"]["reason"]
+    assert "knowledge/sources/2026/07-Jul/2026-07-18-note/source.md" in reason
     assert "2026-07-18-note" in result["next_action"]["reason"]
 
 
@@ -46,8 +47,8 @@ def test_ingest_directory_copies_text_files_under_files_and_manifest(tmp_path: P
     assert result["ok"] is True
     # Topic is metadata-only; it is not a path segment.
     assert result["topic"] == "Research"
-    assert result["source_dir"] == "knowledge/sources/2026/07/2026-07-18-dump"
-    folder = root / "knowledge/sources/2026/07/2026-07-18-dump"
+    assert result["source_dir"] == "knowledge/sources/2026/07-Jul/2026-07-18-dump"
+    folder = root / "knowledge/sources/2026/07-Jul/2026-07-18-dump"
     manifest = (folder / "source.md").read_text(encoding="utf-8")
     assert "- Topic: Research" in manifest
     assert "## Files" in manifest
@@ -68,7 +69,7 @@ def test_ingest_directory_member_named_source_md_does_not_clobber_manifest(
     (src / "notes.md").write_text("notes body", encoding="utf-8")
     result = ingest_repo(root, str(src), topic=None, slug=None, date="2026-07-18", apply=True)
     assert result["ok"] is True
-    folder = root / "knowledge/sources/2026/07/2026-07-18-dump"
+    folder = root / "knowledge/sources/2026/07-Jul/2026-07-18-dump"
     # The root source.md is the manifest, not the member content.
     manifest = (folder / "source.md").read_text(encoding="utf-8")
     assert "## Files" in manifest
@@ -86,7 +87,7 @@ def test_ingest_url_is_stored_verbatim_without_fetch(tmp_path: Path) -> None:
     result = ingest_repo(root, url, topic=None, slug="deep-dive", date="2026-07-18", apply=True)
     assert result["form"] == "url"
     assert result["origin"] == url
-    text = (root / "knowledge/sources/2026/07/2026-07-18-deep-dive/source.md").read_text(
+    text = (root / "knowledge/sources/2026/07-Jul/2026-07-18-deep-dive/source.md").read_text(
         encoding="utf-8"
     )
     assert url in text
@@ -107,7 +108,8 @@ def test_default_date_is_today(tmp_path: Path) -> None:
     root = _repo(tmp_path)
     result = ingest_repo(root, "idea", topic=None, slug="idea", date=None, apply=True)
     today = datetime.date.today()
-    expected = f"knowledge/sources/{today.year:04d}/{today.month:02d}/{today.isoformat()}-idea"
+    month = f"{today.month:02d}-{MONTH_ABBREVIATIONS[today.month - 1]}"
+    expected = f"knowledge/sources/{today.year:04d}/{month}/{today.isoformat()}-idea"
     assert result["source_dir"] == expected
 
 
@@ -120,7 +122,7 @@ def test_plan_mode_writes_nothing(tmp_path: Path) -> None:
     after = {path.relative_to(root).as_posix() for path in root.rglob("*")}
     assert result["ok"] is True
     assert result["planned"] is True
-    assert result["changes"] == ["create knowledge/sources/2026/07/2026-07-18-note/source.md"]
+    assert result["changes"] == ["create knowledge/sources/2026/07-Jul/2026-07-18-note/source.md"]
     assert before == after
     assert not (root / "knowledge").exists()
 
@@ -135,7 +137,7 @@ def test_collision_refuses_and_leaves_original_intact(tmp_path: Path) -> None:
     assert result["ok"] is False
     assert result["findings"][0]["code"] == "source-exists"
     assert result["changes"] == []
-    text = (root / "knowledge/sources/2026/07/2026-07-18-note/source.md").read_text(
+    text = (root / "knowledge/sources/2026/07-Jul/2026-07-18-note/source.md").read_text(
         encoding="utf-8"
     )
     assert "first" in text
@@ -200,10 +202,10 @@ def test_atomic_failure_leaves_no_dest_folder(
     result = ingest_repo(root, str(src), topic=None, slug=None, date="2026-07-18", apply=True)
     assert result["ok"] is False
     assert result["findings"][0]["code"] == "ingest-failed"
-    dest = root / "knowledge/sources/2026/07/2026-07-18-dump"
+    dest = root / "knowledge/sources/2026/07-Jul/2026-07-18-dump"
     assert not dest.exists()
     # No half-written temp folder is left behind either.
-    month_dir = root / "knowledge/sources/2026/07"
+    month_dir = root / "knowledge/sources/2026/07-Jul"
     assert list(month_dir.iterdir()) == []
 
 
@@ -218,7 +220,7 @@ def test_pending_lists_uncompiled_sources(tmp_path: Path) -> None:
     assert result["ok"] is True
     assert result["schema"] == "mos.ingest-pending.v1"
     assert result["command"] == "ingest-pending"
-    assert result["pending"] == ["knowledge/sources/2026/07/2026-07-18-two"]
+    assert result["pending"] == ["knowledge/sources/2026/07-Jul/2026-07-18-two"]
     assert result["next_action"]["id"] == "compile-source"
 
 
@@ -232,7 +234,7 @@ def test_pending_whole_token_matching_ignores_superstrings(tmp_path: Path) -> No
     (wiki / "_log.md").write_text("- compiled 2026-07-18-two-b\n", encoding="utf-8")
     result = pending_sources(root)
     # 2026-07-18-two must still be pending: it is not a whole token in the log.
-    assert result["pending"] == ["knowledge/sources/2026/07/2026-07-18-two"]
+    assert result["pending"] == ["knowledge/sources/2026/07-Jul/2026-07-18-two"]
 
 
 def test_pending_matches_slash_delimited_token(tmp_path: Path) -> None:
@@ -242,7 +244,7 @@ def test_pending_matches_slash_delimited_token(tmp_path: Path) -> None:
     wiki.mkdir(parents=True, exist_ok=True)
     # A path-style reference: the folder name is a slash-delimited token.
     (wiki / "_log.md").write_text(
-        "- compiled knowledge/sources/2026/07/2026-07-18-one\n", encoding="utf-8"
+        "- compiled knowledge/sources/2026/07-Jul/2026-07-18-one\n", encoding="utf-8"
     )
     result = pending_sources(root)
     assert result["pending"] == []
@@ -256,7 +258,7 @@ def test_pending_ignores_nested_files_source_md(tmp_path: Path) -> None:
     ingest_repo(root, str(src), topic=None, slug=None, date="2026-07-18", apply=True)
     result = pending_sources(root)
     # Only the top-level dated folder counts, not the nested files/source.md copy.
-    assert result["pending"] == ["knowledge/sources/2026/07/2026-07-18-dump"]
+    assert result["pending"] == ["knowledge/sources/2026/07-Jul/2026-07-18-dump"]
 
 
 def test_pending_empty_when_no_sources(tmp_path: Path) -> None:

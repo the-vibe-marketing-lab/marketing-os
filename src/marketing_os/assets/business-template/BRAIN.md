@@ -13,15 +13,20 @@ Before producing work:
 
 ## Routing
 
-- Business identity, audience, offers, strategy, proof, and operations belong in `business/`.
-- Immutable source material belongs in `knowledge/sources/YYYY/MM/YYYY-MM-DD-source/`.
+- Business identity, audience, offers, strategy, proof, competitors, and operations belong in
+  `business/`.
+- Ranked competitors belong in `business/competitors/main-competitors/competitors.md`; brands to
+  emulate but not compete with belong in `business/competitors/inspiration/inspiration.md`.
+- Immutable source material belongs in `knowledge/sources/YYYY/MM-Mon/YYYY-MM-DD-source/`.
 - Reusable synthesized knowledge belongs in `knowledge/wiki/`.
-- Organic deliverables belong in `content/YYYY/MM/YYYY-MM-DD-topic/<channel>/`.
-- Coordinated or paid work belongs in `campaigns/YYYY/MM/YYYY-MM-DD-campaign/<platform>/`.
+- Organic deliverables belong in `content/YYYY/MM-Mon/YYYY-MM-DD-topic/<channel>/`.
+- Coordinated or paid work belongs in `campaigns/YYYY/MM-Mon/YYYY-MM-DD-campaign/<platform>/`.
 - Performance reports belong in `reporting/YYYY/QN/YYYY-MM/`.
-- Work with no better destination belongs in `outputs/YYYY/MM/YYYY-MM-DD-slug/`.
+- Work with no better destination belongs in `outputs/YYYY/MM-Mon/YYYY-MM-DD-slug/`.
 - Retired material belongs in `archive/` and must not be used for ordinary grounding.
-- `MM` month folders are `09`, or `09-Sep` when `.mos/config.yaml` sets `"month_folder": "MM-Mon"`.
+- `MM-Mon` month folders are the two-digit month plus its English three-letter name: `09-Sep`
+  (never `09` or `09-Sept`). A brain that sets `"month_folder": "MM"` in `.mos/config.yaml`
+  keeps bare `09` folders.
 
 ## Navigation
 

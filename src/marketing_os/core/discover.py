@@ -49,6 +49,8 @@ FIELD_ALIASES: dict[str, tuple[str, ...]] = {
     "offer": ("offer", "offer-definition", "offer-backbone", "pricing", "package"),
     "strategy": ("strategy", "strategic", "roadmap", "okr", "plan"),
     "proof": ("proof", "testimonial", "case-study", "casestudy", "review", "result", "win"),
+    "competitors": ("competitor", "competition", "competitive-landscape", "rival"),
+    "inspiration": ("inspiration", "inspo", "moodboard", "mood-board", "role-model"),
 }
 
 #: Folders that never hold a current answer: machinery, working scratch, and things already

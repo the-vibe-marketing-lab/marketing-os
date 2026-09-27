@@ -62,7 +62,16 @@ def test_show_asks_every_context_field_on_a_fresh_brain(tmp_path: Path) -> None:
     assert result["ready"] is False
     names = [item["name"] for item in result["fields"]]
     assert names[:4] == ["brand", "voice", "audience", "offer"]
-    assert set(names) == {"brand", "voice", "audience", "offer", "strategy", "proof"}
+    assert set(names) == {
+        "brand",
+        "voice",
+        "audience",
+        "offer",
+        "strategy",
+        "proof",
+        "competitors",
+        "inspiration",
+    }
     for item in result["fields"]:
         assert item["question"].endswith("?")
         assert item["path"]
@@ -213,7 +222,16 @@ def test_set_refuses_an_unknown_field_and_names_the_valid_ones(tmp_path: Path) -
     result = set_context(root, "vibe", BRAND, apply=True)
     assert result["ok"] is False
     assert result["findings"][0]["code"] == "unknown-field"
-    for name in ("brand", "voice", "audience", "offer", "strategy", "proof"):
+    for name in (
+        "brand",
+        "voice",
+        "audience",
+        "offer",
+        "strategy",
+        "proof",
+        "competitors",
+        "inspiration",
+    ):
         assert name in result["findings"][0]["message"]
     assert result["next_action"]["id"] == "choose-field"
     assert _snapshot(root) == before
