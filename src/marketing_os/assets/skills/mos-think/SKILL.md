@@ -46,10 +46,11 @@ operator to accept, revise, or defer before creating any durable record.
 Only after approval, write the decision as a schema-conformant dated artifact:
 
 ```
-business/decisions/YYYY/MM/YYYY-MM-DD-<slug>/decision.md
+business/decisions/YYYY/MM-Mon/YYYY-MM-DD-<slug>/decision.md
 ```
 
-Use today's date and a lowercase hyphenated slug. Record the question, the decision, the
+Use today's date and a lowercase hyphenated slug; `MM-Mon` is `09-Sep` style, or a bare `09`
+when `.mos/config.yaml` sets `"month_folder": "MM"` (the path `mos think` emits already does). Record the question, the decision, the
 rationale, the evidence, the alternatives rejected, and a revisit-when trigger. Then update the
 relevant wiki page and `CONTEXT.md` if the current focus changed.
 

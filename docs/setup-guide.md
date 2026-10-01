@@ -36,7 +36,7 @@ Check it is available:
 mos --version
 ```
 
-You should see `mos 0.4.0`. `mos open` and `mos rename` are the newest two commands; if
+You should see `mos 0.5.0`. `mos open` and `mos rename` are the newest two commands; if
 `mos open --help` answers `invalid choice: 'open'` you are on an older install, and section 3
 will not work until you upgrade (`pipx upgrade marketing-os`, or pull the checkout).
 
@@ -250,13 +250,15 @@ skips every destination that already exists, so what you wrote stays exactly as 
 
 ## 6. Establish minimum context
 
-Scaffolding creates empty rooms. Six fields furnish them: brand, voice, audience, offer,
-strategy, and proof. Only the first four gate readiness — `mos status` reports
-`needs-context` until brand, voice, audience, and offer are answered. Strategy
-(`business/strategy/strategy.md`) and proof are interviewed and settable the same way, but
-a brain reaches `ready` without them.
+Scaffolding creates empty rooms. Eight fields furnish them: brand, voice, audience, offer,
+strategy, proof, competitors, and inspiration. Only the first four gate readiness — `mos
+status` reports `needs-context` until brand, voice, audience, and offer are answered.
+Strategy (`business/strategy/strategy.md`), proof, competitors
+(`business/competitors/main-competitors/competitors.md`) and inspiration
+(`business/competitors/inspiration/inspiration.md`) are interviewed and settable the same
+way, but a brain reaches `ready` without them.
 
-Run inside an agent, the onboard skill interviews you across all six, proposes the exact
+Run inside an agent, the onboard skill interviews you across all of them, proposes the exact
 edits, and saves them only after you approve. Nothing is invented and no non-placeholder
 file is overwritten without discussion.
 
@@ -399,7 +401,7 @@ AGPL-3.0 licence does not sit inside an MIT wheel, and it weighs eight megabytes
 Community
 plugins → Browse → search "Excalidraw" → Install → Enable. Save each drawing beside the note
 it illustrates, inside a dated source folder such as
-`knowledge/sources/2026/08/2026-08-28-funnel-map/` (a loose `drawings/` folder, or
+`knowledge/sources/2026/08-Aug/2026-08-28-funnel-map/` (a loose `drawings/` folder, or
 Excalidraw's default `Excalidraw/` folder at the vault root, is off-schema and `mos validate`
 will say so). `*.excalidraw.md` files are exempt from the frontmatter contract, so
 `mos validate --strict` never flags a drawing.

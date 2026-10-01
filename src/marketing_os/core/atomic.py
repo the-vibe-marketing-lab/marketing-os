@@ -17,7 +17,9 @@ crash.
 
 from __future__ import annotations
 
+import contextlib
 import os
+import stat
 import tempfile
 from pathlib import Path
 
@@ -53,7 +55,19 @@ def atomic_write(target: Path, text: str) -> None:
             handle.write(data)
             handle.flush()
             os.fsync(handle.fileno())
+        _keep_mode(temporary, target)
         os.replace(temporary, target)
     except BaseException:
         temporary.unlink(missing_ok=True)
         raise
+
+
+def _keep_mode(temporary: Path, target: Path) -> None:
+    """Give the replacement the permissions of the document it replaces.
+
+    ``NamedTemporaryFile`` creates ``0600``; without this every rewritten document would
+    silently become private to its owner. A new document keeps the temporary file's mode.
+    """
+    # No target yet, or a filesystem that does not keep modes: keep the temporary's mode.
+    with contextlib.suppress(OSError):
+        os.chmod(temporary, stat.S_IMODE(target.stat().st_mode))

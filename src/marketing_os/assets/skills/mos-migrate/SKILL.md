@@ -11,7 +11,7 @@ diagnosis, decide where each stray file belongs, write the plan, and apply it.
 
 ## Why a skill, not just the command
 
-Deciding that `old-posts/launch.md` belongs at `content/2026/07/2026-07-15-launch/` is judgement —
+Deciding that `old-posts/launch.md` belongs at `content/2026/07-Jul/2026-07-15-launch/` is judgement —
 exactly what the CLI leaves to you. The command owns the safe file moves; you own the mapping.
 
 ## How to run this skill (interaction contract)
@@ -45,15 +45,19 @@ relative to the repo root:
 ```json
 {
   "schema": "mos.migrate-plan.v1",
-  "mkdirs": ["content/2026/07"],
+  "mkdirs": ["content/2026/07-Jul"],
   "moves": [
-    { "source": "old-posts/launch.md", "destination": "content/2026/07/2026-07-15-launch/launch.md" }
+    { "source": "old-posts/launch.md", "destination": "content/2026/07-Jul/2026-07-15-launch/launch.md" }
   ]
 }
 ```
 
-Follow the canonical naming: dated artifacts as `YYYY/MM/YYYY-MM-DD-slug/` under `content`,
+Follow the canonical naming: dated artifacts as `YYYY/MM-Mon/YYYY-MM-DD-slug/` under `content`,
 `campaigns`, `outputs`, `business/decisions`, and `knowledge/sources`; reports as `YYYY/QN/YYYY-MM`.
+The month folder is `09-Sep` (two-digit month plus English three-letter name). Only a brain whose
+`.mos/config.yaml` sets `"month_folder": "MM"` uses a bare `09`; route every destination that way.
+A brain still holding bare `09` folders from before 0.5.0 is renamed with
+`mos fix invalid-month --plan`, then `--yes`, not with a routing plan.
 
 ## 3. Preview, then apply
 

@@ -230,7 +230,25 @@ priority.
   inspects direct children of the repository root and skips dot-entries, so an off-schema
   folder nested inside an allowed tree is never reported.
 - `invalid-year` / `invalid-month` / `invalid-dated-artifact` — a folder under an execution
-  tree breaks the `YYYY/MM/YYYY-MM-DD-slug` grammar. Rename it to match.
+  tree breaks the `YYYY/MM-Mon/YYYY-MM-DD-slug` grammar. Month folders must read `09-Sep`
+  (number and English three-letter name agreeing, exact case) unless the brain sets
+  `"month_folder": "MM"`; the message names the expected folder. A bare `09` left from before
+  0.5.0 is renamed, with every link to it, by `mos fix invalid-month --plan` then `--yes`.
+  Anything else (`09-Sept`, `9`) is renamed by hand.
+- `month-folder-exists` — `mos fix invalid-month` would merge `09` into an existing
+  `09-Sep`, but both hold an entry of the same name (listed in the message). Resolve those by
+  hand, then run it again.
+- `month-move-failed` — a month folder could not be moved, usually because a file in it is
+  open in another app (Obsidian, on Windows). Close it and run `mos fix invalid-month --yes`
+  again; the links to the months that did move were already rewritten.
+- `month-folder-case` — a folder that differs from `09-Sep` only in case (`09-sep`) sits
+  beside `09`. Rename it to the exact `09-Sep` by hand, then run the fix again.
+- `ambiguous-link` / `backslash-link` — warnings from `mos fix invalid-month`: a Markdown
+  link that reads as two different existing paths, or a backslash path, points into a moved
+  month and was left alone. Fix the link by hand (forward slashes, one clear path).
+- `invalid-month-folder` — an error: `.mos/config.yaml` has a `month_folder` value other than
+  `MM` or `MM-Mon`. Fix the value (or remove the key for the `MM-Mon` default). Until then month folder
+  names are not judged.
 - `invalid-quarter` / `invalid-report-month` — a folder under `reporting/` breaks the
   `YYYY/QN/YYYY-MM` grammar. Rename it to match.
 

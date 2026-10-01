@@ -127,6 +127,35 @@ FIELDS: dict[str, FieldSpec] = {
         ),
         related=("business/audience/primary.md", "business/strategy/strategy.md"),
     ),
+    "competitors": FieldSpec(
+        question="Who else competes for the same buyer, and where do they fall short?",
+        hint=(
+            "Rank them by how directly they compete. For each: what they do well, the gap "
+            "you can win, and what to watch."
+        ),
+        title="Competitors",
+        description=(
+            "Who competes for the same buyer, ranked by how directly, with what they do "
+            "well and what to watch."
+        ),
+        related=(
+            "business/audience/primary.md",
+            "business/competitors/inspiration/inspiration.md",
+        ),
+    ),
+    "inspiration": FieldSpec(
+        question="Which brands do you want to emulate, even though you do not compete with them?",
+        hint="For each: what exactly to take from them, and what to leave.",
+        title="Inspiration",
+        description=(
+            "Brands we want to emulate but do not compete with, and exactly what to take "
+            "and leave from each."
+        ),
+        related=(
+            "business/competitors/main-competitors/competitors.md",
+            "business/brand/brand.md",
+        ),
+    ),
 }
 
 

@@ -238,7 +238,8 @@ mos validate [path] [--strict] [--json]
 
 Validates the canonical schema, the dated-folder grammar (config identity,
 required directories and files, allowed top-level paths, and the
-`YYYY/MM/YYYY-MM-DD-slug` layout for dated artifacts), and the frontmatter
+`YYYY/MM-Mon/YYYY-MM-DD-slug` layout for dated artifacts, with month folders as `09-Sep`
+or, when `.mos/config.yaml` sets `"month_folder": "MM"`, as a bare `09`), and the frontmatter
 contract. Structural problems are `error` findings; unknown top-level paths and
 contract gaps are `warning` findings. Exit is `1` only when there is at least one
 error.
@@ -335,7 +336,8 @@ Captures raw material into `knowledge/sources/` so it can be distilled later.
 `source` is a file, a directory, an `http://` or `https://` URL, or literal text —
 checked in that order, so an argument that names a real file is a file and anything
 left over is text. The capture lands in
-`knowledge/sources/YYYY/MM/YYYY-MM-DD-slug/source.md`: a file's contents are copied
+`knowledge/sources/YYYY/MM-Mon/YYYY-MM-DD-slug/source.md` (the month folder is `09-Sep`,
+or a bare `09` when the brain sets `"month_folder": "MM"`): a file's contents are copied
 in under a short header, a directory writes a manifest plus every `.md` and `.txt`
 member beneath `files/`, a URL records the address, and literal text becomes the
 body. Directory members go under `files/` rather than the folder root so a member
@@ -351,7 +353,7 @@ built in a temporary directory beside its destination and moved into place, so a
 failed write leaves no half-capture behind.
 
 `--pending` lists captures that have not been compiled yet: every
-`knowledge/sources/YYYY/MM/<folder>/source.md` whose folder name does not appear in
+`knowledge/sources/YYYY/<month>/<folder>/source.md` whose folder name does not appear in
 `knowledge/wiki/_log.md`. That log line is the entire bookkeeping mechanism — writing
 the folder name into `_log.md` is what marks a source as done.
 
@@ -451,11 +453,12 @@ terminal share one map from finding to fix:
 | `missing-file`, `missing-directory`, `missing-client-registry` | The scaffold, which only ever creates what is missing. Name and mode come from `.mos/config.yaml`; without a name it stops with `needs-name`. |
 | `no-catalog`, `stale-catalog` | `mos index build`. The build has no plan of its own, so `--plan` reports the one line `rebuild the catalogue`. |
 | `unlinked-document` | `mos related`, with no limit. |
+| `invalid-month` | The month folder migration, run only when named (`--all` skips it): every bare `MM` folder directly inside a four-digit year folder under `content/`, `campaigns/`, `outputs/`, `business/decisions/` and `knowledge/sources/` is renamed to `YYYY/MM-Mon` (`09` becomes `09-Sep`), or merged into an existing `09-Sep`; `reporting/` and anything else are never touched. Only links into a folder it moved are rewritten, and only in link positions: Markdown link, image and reference targets, wikilinks and embeds, `sources:`/`related:` frontmatter values, canvas `"file"` values and base `inFolder("...")` arguments. Prose, headings, tables, dates, other frontmatter keys, URLs and code are never touched. A Markdown link is read from its own document first and from the brain root only if that path does not exist; wikilinks and frontmatter paths are read from the brain root. `--plan` lists each rename or merge and how many links move in each file. A merge where both folders hold an entry of the same name refuses the run (`month-folder-exists`), as does a folder that differs from `09-Sep` only in case (`month-folder-case`). A move that fails part-way reports `month-move-failed`, still rewrites the links to what moved, and finishes on the next run; each move is journalled in `.mos/local/month-moves.json`, which a clean run deletes. `ambiguous-link`, `backslash-link`, `unreadable-document` and `linked-document` are warnings for links it left alone. It does nothing in a brain that sets `"month_folder": "MM"`, and a second run is a no-op. |
 | `runtime-not-ready` | `mos skills sync` for both runtimes. |
 
 Any other code returns `no-deterministic-fix` with a `copy-prompt` next action: those
 findings are judgement calls for the assistant, not for a script. `--all` runs every
-fixer once, in the order above, prefixes each change with its code, and lists the codes
+fixer except `invalid-month` once, in the order above, prefixes each change with its code, and lists the codes
 that reported a change under `ran`. `--plan` and `--yes` mean what they mean everywhere
 else; the envelope is `mos.fix.v1`.
 
@@ -500,7 +503,8 @@ query` uses. Those three go in whatever the topic is, because a recommendation
 reasoned without them is a recommendation about a different business.
 
 The steps name the file the decision should land in —
-`business/decisions/YYYY/MM/YYYY-MM-DD-<topic-slug>/decision.md` — and tell the agent to
+`business/decisions/YYYY/MM-Mon/YYYY-MM-DD-<topic-slug>/decision.md`, with the month folder in
+the brain's `month_folder` style — and tell the agent to
 append a line naming that decision file to `knowledge/wiki/_log.md`. (The folder-name
 convention is `mos ingest --pending`'s, for sources; it is not what think emits.) The command
 supplies the prompt; the `mos-think` skill is what runs it.
@@ -517,7 +521,7 @@ canonical file `path`, `writes_to` (where an answer would land), whether it is
 `complete`, whether it is `required`, and `body` — the operator's own words, with the
 document's heading stripped. The offer field also carries `files`, the offer
 documents that already exist. The four required fields — brand, voice, audience,
-offer — come first, then strategy and proof.
+offer — come first, then strategy, proof, competitors and inspiration.
 
 Completeness is decided by the same function `mos status` uses, so untouched
 template boilerplate reports as no answer and the two commands can never disagree.

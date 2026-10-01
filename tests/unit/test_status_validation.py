@@ -249,7 +249,7 @@ def test_navigation_files_never_answer_for_a_brain_that_is_still_stubs(tmp_path:
 
     assert context["missing"] == ["brand", "voice", "audience", "offer"]
     assert context["ready"] is False
-    assert [entry["source"] for entry in context["fields"].values()] == ["missing"] * 6
+    assert [entry["source"] for entry in context["fields"].values()] == ["missing"] * 8
 
 
 def test_an_offer_file_that_cannot_be_read_does_not_take_down_status(tmp_path: Path) -> None:
@@ -387,7 +387,7 @@ def test_an_empty_folder_that_is_not_a_brain_still_reports_nothing_found(tmp_pat
     assert status["next_action"]["id"] == "run-setup"
     assert status["context"]["ready"] is False
     assert status["context"]["missing"] == ["brand", "voice", "audience", "offer"]
-    assert [entry["source"] for entry in status["context"]["fields"].values()] == ["missing"] * 6
+    assert [entry["source"] for entry in status["context"]["fields"].values()] == ["missing"] * 8
 
 
 def test_a_placeholder_in_a_folder_that_is_not_a_brain_never_answers_for_a_field(
@@ -420,7 +420,7 @@ def test_a_placeholder_in_a_folder_that_is_not_a_brain_never_answers_for_a_field
 
     assert context["ready"] is False
     assert context["missing"] == ["brand", "voice", "audience", "offer"]
-    assert [entry["source"] for entry in context["fields"].values()] == ["missing"] * 6
+    assert [entry["source"] for entry in context["fields"].values()] == ["missing"] * 8
 
 
 def test_doctor_on_a_folder_that_is_not_a_brain_checks_the_home_install(

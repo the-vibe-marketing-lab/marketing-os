@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from marketing_os.core.catalog import build_repo as build_catalog
+from marketing_os.core.months import migrate_month_folders
 from marketing_os.core.related import related_repo
 from marketing_os.core.results import envelope, finding, next_action
 from marketing_os.core.schema import read_config, repo_mode
@@ -57,6 +58,10 @@ def _catalogue(root: Path, apply: bool) -> dict[str, Any]:
     return envelope("index-build", root, ok=True, changes=["rebuild the catalogue"], planned=True)
 
 
+def _months(root: Path, apply: bool) -> dict[str, Any]:
+    return migrate_month_folders(root, apply)
+
+
 def _related(root: Path, apply: bool) -> dict[str, Any]:
     return related_repo(root, apply=apply, limit=None)
 
@@ -70,6 +75,7 @@ FIXERS: dict[str, Fixer] = {
     "missing-file": _scaffold,
     "missing-directory": _scaffold,
     "missing-client-registry": _scaffold,
+    "invalid-month": _months,
     "no-catalog": _catalogue,
     "stale-catalog": _catalogue,
     "unlinked-document": _related,
@@ -78,6 +84,10 @@ FIXERS: dict[str, Fixer] = {
 
 #: The codes the dashboard may offer "Preview the fix" for.
 FIXABLE: frozenset[str] = frozenset(FIXERS)
+
+#: Fixes that run only when named. Renaming every month folder in a brain is not
+#: something ``--all`` should do as a side effect of adding a missing file.
+EXPLICIT_ONLY: frozenset[str] = frozenset({"invalid-month"})
 
 
 def fix_repo(
@@ -127,7 +137,7 @@ def _fix_all(root: Path, apply: bool) -> dict[str, Any]:
     ok = True
     done: list[Fixer] = []
     for code, fixer in FIXERS.items():
-        if fixer in done:
+        if code in EXPLICIT_ONLY or fixer in done:
             continue  # three codes share the scaffold; it runs once
         done.append(fixer)
         inner = fixer(root, apply)

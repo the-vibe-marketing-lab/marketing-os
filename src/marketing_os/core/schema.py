@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import hashlib
 import json
 import re
@@ -11,6 +12,24 @@ from typing import Any
 from marketing_os.core.results import finding
 
 MODES = ("in-house", "agency", "client")
+MONTH_FOLDER_STYLES = ("MM", "MM-Mon")
+#: The trees whose artifacts are filed as ``YYYY/<month>/YYYY-MM-DD-slug``.
+DATED_ROOTS = ("content", "campaigns", "outputs", "business/decisions", "knowledge/sources")
+MONTH_ABBREVIATIONS = (
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+)
+_MONTH_NAME = re.compile(r"(0[1-9]|1[0-2])(?:-(.+))?")
 
 
 def assets_root() -> Path:
@@ -142,3 +161,59 @@ def repo_mode(config: dict[str, Any] | None) -> tuple[str, list[dict[str, str]]]
 def slugify(value: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
     return slug or "business"
+
+
+def month_folder_style(config: dict[str, Any] | None) -> tuple[str, list[dict[str, str]]]:
+    """Resolve how month folders under the dated trees are named.
+
+    Missing ``month_folder`` means ``MM-Mon`` (``09-Sep``), the default since 0.5.0.
+    ``MM`` (``09``) is the legacy opt-out a brain keeps by saying so. An unrecognised
+    value returns an ``invalid-month-folder`` error and is returned verbatim so callers
+    never guess.
+    """
+    raw = config.get("month_folder") if isinstance(config, dict) else None
+    if raw is None:
+        return "MM-Mon", []
+    if raw not in MONTH_FOLDER_STYLES:
+        return str(raw), [
+            finding(
+                "invalid-month-folder",
+                f"Config month_folder {raw!r} is not one of MM, MM-Mon.",
+                path=".mos/config.yaml",
+            )
+        ]
+    return raw, []
+
+
+def month_dir(when: datetime.date, config: dict[str, Any] | None) -> str:
+    """The month folder name for a date: ``09-Sep`` by default, ``09`` under ``MM``.
+
+    The single formatter every path generator uses, so a brain's month folders are
+    always written the way its validator reads them. An invalid style falls back to
+    ``MM-Mon``; validation reports the bad value separately.
+    """
+    style, findings = month_folder_style(config)
+    number = f"{when.month:02d}"
+    if style == "MM" and not findings:
+        return number
+    return f"{number}-{MONTH_ABBREVIATIONS[when.month - 1]}"
+
+
+def is_month_like(name: str) -> bool:
+    """Whether a name is shaped like a month folder at all: ``01``-``12``, maybe suffixed.
+
+    Only these children of a year folder are judged as month folders. Anything else a year
+    folder holds is not a month folder, so it is neither validated nor renamed as one.
+    """
+    return _MONTH_NAME.fullmatch(name) is not None
+
+
+def is_month_dir(name: str, style: str) -> bool:
+    """Whether a folder name is a valid month folder in the given style."""
+    match = _MONTH_NAME.fullmatch(name)
+    if match is None:
+        return False
+    number, suffix = match.groups()
+    if style == "MM-Mon":
+        return suffix == MONTH_ABBREVIATIONS[int(number) - 1]
+    return suffix is None

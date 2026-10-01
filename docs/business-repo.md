@@ -24,20 +24,23 @@ my-business/
 |   |-- offers/<offer-slug>/offer.md
 |   |-- strategy/{strategy.md,goals.md,roadmap.md}
 |   |-- proof/testimonials.md
+|   |-- competitors/
+|   |   |-- main-competitors/competitors.md
+|   |   `-- inspiration/inspiration.md
 |   |-- operations/
 |   |-- clients/clients.md             agency mode only, from the mode overlay
-|   `-- decisions/YYYY/MM/YYYY-MM-DD-slug/decision.md
+|   `-- decisions/YYYY/MM-Mon/YYYY-MM-DD-slug/decision.md
 |-- knowledge/
-|   |-- sources/YYYY/MM/YYYY-MM-DD-source/
+|   |-- sources/YYYY/MM-Mon/YYYY-MM-DD-source/
 |   `-- wiki/{_index.md,_log.md}
-|-- content/YYYY/MM/YYYY-MM-DD-topic/<channel>/
-|-- campaigns/YYYY/MM/YYYY-MM-DD-campaign/<platform>/
+|-- content/YYYY/MM-Mon/YYYY-MM-DD-topic/<channel>/
+|-- campaigns/YYYY/MM-Mon/YYYY-MM-DD-campaign/<platform>/
 |-- reporting/YYYY/QN/YYYY-MM/
-|-- outputs/YYYY/MM/YYYY-MM-DD-slug/
+|-- outputs/YYYY/MM-Mon/YYYY-MM-DD-slug/
 `-- archive/
 ```
 
-The required directories, the seventeen required files and the allowed top-level paths above
+The required directories, the nineteen required files and the allowed top-level paths above
 come from one file, `src/marketing_os/assets/schema.json`, and `mos validate` reports any
 deviation from those three. Not everything in the tree is in it. `.gitattributes` and the
 `.obsidian/` vault come from the business template
@@ -87,7 +90,7 @@ keep credentials and secrets out and record only the process itself.
 `business/decisions/` is the per-event record of marketing decisions: each entry captures
 what was decided, the reasoning, the alternatives considered, and the expected outcome, so
 later work can trace why the current strategy exists. Unlike `operations/`, this tree is
-dated. Each decision lives at `business/decisions/YYYY/MM/YYYY-MM-DD-slug/decision.md`, and
+dated. Each decision lives at `business/decisions/YYYY/MM-Mon/YYYY-MM-DD-slug/decision.md`, and
 `mos validate` checks the folder names against the dated grammar below. Keep this business
 record distinct from the engine repository's own `docs/` and `decisions/`, which document
 the tooling rather than a business.
@@ -109,7 +112,9 @@ still parses. `mos onboard` emits sorted keys, for example an agency HQ:
 ```
 
 Client repos additionally carry an `agency` key. Repos created before modes existed omit
-`mode` entirely and read as in-house (see Modes below).
+`mode` entirely and read as in-house (see Modes below). An optional `month_folder` key picks
+how month folders are named in the dated trees — `"MM"` (the default when absent) or
+`"MM-Mon"` — see the dated-folder grammar below.
 
 `mos status`, `mos validate`, and `mos doctor` read `.mos/config.yaml` at exactly the path
 they are given. They do not walk up, so run them from the repository root or pass it
@@ -191,15 +196,35 @@ Execution trees use dated folders so artifacts sort chronologically and validate
 deterministically. `mos validate` enforces the exact names:
 
 - Execution dirs (`content/`, `campaigns/`, `outputs/`, `business/decisions/`, and
-  `knowledge/sources/`) nest as `YYYY/MM/YYYY-MM-DD-slug/`. The year is four digits, the
-  month is `01`-`12`, and the leaf is a `YYYY-MM-DD` date followed by a lowercase hyphenated
+  `knowledge/sources/`) nest as `YYYY/MM-Mon/YYYY-MM-DD-slug/`. The year is four digits,
+  the month folder is `MM-Mon` — the two-digit month, a hyphen, and the fixed English
+  three-letter abbreviation (`Jan` `Feb` `Mar` `Apr` `May` `Jun` `Jul` `Aug` `Sep` `Oct`
+  `Nov` `Dec`) — and the leaf is a `YYYY-MM-DD` date followed by a lowercase hyphenated
   slug (`a-z`, `0-9`, and single hyphens between segments), for example
-  `content/2026/07/2026-07-18-launch-recap/`.
+  `content/2026/09-Sep/2026-09-26-launch-recap/`. The number and the name must agree, and
+  the case is exact: `09-Aug`, `09-sep`, `09-Sept`, and a bare `09` are all `invalid-month`.
+- Only month-shaped directories (`01`-`12`, with or without a suffix) directly inside a
+  year folder are judged as month folders. A file, a `YYYY-MM` folder or any other folder
+  in a year folder is not a month folder and is neither validated nor renamed as one, and
+  `reporting/` keeps its own quarter grammar below.
+- `MM-Mon` is the default since 0.5.0, when `.mos/config.yaml` has no `month_folder` key.
+  A brain can keep the older bare-number folders (`content/2026/09/...`) by setting
+  `"month_folder": "MM"`; the validator then accepts only `01`-`12`. The style is
+  all-or-nothing per brain, and `mos think` and `mos ingest` generate paths in it (one
+  formatter, `month_dir` in `core/schema.py`, serves the validator and every generator).
+  Any other value is an `invalid-month-folder` error, and month folder names are then not
+  judged at all rather than judged against a style nobody understands. Leaf folders keep
+  their numeric `YYYY-MM-DD` date in both styles.
+- A brain made before 0.5.0 without the key still has `09` folders, which now read as
+  `invalid-month`. `mos fix invalid-month --plan` lists the renames and the links that move
+  with them; `mos fix invalid-month --yes` applies both. A `09-Sep` already beside a `09`
+  is merged into unless both hold an entry of the same name, which refuses the run; running
+  it again changes nothing. `/mos-update` offers this, or the `"MM"` pin, after an update.
 - Reporting uses `reporting/YYYY/QN/YYYY-MM/` instead: a four-digit year, a quarter
   `Q1`-`Q4`, then a `YYYY-MM` month, for example `reporting/2026/Q3/2026-07/`.
 
 The leaf check is a shape check, not a calendar one: the month and day inside the leaf name
-are matched as two digits each, so `2026-99-99-launch` passes. It is the enclosing `YYYY/MM/`
+are matched as two digits each, so `2026-99-99-launch` passes. It is the enclosing `YYYY/MM-Mon/`
 folders that carry the real month range. The check exists to keep artifacts sorting and
 validating deterministically, not to catch a typo in a date.
 
@@ -207,7 +232,9 @@ Three file names are skipped by the checker — `.gitkeep`, `_index.md`, and `_l
 empty scaffolded tree passes and a generated navigation file sitting beside dated folders is
 not read as malformed content. Any folder that breaks the grammar surfaces as an
 `invalid-year`, `invalid-month`, `invalid-dated-artifact`, `invalid-quarter`, or
-`invalid-report-month` finding.
+`invalid-report-month` finding; an `invalid-month` message names the expected form, for
+example `Expected an MM-Mon directory like 09-Sep.`, and for a bare `09` also names
+`mos fix invalid-month --plan`.
 
 ## File lifecycle
 

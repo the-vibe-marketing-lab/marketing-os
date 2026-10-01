@@ -320,6 +320,13 @@ def test_onboard_scaffolds_the_obsidian_vault(tmp_path: Path) -> None:
     # The agency overlay adds files; it must not clobber the shipped vault config.
     icons = (plugins / "obsidian-icon-folder" / "data.json").read_text(encoding="utf-8")
     assert '"business/clients"' in icons
+    for folder in (
+        "business/competitors",
+        "business/competitors/main-competitors",
+        "business/competitors/inspiration",
+    ):
+        assert f'"{folder}"' in icons, folder
+        assert (target / folder).is_dir(), folder
     assert (target / "business" / "clients" / "clients.md").is_file()
     # The MarketingOS theme ships intact and is the active theme. Compared as text:
     # the scaffolder writes platform newlines, so Windows gets CRLF on disk.
