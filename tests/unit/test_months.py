@@ -1,4 +1,5 @@
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -371,6 +372,9 @@ def test_unreadable_and_symlinked_documents_are_reported(tmp_path: Path) -> None
     assert link.is_symlink()
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="Windows has no POSIX permission bits; st_mode reports 0o666"
+)
 def test_rewritten_documents_keep_their_mode(tmp_path: Path) -> None:
     """Review item 9: the atomic rewrite no longer leaves documents 0600."""
     root = _legacy_brain(tmp_path)
