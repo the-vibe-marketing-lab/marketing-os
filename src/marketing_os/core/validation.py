@@ -25,6 +25,7 @@ YEAR = re.compile(r"^\d{4}$")
 DATED = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$")
 QUARTER = re.compile(r"^Q[1-4]$")
 YEAR_MONTH = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+CHANNEL = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 
 NAV_FILES = frozenset({".gitkeep", "_index.md", "_log.md"})
@@ -77,6 +78,8 @@ def _check_year_month_dated(
     base = root / relative
     for year in _visible_children(base):
         if not year.is_dir() or not YEAR.fullmatch(year.name):
+            if relative == "campaigns" and year.is_dir() and CHANNEL.fullmatch(year.name):
+                continue  # a channel namespace, judged by _check_campaign_channels
             findings.append(finding("invalid-year", "Expected a YYYY directory.", path=str(year)))
             continue
         for month in _visible_children(year):
@@ -100,6 +103,31 @@ def _check_year_month_dated(
                             path=str(artifact),
                         )
                     )
+    return findings
+
+
+def _check_campaign_channels(root: Path, month_style: str | None) -> list[dict[str, str]]:
+    """Judge ``campaigns/<channel>/`` namespaces, the layout channel skill packs write.
+
+    The GEO pack writes ``campaigns/geo/YYYY-MM/`` and the Meta ads pack writes
+    ``campaigns/meta-ads/ads/...``, so a lowercase slug folder directly under ``campaigns/``
+    is a channel rather than a malformed year. Inside a channel, ``YYYY-MM`` run folders and
+    the pack's own working folders are accepted; any ``YYYY`` folder there is held to the
+    same ``YYYY/<month>/YYYY-MM-DD-slug`` grammar as the date-first layout.
+    """
+    findings: list[dict[str, str]] = []
+    for channel in _visible_children(root / "campaigns"):
+        is_channel = not YEAR.fullmatch(channel.name) and CHANNEL.fullmatch(channel.name)
+        if channel.is_dir() and is_channel:
+            years = [c for c in _visible_children(channel) if c.is_dir() and YEAR.fullmatch(c.name)]
+            if years:
+                findings.extend(
+                    item
+                    for item in _check_year_month_dated(
+                        root, f"campaigns/{channel.name}", month_style
+                    )
+                    if item["code"] != "invalid-year"
+                )
     return findings
 
 
@@ -200,7 +228,7 @@ def validation_findings(root: Path) -> list[dict[str, str]]:
     # they have always come in — structure, then contract — because a caller comparing two
     # validation runs must not see them shuffle.
     structure, contract = gather(
-        lambda: _structure_findings(root, schema, month_style),
+        lambda: _structure_findings(root, schema, month_style, _extra_top_level(config)),
         # The catalogue is built here and handed down. ``contract_findings`` has always
         # taken one and has always built its own when it was not given one, which meant
         # every validation pass read all fifteen hundred documents a second time for an
@@ -212,8 +240,25 @@ def validation_findings(root: Path) -> list[dict[str, str]]:
     return findings
 
 
+def _extra_top_level(config: dict[str, Any] | None) -> frozenset[str]:
+    """Top-level names a brain declares as its own with ``"extra_top_level": [...]``.
+
+    An established brain often carries folders the canonical architecture does not name
+    (a Skool tree, a reference library, a projects area) that its own routing depends on.
+    Declaring them is an explicit, reviewable decision; anything undeclared is still
+    reported. A malformed value declares nothing.
+    """
+    value = (config or {}).get("extra_top_level")
+    if not isinstance(value, list):
+        return frozenset()
+    return frozenset(item for item in value if isinstance(item, str) and item and "/" not in item)
+
+
 def _structure_findings(
-    root: Path, schema: dict[str, Any], month_style: str | None = "MM-Mon"
+    root: Path,
+    schema: dict[str, Any],
+    month_style: str | None = "MM-Mon",
+    extra_top_level: frozenset[str] = frozenset(),
 ) -> list[dict[str, str]]:
     """Everything the brain's folders say about themselves: what is missing, what is odd.
 
@@ -238,7 +283,12 @@ def _structure_findings(
     allowed_files.update(schema.get("generated_files", []))
     if root.is_dir():
         for child in root.iterdir():
-            if child.name.startswith(".") or child.name in allowed or child.name in allowed_files:
+            if (
+                child.name.startswith(".")
+                or child.name in allowed
+                or child.name in allowed_files
+                or child.name in extra_top_level
+            ):
                 continue
             findings.append(
                 finding(
@@ -251,6 +301,7 @@ def _structure_findings(
 
     for relative in DATED_ROOTS:
         findings.extend(_check_year_month_dated(root, relative, month_style))
+    findings.extend(_check_campaign_channels(root, month_style))
     findings.extend(_check_reporting(root))
     return findings
 
