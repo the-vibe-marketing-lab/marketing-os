@@ -539,3 +539,35 @@ def test_a_canonical_brain_reports_nothing_discovered_and_the_findings_are_valid
     assert not any(item["code"] == "file-discovered" for item in doctor["findings"])
     assert not any("discovered_path" in item for item in doctor["findings"])
     assert doctor["checks"]["structure"] is True
+
+
+def test_campaign_channel_namespaces_are_accepted(tmp_path: Path) -> None:
+    """Channel packs write campaigns/<channel>/...; that is a namespace, not a bad year."""
+    root = tmp_path / "brain"
+    setup_repo(root, "Example Business", "all", mode="in-house", apply=True)
+    (root / "campaigns" / "geo" / "2026-10" / "homepage-faqs").mkdir(parents=True)
+    (root / "campaigns" / "meta-ads" / "ads" / "2026-09-02-validation").mkdir(parents=True)
+    (root / "campaigns" / "geo" / "2026" / "10-Oct" / "loose").mkdir(parents=True)
+    (root / "campaigns" / "Not A Channel").mkdir(parents=True)
+    findings = validate_repo(root)["findings"]
+    years = [item["path"] for item in findings if item["code"] == "invalid-year"]
+    dated = [item["path"] for item in findings if item["code"] == "invalid-dated-artifact"]
+    assert years == [str(root / "campaigns" / "Not A Channel")]
+    assert dated == [str(root / "campaigns" / "geo" / "2026" / "10-Oct" / "loose")]
+
+
+def test_declared_extra_top_level_folders_are_not_reported(tmp_path: Path) -> None:
+    root = tmp_path / "brain"
+    setup_repo(root, "Example Business", "all", mode="in-house", apply=True)
+    (root / "skool").mkdir()
+    (root / "projects").mkdir()
+    config_path = root / ".mos" / "config.yaml"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["extra_top_level"] = ["skool"]
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    flagged = [
+        item["path"]
+        for item in validate_repo(root)["findings"]
+        if item["code"] == "unknown-top-level"
+    ]
+    assert flagged == ["projects"]
