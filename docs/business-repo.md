@@ -35,6 +35,7 @@ my-business/
 |   `-- wiki/{_index.md,_log.md}
 |-- content/YYYY/MM-Mon/YYYY-MM-DD-topic/<channel>/
 |-- campaigns/YYYY/MM-Mon/YYYY-MM-DD-campaign/<platform>/
+|-- campaigns/<channel>/...       (channel packs, e.g. geo/YYYY-MM/, meta-ads/)
 |-- reporting/YYYY/QN/YYYY-MM/
 |-- outputs/YYYY/MM-Mon/YYYY-MM-DD-slug/
 `-- archive/
@@ -207,6 +208,11 @@ deterministically. `mos validate` enforces the exact names:
   year folder are judged as month folders. A file, a `YYYY-MM` folder or any other folder
   in a year folder is not a month folder and is neither validated nor renamed as one, and
   `reporting/` keeps its own quarter grammar below.
+- A brain that carries top-level folders the architecture does not name (a Skool tree, a
+  projects area) declares them with `"extra_top_level": ["skool", "projects"]` in
+  `.mos/config.yaml`; declared names are not reported as `unknown-top-level`, undeclared
+  ones still are. Under `campaigns/`, a lowercase slug folder is a channel namespace
+  (`campaigns/geo/YYYY-MM/`, `campaigns/meta-ads/`), as channel skill packs write it.
 - `MM-Mon` is the default since 0.5.0, when `.mos/config.yaml` has no `month_folder` key.
   A brain can keep the older bare-number folders (`content/2026/09/...`) by setting
   `"month_folder": "MM"`; the validator then accepts only `01`-`12`. The style is
